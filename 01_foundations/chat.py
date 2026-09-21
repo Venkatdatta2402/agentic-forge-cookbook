@@ -8,7 +8,7 @@ import tiktoken
 from openai import BadRequestError
 from pydantic import BaseModel
 
-from llm import async_client, chat, current_model, execute_tool_call, extract
+from llm import async_client, chat, execute_tool_call, extract, DEFAULT_MODEL
 
 _encoding = tiktoken.get_encoding("cl100k_base")
 
@@ -109,14 +109,12 @@ class Conversation:
 
         self.messages = trimmed
 
-    # model=None rather than model=DEFAULT_MODEL, so the active model is looked up when the call
-    # happens instead of frozen when this method was defined -- see llm.use().
-    async def asend_with_tools(self, content, tools, functions, schemas=None, retries=3, model=None):
+    async def asend_with_tools(self, content, tools, functions, schemas=None, retries=3, model=DEFAULT_MODEL):
         self.messages.append({"role": "user", "content": content})
         for _ in range(retries):
             try:
                 response = await async_client.chat.completions.create(
-                    model=model or current_model(), messages=self.messages, tools=tools
+                    model=model, messages=self.messages, tools=tools
                 )
             except BadRequestError:
                 self.messages.append({
@@ -126,7 +124,13 @@ class Conversation:
                 continue
 
             message = response.choices[0].message
-            self.messages.append(message)
+            # `.model_dump()` rather than the SDK object itself, so `messages` holds one type
+            # and not two. Appending the object works right up until something tries to WRITE
+            # the conversation out -- json.dump raises TypeError on a ChatCompletionMessage --
+            # and a persistence boundary is the worst place to discover that a list you have
+            # been treating as data is half objects. The API accepts the dict form unchanged,
+            # tool_calls included; `message` is still the object below, so nothing else moves.
+            self.messages.append(message.model_dump(exclude_none=True))
 
             if not message.tool_calls:
                 return message.content

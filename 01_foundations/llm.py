@@ -1,219 +1,46 @@
 import json
 import os
-import re
-import time
 
 from dotenv import load_dotenv
-from openai import AsyncOpenAI, BadRequestError, OpenAI, RateLimitError
+from openai import AsyncOpenAI, BadRequestError, OpenAI
 from pydantic import ValidationError
 
 load_dotenv()
 
-# Every provider below speaks the OpenAI wire format, so moving between them changes exactly
-# three things -- the base URL, which env var holds the key, and the default model name --
-# and nothing downstream of this file needs to know which one is active.
-#
-# `free_tier` is a note to humans, not something the code enforces. These numbers change
-# without notice; models() below asks the provider what it will actually serve today.
-PROVIDERS = {
-    "groq": {
-        "base_url": "https://api.groq.com/openai/v1",
-        "key_env": "GROQ_API_KEY",
-        "model": "llama-3.3-70b-versatile",
-        "free_tier": "100k tokens/day, 12k tokens/minute -- fast, but the daily cap is easy "
-                     "to reach once 02_agent_runtime starts forking",
-    },
-    "cerebras": {
-        "base_url": "https://api.cerebras.ai/v1",
-        "key_env": "CEREBRAS_API_KEY",
-        "model": "gpt-oss-120b",
-        "free_tier": "1M tokens/day -- ten times Groq's budget, but only an 8K context window, "
-                     "which 02_agent_runtime's longer conversations can exceed",
-    },
-    "gemini": {
-        "base_url": "https://generativelanguage.googleapis.com/v1beta/openai/",
-        "key_env": "GEMINI_API_KEY",
-        # Not a Gemini 3.x model, purely for quota: gemini-3.6-flash allows 20 requests per DAY
-        # on the free tier, which one agent loop can spend. (Its thinking-model behavior is
-        # handled -- Think now stores and replays the thought_signature those models require --
-        # so 3.x works fine on a paid key. See think.py's _build_messages.)
-        # Per-minute caps differ too: 2.5-flash is 5 RPM, 2.5-flash-lite roughly 15. For the
-        # forking notebook in 02_agent_runtime, prefer lite: LLM_MODEL=gemini-2.5-flash-lite
-        "model": "gemini-2.5-flash",
-        # Measured on an unverified free key, not taken from the published figures: roughly
-        # 20 requests per DAY per model, and 5-15 per minute. Published numbers are far higher
-        # (1500/day) and evidently assume a verified or billing-enabled project. Counted per
-        # model, so switching model gets you a fresh daily allowance.
-        "free_tier": "~20 requests/day per model and 5-15/minute on an unverified key, 1M "
-                     "context. Generous per request, very tight per day -- fine for one "
-                     "notebook, not for a chapter",
-    },
-}
+# Groq retired llama-3.3-70b-versatile for newer accounts -- `client.models.list()` no longer
+# offers it, and a call returns 404 model_not_found. Much of this repo's tuning was measured
+# against it, so where a note says "this model does X", check which one it means.
+DEFAULT_MODEL = "openai/gpt-oss-120b"
 
-# max_retries covers HTTP 429s, which the SDK retries with backoff honoring Retry-After.
-# The default of 2 is fine for one call at a time, but 02_agent_runtime runs branches and
-# tool calls concurrently, and a free-tier tokens-per-minute cap is easy to burst through.
-MAX_RETRIES = 8
+# max_retries covers HTTP 429s and 5xx, which the SDK retries with backoff, honoring Retry-After.
+# The default of 2 is fine for one call at a time, but 02_agent_runtime runs branches and tool
+# calls concurrently, and Groq's free-tier tokens-per-minute cap is easy to burst through.
+# The daily cap is a different matter -- no amount of retrying clears that one.
+client = OpenAI(
+    api_key=os.environ["GROQ_API_KEY"],
+    base_url="https://api.groq.com/openai/v1",
+    max_retries=8,
+)
 
-DEFAULT_MODEL = None  # set by use(), called at the bottom of this file
-
-_active = {"provider": None, "model": None, "client": None, "async_client": None}
-_clients = {}
+async_client = AsyncOpenAI(
+    api_key=os.environ["GROQ_API_KEY"],
+    base_url="https://api.groq.com/openai/v1",
+    max_retries=8,
+)
 
 
-def use(provider=None, model=None):
-    """Point every client in this repo at `provider` for the rest of the session.
-
-    Called with no arguments it reads LLM_PROVIDER and LLM_MODEL from .env, falling back to
-    groq and that provider's default. Call it again at any time to switch --
-    `llm.use("gemini")`, or `llm.use("gemini", "gemini-2.5-flash-lite")` -- including from
-    inside a notebook.
-    """
-    provider = provider or os.getenv("LLM_PROVIDER") or "groq"
-    model = model or os.getenv("LLM_MODEL")
-    if provider not in PROVIDERS:
-        raise ValueError(f"unknown provider {provider!r}; choose from {', '.join(PROVIDERS)}")
-
-    spec = PROVIDERS[provider]
-    api_key = os.getenv(spec["key_env"])
-    if not api_key:
-        raise RuntimeError(
-            f"provider {provider!r} needs {spec['key_env']} set in your .env file.\n"
-            f"Free tier: {spec['free_tier']}"
-        )
-
-    if provider not in _clients:
-        _clients[provider] = (
-            OpenAI(api_key=api_key, base_url=spec["base_url"], max_retries=MAX_RETRIES),
-            AsyncOpenAI(api_key=api_key, base_url=spec["base_url"], max_retries=MAX_RETRIES),
-        )
-
-    global DEFAULT_MODEL
-    _active["provider"] = provider
-    _active["model"] = model or spec["model"]
-    _active["client"], _active["async_client"] = _clients[provider]
-    DEFAULT_MODEL = _active["model"]
-    return provider
-
-
-def current_provider():
-    return _active["provider"]
-
-
-def current_model():
-    return _active["model"]
-
-
-def providers():
-    """Every known provider, and whether its key is actually present in this environment."""
-    return {
-        name: {
-            "model": spec["model"],
-            "key_env": spec["key_env"],
-            "key_set": bool(os.getenv(spec["key_env"])),
-            "free_tier": spec["free_tier"],
-            "active": name == _active["provider"],
-        }
-        for name, spec in PROVIDERS.items()
-    }
-
-
-def models():
-    """Ask the active provider what it will serve right now.
-
-    The defaults in PROVIDERS go stale -- providers retire model names on their own schedule.
-    This is the one-line way to find out what your key can actually reach today.
-    """
-    return sorted(m.id for m in _active["client"].models.list())
-
-
-class _ActiveClient:
-    """Forwards every attribute to whichever provider's client is currently active.
-
-    This indirection is what makes use() work after the fact. `from llm import client` binds a
-    reference once, at import time -- so rebinding llm.client would do nothing for chat.py and
-    think.py, which grabbed it at startup and would go on talking to the old provider. Holding
-    a proxy instead means there is only ever one place the answer lives.
-    """
-
-    def __init__(self, kind):
-        self._kind = kind
-
-    def __getattr__(self, name):
-        return getattr(_active[self._kind], name)
-
-    def __repr__(self):
-        return f"<{self._kind} -> provider {_active['provider']!r}, model {_active['model']!r}>"
-
-
-client = _ActiveClient("client")
-async_client = _ActiveClient("async_client")
-
-use()  # honors LLM_PROVIDER from .env; defaults to groq
-
-
-# How long a per-minute cap is ever worth waiting out. Anything longer is a daily quota
-# wearing a retry delay as a disguise, and sleeping through it helps nobody.
-MAX_RATE_LIMIT_WAIT = 90
-
-_RETRY_DELAY = re.compile(r'retryDelay["\']?[:\s]+["\']?(\d+(?:\.\d+)?)s')
-
-# A daily cap reports a short retryDelay too -- Gemini will happily say "retry in 21s" about a
-# quota that does not reset until tomorrow. Waiting that out just burns six attempts and still
-# fails, so daily limits are detected by name and re-raised immediately.
-_PER_DAY = re.compile(r"PerDay|per day|\bTPD\b|RequestsPerDay", re.IGNORECASE)
-
-
-def _requested_delay(error):
-    """Seconds to wait, if the server asked for a wait that waiting can actually satisfy."""
-    text = str(error)
-    if _PER_DAY.search(text):
-        return None
-    match = _RETRY_DELAY.search(text)
-    return float(match.group(1)) if match else None
-
-
-def complete(**kwargs):
-    """`client.chat.completions.create`, but honoring a rate-limit delay stated in the body.
-
-    The SDK already retries 429s with exponential backoff, and honors a Retry-After header when
-    there is one. Gemini never sends that header -- it puts the wait in the JSON body as
-    `retryDelay` -- so the SDK backs off blind, caps out around 8s per attempt, and gives up
-    while the server is still asking for 49. Reading the number it actually gave us turns a
-    hard failure into a pause, which is the difference between a free tier being usable here
-    and not.
-
-    A delay longer than MAX_RATE_LIMIT_WAIT is re-raised rather than slept through: that is a
-    daily cap, and the answer to a daily cap is llm.use(...) another provider, not waiting.
-    """
-    attempts = 6
-    for attempt in range(attempts):
-        try:
-            return client.chat.completions.create(**kwargs)
-        except RateLimitError as error:
-            delay = _requested_delay(error)
-            if delay is None or delay > MAX_RATE_LIMIT_WAIT or attempt == attempts - 1:
-                raise
-            time.sleep(delay + 1)  # +1 so we land just past the window, not on its edge
-    raise RuntimeError("unreachable")
-
-
-# Every function below takes model=None rather than model=DEFAULT_MODEL, so the active model is
-# looked up when the call is made instead of frozen when the function was defined. That is what
-# lets use() take effect in code that was imported long before it was called.
-
-def chat(messages, model=None, **kwargs):
-    response = complete(
-        model=model or current_model(),
+def chat(messages, model=DEFAULT_MODEL, **kwargs):
+    response = client.chat.completions.create(
+        model=model,
         messages=messages,
         **kwargs,
     )
     return response.choices[0].message.content
 
 
-def stream_chat(messages, model=None, **kwargs):
-    stream = complete(
-        model=model or current_model(),
+def stream_chat(messages, model=DEFAULT_MODEL, **kwargs):
+    stream = client.chat.completions.create(
+        model=model,
         messages=messages,
         stream=True,
         **kwargs,
@@ -224,9 +51,9 @@ def stream_chat(messages, model=None, **kwargs):
             yield delta
 
 
-async def async_stream_chat(messages, model=None, **kwargs):
+async def async_stream_chat(messages, model=DEFAULT_MODEL, **kwargs):
     stream = await async_client.chat.completions.create(
-        model=model or current_model(),
+        model=model,
         messages=messages,
         stream=True,
         **kwargs,
@@ -237,7 +64,7 @@ async def async_stream_chat(messages, model=None, **kwargs):
             yield delta
 
 
-def stream_and_print(messages, model=None, **kwargs):
+def stream_and_print(messages, model=DEFAULT_MODEL, **kwargs):
     full = []
     for delta in stream_chat(messages, model=model, **kwargs):
         print(delta, end="", flush=True)
@@ -246,10 +73,45 @@ def stream_and_print(messages, model=None, **kwargs):
     return "".join(full)
 
 
-def extract(prompt, schema, retries=3, model=None):
+def _response_format(schema):
+    """Ask the API to enforce the shape, if this model can.
+
+    Groq's `json_schema` mode constrains the reply to the schema itself, rather than merely to
+    "some valid JSON". llama-3.3-70b did not support it, which is why chapter 1's notebook 5
+    teaches the validate-and-retry approach; gpt-oss-120b does. Both are kept: see extract().
+    """
+    return {"type": "json_schema",
+            "json_schema": {"name": schema.__name__.lower(), "schema": schema.model_json_schema()}}
+
+
+def extract(prompt, schema, retries=3, model=DEFAULT_MODEL):
+    """Get a validated Pydantic object back from the model.
+
+    Two lines of defence, and the second is not redundant.
+
+    `json_schema` mode makes the API enforce the SHAPE -- right field names, right types, nothing
+    missing. Where the model supports it that removes a whole class of failure at the source, and
+    it is tried first. A model that rejects the mode falls back to plain JSON, so this still works
+    against anything that can return `{...}` at all.
+
+    What no schema can constrain is SENSE. Measured, from `SelectThink` asked to score three
+    candidates out of ten: `scores=[869.0]` -- one number for three candidates, and 869 out of a
+    stated maximum of 10 -- alongside `keep_indices=[20]`, an index into a list of length three.
+    Every one of those is schema-valid. "One score per candidate" and "an index that exists" are
+    not things a JSON schema can say.
+
+    So the validation loop stays, and it stays for the same reason `DebugThink` gets the real
+    error rather than a nudge: the model is told exactly what was wrong with what it produced.
+    """
     messages = [{"role": "user", "content": prompt}]
+    response_format = _response_format(schema)
     for _ in range(retries):
-        reply = chat(messages, model=model, response_format={"type": "json_object"})
+        try:
+            reply = chat(messages, model=model, response_format=response_format)
+        except BadRequestError:
+            # this model cannot enforce schemas -- ask for plain JSON and lean on validation
+            response_format = {"type": "json_object"}
+            reply = chat(messages, model=model, response_format=response_format)
         messages.append({"role": "assistant", "content": reply})
         try:
             return schema.model_validate_json(reply)
@@ -259,6 +121,50 @@ def extract(prompt, schema, retries=3, model=None):
                 "content": f"That was invalid: {e}\nReturn corrected JSON only, matching the schema.",
             })
     raise ValueError(f"Failed to get valid {schema.__name__} after {retries} attempts")
+
+
+def tool_call_failure(error):
+    """What Groq actually said about a rejected tool call, phrased back at the model.
+
+    Groq validates tool-call generations server-side and returns HTTP 400 (so the SDK raises
+    BadRequestError) in two distinct cases, and its body carries far more than the exception's
+    str() shows:
+
+      - broken syntax  -> `failed_generation` holds the exact malformed text it produced
+      - wrong types    -> `message` names the offending field and the expected type
+
+    Both are worth handing back verbatim. A generic "that didn't work, try again" tells the model
+    nothing it can act on; the text below tells it precisely what it emitted and what was wrong
+    with it -- the same reason DebugThink gets the real schema and the real error rather than a
+    nudge. Returns None if this wasn't a tool-call rejection.
+    """
+    body = getattr(error, "body", None)
+    if not isinstance(body, dict):
+        return None
+    err = body.get("error") if isinstance(body.get("error"), dict) else body
+    if err.get("code") != "tool_use_failed":
+        return None
+
+    parts = [f"Your last tool call was rejected: {err.get('message', 'it could not be processed')}"]
+    failed = err.get("failed_generation")
+    if failed:
+        parts.append(f"This is exactly what you generated, and it is not valid:\n{failed}")
+    # Naming the wrapper specifically, because it is the failure mode this model actually has.
+    # Watching every rejected attempt in one run, all five looked like:
+    #     To answer these questions, I need to make two function calls.
+    #     <function=get_current_time{"timezone": "Asia/Tokyo"}</function>
+    # -- prose, then the call written as TEXT rather than emitted through the tool-calling
+    # mechanism. A generic "issue the call again" left it repeating the same shape five times,
+    # because from where it sat the call looked fine.
+    parts.append(
+        "Issue the call again as one complete, valid tool call. Do not write it out as text: "
+        "anything of the form <function=name{...}</function> in your reply is not a tool call "
+        "and will be rejected again. Do not explain first -- make the call and nothing else. "
+        "Make one call, not several. Close every brace and bracket, "
+        "give booleans as true/false rather than the strings \"true\"/\"false\", match every "
+        "declared type, and leave out any optional field you do not actually need."
+    )
+    return "\n\n".join(parts)
 
 
 def execute_tool_call(tool_call, functions, schemas=None):
@@ -272,15 +178,15 @@ def execute_tool_call(tool_call, functions, schemas=None):
     return str(result)
 
 
-def resolve_tools(messages, tools, functions, schemas=None, retries=3, model=None):
+def resolve_tools(messages, tools, functions, schemas=None, retries=3, model=DEFAULT_MODEL):
     messages = list(messages)
     for _ in range(retries):
         try:
-            response = complete(model=model or current_model(), messages=messages, tools=tools)
-        except BadRequestError:
+            response = client.chat.completions.create(model=model, messages=messages, tools=tools)
+        except BadRequestError as e:
             messages.append({
                 "role": "user",
-                "content": "That tool call could not be processed. Try again, calling one of the available tools correctly.",
+                "content": tool_call_failure(e) or "That tool call could not be processed. Try again, calling one of the available tools correctly.",
             })
             continue
 

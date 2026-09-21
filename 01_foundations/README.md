@@ -17,76 +17,42 @@ Each notebook ends with a **What you built** section and the next one opens
 with **Prerequisites**, so the chapter reads as a curriculum, not a
 reference.
 
-## Providers
+`llm.py` wraps the OpenAI SDK pointed at Groq's endpoint (`GROQ_API_KEY` from
+`.env`) — this is what every notebook below imports from. Copy `.env.example`
+to `.env` and add a key from [console.groq.com](https://console.groq.com/keys).
 
-`llm.py` wraps the OpenAI SDK — this is what every notebook in the repo
-imports from. It ships with three providers, all of which speak the OpenAI
-wire format, so moving between them changes the base URL, the key, and the
-model name, and nothing else:
+## Which model these notebooks were written against
 
-| provider | free tier (measured, not published) | watch out for |
-|---|---|---|
-| `groq` (default) | 100k tokens/day, 12k tokens/minute | the daily cap is reachable in one run of `02_agent_runtime`'s forking notebook |
-| `gemini` | ~20 requests/day **per model**, 5–15/minute, 1M context | published figures (1500/day) assume a verified or billing-enabled project; an ordinary key gets far less |
-| `cerebras` | 1M tokens/day | only an 8K context window — fine here, tight for later chapters |
+**This chapter was written and executed against `llama-3.3-70b-versatile`**, and
+the saved outputs below came from it. Groq has since retired that model for newer
+accounts — `client.models.list()` no longer offers it, and a call returns
+`404 model_not_found` — so `DEFAULT_MODEL` is now `openai/gpt-oss-120b`.
 
-Those numbers are what the APIs actually returned when the limits were hit, not
-what the docs advertise. Gemini's quota is counted per model, so
-`llm.use("gemini", "gemini-2.5-flash-lite")` gets a separate daily allowance
-from `gemini-2.5-flash`.
+Re-running a notebook will therefore produce different text from the outputs
+committed here. That is expected. Where a passage names a model or quotes a
+number measured from one — a price, a tokenizer's exact split, a failure the
+model has — it says which model it means, because those do not carry across.
 
-Copy `.env.example` to `.env` and fill in a key for whichever you want. Only
-the active provider's key is required.
+One difference is worth knowing before you start, because it changes what
+notebook 5 is teaching rather than just its numbers: **llama-3.3-70b did not
+support Groq's strict `json_schema` mode, and `gpt-oss-120b` does.** Notebook 5
+builds structured output the way you have to when the API will only promise you
+*some* valid JSON. That technique is still worth having — plenty of models and
+providers offer nothing better, and a schema constrains shape but never sense —
+so the notebook keeps it, and `extract()` now asks for schema enforcement first
+and falls back to it. See the notebook for what each layer actually catches.
 
-```python
-import llm
+The free tier allows 100k tokens/day and 12k tokens/minute. The per-minute cap
+is handled for you: the clients pass `max_retries=8` so the SDK backs off and
+retries a 429 rather than raising, which matters once `02_agent_runtime` starts
+making concurrent calls. The daily cap is not something retrying can fix.
 
-llm.providers()          # every provider, and whether its key is actually set
-llm.use("gemini")        # switch for the rest of the session
-llm.current_model()      # what the active provider will be called with
-llm.models()             # ask the provider what it will serve today
-```
-
-`use()` takes effect immediately, including in code imported long beforehand.
-Two details make that work, and both are worth knowing about because they look
-like over-engineering until you need them:
-
-- `client` and `async_client` are thin proxies that forward to whichever
-  provider is active. `from llm import client` binds a reference once, at
-  import time, so without the indirection `use()` could only ever rebind
-  `llm.client` — `chat.py` and `think.py` would go on talking to the old one.
-- Functions take `model=None` and resolve the active model when the call is
-  made, rather than defaulting to `model=DEFAULT_MODEL` and freezing it when
-  the function was defined.
-
-`DEFAULT_MODEL` still exists and `use()` keeps it current, but prefer
-`llm.current_model()` — a `from llm import DEFAULT_MODEL` done before a switch
-holds a stale string, which is exactly the trap the two points above avoid.
-
-Model names in `PROVIDERS` go stale as providers retire them; `llm.models()`
-is the one-line way to see what your key actually reaches.
-
-### Rate limits
-
-`llm.complete()` wraps `client.chat.completions.create` and is what everything
-here calls. The SDK already retries 429s with backoff and honors a
-`Retry-After` header — but Gemini never sends that header. It puts the wait in
-the response body as `retryDelay`, where the SDK can't see it, so it backs off
-blind, caps out around 8s, and gives up while the server is still asking for
-49. `complete()` reads the number the server actually gave and waits it out.
-
-It refuses to wait on a *daily* cap, which matters because those report a short
-`retryDelay` too — Gemini will say "retry in 21s" about a quota that resets
-tomorrow. Sleeping through that burns attempts and still fails. The answer to a
-daily cap is `llm.use(...)` another provider.
-
-### Thinking models
-
-Gemini 3.x returns an opaque `thought_signature` alongside each function call
-and rejects any replayed call that arrives without it — that's how it resumes
-its own reasoning across a tool round trip. `02_agent_runtime`'s `Think` stores
-it on the decision and hands it straight back, so those models work. They're
-not the default only because `gemini-3.6-flash` allows 20 requests per day.
+`tool_call_failure()` turns Groq's rejection of a malformed tool call into text
+worth showing a model. Groq validates tool-call generations server-side and
+returns HTTP 400 with the exact broken output it produced (`failed_generation`)
+and, for type errors, the offending field by name. Handing that back beats a
+generic "try again", which asks the model to fix something without saying what
+was wrong — see `02_agent_runtime/think.py`.
 
 ## Notebooks
 

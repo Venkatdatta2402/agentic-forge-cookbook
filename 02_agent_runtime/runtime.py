@@ -2,9 +2,10 @@ import concurrent.futures
 import json
 import time
 
+from act import pending_decision
 from chat import count_tokens
 from llm import chat
-from think import plan_progress, render, resolve_args, step_dependencies
+from think import latest_plan, render, resolve_args, step_dependencies
 
 
 class Runtime:
@@ -49,7 +50,7 @@ class Runtime:
         while not self.finished:
             reason = self._stop_reason(conversation)
             if reason is not None:
-                return self._end_gracefully(conversation, reason)
+                return self._end_gracefully(conversation, reason, self._drain(conversation))
 
             conversation.remaining_budget = self._remaining_budget(conversation)
 
@@ -60,21 +61,66 @@ class Runtime:
             self._iterations += 1
 
             if conversation.messages and conversation.messages[-1].get("role") == "assistant":
+                self._drain(conversation)
                 return conversation
 
+        self._drain(conversation)
         return conversation
+
+    def _drain(self, conversation):
+        # Every way out of run() passes through here, because a background branch that outlives
+        # the run costs real money for an answer nobody will read.
+        #
+        # Nothing is appended to `messages`. A great deal of code reads messages[-1] as "the
+        # answer" -- Act._fork does it for every branch -- so writing a note after the final
+        # assistant message would quietly turn that answer into a note. The record goes on the
+        # conversation instead, and into the stopping message where one is being written anyway.
+        running = getattr(conversation, "running", None)
+        if not running:
+            return []
+
+        abandoned = list(running)
+        if getattr(conversation, "abandoned", None) is not None:
+            conversation.abandoned.set()          # branches stop at their next iteration
+        for branch_id in abandoned:
+            running.pop(branch_id).cancel()       # only bites if it never started
+        conversation.abandoned_branches = abandoned
+
+        # the run is over, so nothing is promised to anyone any more
+        if getattr(conversation, "reserved_budget", None) is not None:
+            conversation.reserved_budget = {"tokens": 0, "tool_calls": 0}
+            conversation.reserved_by_branch = {}
+
+        pool = getattr(conversation, "pool", None)
+        if pool is not None:
+            # not waited on: the cancel flag is what stops them, and blocking here would spend
+            # exactly the time this is meant to save
+            pool.shutdown(wait=False, cancel_futures=True)
+            conversation.pool = None
+        return abandoned
 
     def _tool_calls_made(self, conversation):
         return sum(1 for m in conversation.messages if m.get("role") == "decision" and m.get("type") == "tool_call")
 
     def _remaining_budget(self, conversation):
-        # all four budgets Runtime tracks, not just time -- whatever decides to fork should be
-        # able to split any (or all) of them across branches, not only max_seconds.
+        # all four budgets Runtime tracks, not just time, so whatever decides to fork can hand
+        # any of them to a branch. Note they are NOT all the same kind of thing: tokens and tool
+        # calls are really consumed and so must be divided between branches, while seconds and
+        # iterations are ceilings each branch faces on its own -- branches run concurrently, and
+        # each Runtime counts its own iterations. think._POOLED_BUDGETS / _PER_BRANCH_BUDGETS is
+        # where that distinction is stated to the model.
         tokens_used = sum(count_tokens(m["content"]) for m in conversation.messages if m.get("content"))
+        # what branches left running were promised but have not necessarily spent yet. Subtracted
+        # so the figure advertised to a fork is UNPROMISED budget rather than merely unspent
+        # budget -- otherwise the same tokens get handed to a second branch while the first is
+        # still working through them. Only the pooled budgets appear here; see the note above.
+        reserved = getattr(conversation, "reserved_budget", None) or {}
         return {
             "iterations": None if self.max_iterations is None else max(0, self.max_iterations - self._iterations),
-            "tool_calls": None if self.max_tool_calls is None else max(0, self.max_tool_calls - self._tool_calls_made(conversation)),
-            "tokens": None if self.max_tokens is None else max(0, self.max_tokens - tokens_used),
+            "tool_calls": None if self.max_tool_calls is None else max(
+                0, self.max_tool_calls - self._tool_calls_made(conversation) - reserved.get("tool_calls", 0)),
+            "tokens": None if self.max_tokens is None else max(
+                0, self.max_tokens - tokens_used - reserved.get("tokens", 0)),
             "seconds": None if self.max_seconds is None else max(0.0, self.max_seconds - (time.monotonic() - self._started_at)),
         }
 
@@ -111,12 +157,16 @@ class Runtime:
 
         return None
 
-    def _end_gracefully(self, conversation, reason):
+    def _end_gracefully(self, conversation, reason, abandoned=()):
         last = conversation.messages[-1] if conversation.messages else None
         progress = f" Last step: {last['role']} -> {last['content']!r}." if last else " No steps completed."
+        # said out loud rather than dropped: work was paid for and thrown away, and a run that
+        # keeps doing that is one where wait_for is being used wrongly
+        cut = (f" Cut short while still running, and their work discarded: {', '.join(abandoned)}."
+               if abandoned else "")
         conversation.messages.append({
             "role": "assistant",
-            "content": f"Stopping: {reason}.{progress} This is partial progress, not a final answer.",
+            "content": f"Stopping: {reason}.{progress}{cut} This is partial progress, not a final answer.",
         })
         return conversation
 
@@ -129,8 +179,10 @@ class Loop:
     # component produces a final assistant message -- that can happen before `until` would ever
     # fire (e.g. a decision to respond, which has nothing to do with `until`'s own condition).
     # Doesn't get Runtime's budget/doom-loop protection -- that stays the outer Runtime's job.
-    # `until` is content-driven (e.g. plan_done); `count` is a plain fixed number of passes --
-    # not every use of Loop has (or needs) a predicate to check against.
+    # `until` is content-driven -- a predicate over the conversation, for when the number of
+    # passes depends on what actually happens. `count` is a plain fixed number, for when it
+    # doesn't. Either works alone; how many rounds a task deserves is the caller's call, which
+    # is the whole reason this is a parameter and not a constant inside some pattern.
     def __init__(self, components, until=None, count=None, max_iterations=50):
         assert until is not None or count is not None, "Loop needs either `until` or `count`"
         self.components = list(components)
@@ -167,10 +219,30 @@ class Graph:
         self.max_workers = max_workers
 
     def run(self, conversation):
-        plan, _ = plan_progress(conversation)
-        steps = plan["steps"]
+        # Deciding to answer is itself an Act -- a graph of exactly one. Without this the loop
+        # could never finish: the planner would conclude "done, here is the answer", nothing
+        # would turn that decision into an assistant message, and control would come back here
+        # to re-run an already-finished plan until the budget stopped it.
+        last = pending_decision(conversation)
+        if last is not None and last.get("type") == "respond":
+            return self.act.run(conversation)
+
+        steps = latest_plan(conversation)["steps"]
         deps = [step_dependencies(step) for step in steps]
-        results = {}
+
+        # $stepN is numbered globally, across every round -- a replan continues the count rather
+        # than restarting it (see PlannerThink._continue_or_finish, which tells the planner
+        # exactly which index to carry on from). So earlier rounds' outputs are seeded here as
+        # already-satisfied dependencies, and this round's steps take the indices after them.
+        # Resolving against a fresh per-round dict instead would silently make "$step0" mean
+        # this round's first step, and a replan referring back to round one would read the
+        # wrong value.
+        step_outputs = getattr(conversation, "step_outputs", None)
+        if step_outputs is None:
+            step_outputs = conversation.step_outputs = []
+        base = len(step_outputs)
+        results = dict(enumerate(step_outputs))
+        step_outputs.extend([None] * len(steps))
         started = set()
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as pool:
@@ -190,7 +262,8 @@ class Graph:
                 finished = next(concurrent.futures.as_completed(in_flight))
                 i = in_flight.pop(finished)
                 effect = finished.result()
-                results[i] = effect["content"]
+                results[base + i] = effect["content"]
+                step_outputs[base + i] = effect["content"]  # by index: completion order varies
                 conversation.messages.append({"role": "tool", "content": self._phrase(effect, conversation)})
                 launch_ready()
 

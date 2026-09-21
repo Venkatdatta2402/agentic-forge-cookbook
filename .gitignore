@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 .DS_Store
+
+# generated stores (04_memory)
+store/
+
+# stdio servers' stderr (07_mcp)
+server.log
