@@ -136,6 +136,70 @@ needs no modification to use it.
    `('mcp_tool', 'session')`). Ends on a server killed mid-run, which lands as `broken` and is
    correctly withheld from the model ✅
 
+## Where a live connection lives
+
+A tool built by `remote.py` is a closure. Handed a `Session`, it seals the session inside
+itself — which works until the server dies, at which point there is no way to give that
+function a new one and every tool has to be rebuilt along with the `Registry` holding them.
+
+So it is handed a **`Connection`** instead: a box holding the session, offering the same methods
+so nothing downstream can tell the difference. Replacing the session is one assignment, and
+every tool built earlier keeps working because none of them ever held it.
+
+The box lives on `Conversation.resources`, which is a new field in `01_foundations/chat.py` and
+the one place this chapter reached back past `03_tools`. It is there because **two chapters
+needed it from opposite directions**: `04_memory` notebook 5 found that nothing on a
+conversation could hold a memory store, so `remember` had to close over one; this chapter found
+the same for a live session, where it is worse — an awkward-to-reach store is still working, a
+dead session needs replacing by somebody.
+
+```python
+conversation.resources["mcp"] = Connection(lambda: Session(SERVER)).open()
+```
+
+Anything holding the conversation can now reach it, which is every component, because that is
+what `.run(conversation)` means. Notebook 6 kills a server, calls `reconnect()`, and the same
+`Registry` keeps answering.
+
+## Deciding when to reconnect
+
+`reconnect()` is a mechanism and says nothing about *when*. Attempts, waits, when to give up and
+who gets told are decisions, so they live in a component — `Reconnect` in `repair.py` — because
+`02_agent_runtime` already says a component is anything with `.run(conversation)`. **This needed
+no change to chapter 2 either**: the extension point was built four chapters earlier.
+
+```python
+Runtime(loop=[Observe(...), Reconnect(), Think(...), Act(...), Observe()], repeat_from=1)
+```
+
+| the situation | what happens | what the model is told |
+|---|---|---|
+| server answering | one `tools/list`, ~2.5 ms, nothing else | nothing |
+| died, restartable | repaired, logged | **nothing** — it cannot act on "we reconnected" |
+| never coming back | gives up after `attempts` | "the mcp service is unreachable…" — it *can* act on that |
+
+Two decisions inside it are worth arguing with. **It probes rather than infers**: by the time a
+failure reaches `pending` it is a string, so `kind` is gone and a dead connection is
+indistinguishable from a buggy tool — checking the world instead of trusting the report is
+`verified()`'s move again. And **a successful repair stays out of the conversation**, for the
+same reason `for_the_model` exists.
+
+Two findings from building it:
+
+**`ping` does not work.** The protocol has one and `Client.send_ping()` sends it, but a server
+built with this SDK's `MCPServer` answers `MCPError: Method not found` — so a health check built
+on `ping` reports every healthy server as dead. `tools/list` is the cheapest call every server
+must implement, so that is the probe.
+
+**A repair budget is not optional.** Without one, a server that fails on startup gets `attempts`
+tries *per iteration*, forever, and the run spends its whole budget restarting a process that was
+never going to work.
+
+`Runtime` deliberately does **not** close those resources at the end of a run. That was the
+first design and it is wrong: a long-running agent does several runs on one conversation, and
+closing its connection after run one breaks run two. Closing belongs to whoever opened the
+conversation, so `Conversation` is a context manager and `close()` is explicit.
+
 ## What the whole chapter cost the earlier ones
 
 The promise every notebook here made was that `02_agent_runtime` and `03_tools` would not have
@@ -147,10 +211,16 @@ zero times:
 |---|---|
 | `02_agent_runtime` | **no changes** |
 | `03_tools` | **one**: `invoker()` now honours `for_the_model` |
+| `01_foundations` | **one**: `Conversation` gained `resources` and `close()` |
 
-That single change was not an MCP requirement. `for_the_model` was computed and read by nobody,
-which was survivable while `broken` meant a bug in a local function and stopped being
-survivable once it meant "a server we do not control declined to explain itself".
+Neither was an MCP requirement.
+
+`for_the_model` was computed and read by nobody — survivable while `broken` meant a bug in a
+local function, and not once it meant "a server we do not control declined to explain itself".
+
+`Conversation.resources` is a missing field rather than a bug, and it went in because two
+chapters needed it from opposite directions (above). The runtime still has no idea any of this
+exists.
 
 ## What this chapter does with chapters 1–3
 
@@ -185,6 +255,10 @@ Built as the notebooks need them, same as every other chapter. Two so far.
   imports mcp. `weather` lives here because notebook 1 describes **the same function object**
   two ways; written out once per side, the comparison would only prove someone had kept two
   copies in step, which is `03_tools` notebook 1's opening failure four chapters later
+- `repair.py` — `Reconnect`: the *policy* around `Connection.reconnect()`, as an ordinary
+  `02_agent_runtime` component. Attempts, waits, backoff, a per-run repair budget, and the
+  decision about which outcomes the model hears. Probes with `tools/list` because `ping` is
+  unimplemented by this SDK's servers; returns `None` on success and a message only on giving up
 - `transport_server.py` — an `expose()`d registry whose tools are instruments rather than
   tools: they report the process the server is running in, what it inherited, and how long it
   can be made to take. Runs over stdio or streamable HTTP depending on one launch argument,

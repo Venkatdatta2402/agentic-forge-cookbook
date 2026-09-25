@@ -85,3 +85,23 @@ was wrong — see `02_agent_runtime/think.py`.
 
 (Embeddings intentionally live in `05_retrieval`, not here — they only
 matter once there's something to retrieve.)
+
+## One change made later, from two directions at once
+
+`Conversation` gained `resources` — a dict for live things (connections, sessions, database
+handles) — plus a `close()` and context-manager support. It is not used by any notebook in this
+chapter, and it is here rather than in a later one because `Conversation` is here.
+
+Two later chapters asked for it independently. `04_memory` notebook 5 found that nothing on a
+conversation could hold a memory store, so `remember` had to close over one. `07_mcp` notebook 6
+found the same for a live MCP session, where it is worse: a store that is awkward to reach still
+works, while a session whose server has died needs *replacing*, and nothing sealed in a closure
+can be replaced by anybody else.
+
+`messages` and `notes` are data — they serialize. `resources` is the opposite: things that are
+open and must be closed. Keeping them on the conversation is what makes them reachable, and
+reachable is what makes them replaceable.
+
+`Runtime` does **not** close them at the end of a run, which was the first design and is wrong —
+an agent doing several runs on one conversation would lose its connection after the first.
+Closing belongs to whoever opened the conversation, hence `with Conversation() as c`.

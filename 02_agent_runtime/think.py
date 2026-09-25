@@ -9,7 +9,18 @@ from llm import DEFAULT_MODEL, client, extract, tool_call_failure
 
 
 def render(conversation):
-    return "\n".join(f"{m['role']}: {m['content']}" for m in conversation.messages)
+    return "\n".join(f"{m['role']}: {_rendered_content(m)}" for m in conversation.messages)
+
+
+def _rendered_content(m):
+    # A tool_call decision keeps its tool's name in `tool` and only the arguments in `content`,
+    # so rendering `content` alone turned get_metrics and get_deploys into the same line --
+    # `decision: {"service": "checkout-api"}` -- in every prompt built from this function.
+    # Found by 05_context's first notebook, looking at what Observe was actually sent. Written
+    # the way transcript() already writes a call, so both views of a run read alike.
+    if m.get("role") == "decision" and m.get("type") == "tool_call":
+        return f"{m['tool']}({m['content']})"
+    return m["content"]
 
 
 def branch_label(branch):

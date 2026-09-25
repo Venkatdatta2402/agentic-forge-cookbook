@@ -71,7 +71,12 @@ _ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models"
 
 
 def _connect(path):
-    db = sqlite3.connect(path)
+    # check_same_thread=False because a store is built in one thread and read from another as
+    # soon as retrieval runs alongside anything else -- 05_context's gather() does exactly
+    # that, and the default raised "SQLite objects created in a thread can only be used in that
+    # same thread". Python's guard is stricter than SQLite itself: this build is compiled
+    # serialized (`sqlite3.threadsafety == 3`), so one connection is safe to share.
+    db = sqlite3.connect(path, check_same_thread=False)
     db.row_factory = sqlite3.Row
     return db
 
