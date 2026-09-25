@@ -138,6 +138,17 @@ observation:
   agent's `calculate` tool was never called, and the arithmetic ended up in no
   tool result anywhere. A correct answer that nothing could check.
 
+One change was later made by `05_context`, to `render()` in `think.py`, which
+flattens the conversation for every prompt that isn't `Think`'s own: `Observe`,
+`Graph`, `PlannerThink`, `SelectThink`, `ExpandThink`, `ReflectionThink`:
+
+- It now writes a tool call's name as well as its arguments,
+  `decision: get_metrics({"service": "checkout-api"})`. A decision keeps the
+  tool's name in `tool` and only the arguments in `content`, and `render()`
+  wrote `content` alone, so two different tools called with the same
+  arguments rendered as the same line. The saved outputs in this chapter's
+  notebooks predate the fix.
+
 Groq's daily cap of 100k tokens is real and reachable — notebook 5's forking
 demos can spend a large share of it in one run. That is a quota limit, not a
 code failure; the fix is to run it again tomorrow.

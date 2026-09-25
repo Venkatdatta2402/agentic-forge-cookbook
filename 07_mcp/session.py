@@ -167,6 +167,135 @@ class Session:
     def get_prompt(self, name, args=None, timeout=None):
         return self._await(self._client.get_prompt(name, args or {}), timeout)
 
+    def ping(self, timeout=None):
+        """The protocol's own liveness check -- which this SDK's servers do not answer.
+
+        `ping` is in the MCP spec and `Client.send_ping()` sends it, but a server built with
+        `MCPServer` replies `MCPError: Method not found`. Kept because it is the right call to
+        make against a server that implements it, and because the alternative -- see
+        `Connection.healthy()` -- is only necessary once you know this one does not work.
+        """
+        return self._await(self._client.send_ping(), timeout)
+
     @property
     def server_name(self):
         return self._client.server_info.name if self._client else None
+
+
+class Connection:
+    """A box holding a `Session`, so the session can be replaced without rebuilding the tools.
+
+    `remote_tool()` builds a function that closes over whatever it is given. Given a `Session`,
+    the session is sealed inside it: it works, and when the server dies there is no way to hand
+    that function a new one -- every tool has to be built again, and the `Registry` they were
+    added to rebuilt with them.
+
+    Given a `Connection`, the box is what gets sealed in. Replacing the session is then one
+    assignment, and every tool built earlier keeps working because none of them ever held the
+    session in the first place. Notebook 6 kills a server and reconnects to show it.
+
+    It deliberately offers the same methods as `Session` -- `call`, `list_tools`, `read_resource`
+    and the rest -- so nothing downstream can tell the difference, and `remote_tools()` did not
+    have to change to accept one.
+
+    Put it on a `Conversation`:
+
+        conversation.resources["mcp"] = Connection(lambda: Session(SERVER)).open()
+
+    and `Conversation.close()` closes it, while any component that gets the conversation can
+    reach in and call `reconnect()`.
+    """
+
+    def __init__(self, factory):
+        # A factory rather than a session, because reconnecting means building a *new* one and
+        # a box holding a dead session has no way to make another.
+        self.factory = factory
+        self.session = None
+        self.reconnects = 0
+
+    # --- lifetime ------------------------------------------------------------------------
+
+    def open(self):
+        if self.session is None:
+            self.session = self.factory().__enter__()
+        return self
+
+    def close(self):
+        if self.session is not None:
+            session, self.session = self.session, None
+            session.__exit__(None, None, None)
+
+    def reconnect(self):
+        """Throw the dead session away and start a fresh one. Same box, same tools."""
+        self.close()
+        self.reconnects += 1
+        return self.open()
+
+    @property
+    def alive(self):
+        """Whether a session object exists. Says nothing about whether it works."""
+        return self.session is not None
+
+    def healthy(self, timeout=2):
+        """Whether the server is actually answering -- asked, not assumed.
+
+        `alive` is bookkeeping: it says whether we are holding a session object, which stays
+        true for a session whose process died thirty seconds ago. This asks the server, which is
+        the difference between believing our own records and checking the world -- the same
+        distinction `verified()` makes in `03_tools`.
+
+        It asks with `tools/list` rather than the obvious `ping`. `ping` is in the spec and the
+        client can send it, but a server built with this SDK's `MCPServer` answers
+        `MCPError: Method not found`, so a liveness check built on it reports every healthy
+        server as dead. `tools/list` is the cheapest call every MCP server must implement.
+
+        Cheap over stdio -- about 1.5 ms, a round trip down a local pipe -- and not free over
+        HTTP, which is why the component that calls it takes a policy instead of probing on
+        every turn by reflex.
+        """
+        if self.session is None:
+            return False
+        try:
+            self.session.list_tools()
+            return True
+        except Exception:  # noqa: BLE001 -- any failure to answer means not healthy
+            return False
+
+    def __enter__(self):
+        return self.open()
+
+    def __exit__(self, *exc):
+        self.close()
+        return False
+
+    # --- everything a Session can do, forwarded to whichever one is current --------------
+
+    def _live(self):
+        if self.session is None:
+            raise RuntimeError("connection is closed; call open() or reconnect()")
+        return self.session
+
+    def call(self, name, args, timeout=None):
+        return self._live().call(name, args, timeout)
+
+    def list_tools(self):
+        return self._live().list_tools()
+
+    def list_resources(self):
+        return self._live().list_resources()
+
+    def list_resource_templates(self):
+        return self._live().list_resource_templates()
+
+    def read_resource(self, uri, timeout=None):
+        return self._live().read_resource(uri, timeout)
+
+    def list_prompts(self):
+        return self._live().list_prompts()
+
+    def get_prompt(self, name, args=None, timeout=None):
+        return self._live().get_prompt(name, args, timeout)
+
+    @property
+    def server_name(self):
+        return self.session.server_name if self.session else None

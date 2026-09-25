@@ -74,11 +74,56 @@ def trim_to_budget(messages, max_tokens, reserve_turns=2):
 
 
 class Conversation:
+    """The messages an agent is carrying, plus the live things it needs to do its work.
+
+    `messages` and `notes` are data -- they can be written to a file and read back. `resources`
+    is the opposite: connections, sessions, database handles, things that are *open* and have
+    to be closed. Keeping them here rather than in a closure is what makes them reachable,
+    which is what makes them replaceable.
+
+    Two chapters asked for this independently. `04_memory` notebook 5 found that nothing on a
+    Conversation could hold a memory store, so `remember` had to close over one. `07_mcp`
+    notebook 6 found the same thing for a live MCP session, where it is worse: a session whose
+    server has died needs replacing, and a thing sealed inside a closure cannot be replaced by
+    anyone.
+    """
+
     def __init__(self, system=None):
         self.messages = []
         self.notes = []
+        # name -> a live thing. Anything with a `close()` is closed by `close()` below; the
+        # names are the caller's to choose ("mcp", "store"), because nothing here needs to
+        # know what is in it.
+        self.resources = {}
         if system:
             self.messages.append({"role": "system", "content": system})
+
+    def close(self):
+        """Close every resource that knows how, and forget them all.
+
+        Deliberately NOT called by `Runtime.run()`, which was the first design and is wrong: a
+        long-running agent does several runs on one conversation, and closing its connection
+        at the end of run one would break run two. Cleanup belongs to whoever opened the
+        conversation, which is why this is also a context manager -- `with Conversation() as c`
+        is the form that cannot forget.
+        """
+        problems = []
+        for name, resource in list(self.resources.items()):
+            closer = getattr(resource, "close", None)
+            if callable(closer):
+                try:
+                    closer()
+                except Exception as e:  # noqa: BLE001 -- one bad resource must not orphan the rest
+                    problems.append(f"{name}: {type(e).__name__}: {e}")
+        self.resources.clear()
+        return problems
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        self.close()
+        return False
 
     def send(self, content, **kwargs):
         self.messages.append({"role": "user", "content": content})
