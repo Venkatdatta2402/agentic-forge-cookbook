@@ -35,7 +35,7 @@ from typing import Literal
 from pydantic import BaseModel
 
 from chat import _encoding
-from context import Item, render, tokens
+from context import Item, render, route, tokens
 from llm import chat, extract
 from selection import supersede, words
 
@@ -251,7 +251,8 @@ def compressible(items, keep_recent=6):
         return []
     cutoff = max(i.turn for i in items) - keep_recent
     return [i for i in items
-            if not i.pinned and i.kind != "state" and i.turn <= cutoff]
+            if not i.pinned and i.kind != "state" and i.turn <= cutoff
+            and route(i) in ("run", "called")]
 
 
 def compact(items, keep_recent=6):
@@ -262,6 +263,13 @@ def compact(items, keep_recent=6):
       - task state (the current plan, the scratchpad): it is already the run's own summary of
         where things stand, and the next step starts from it
       - the last `keep_recent` turns: what the next step is most likely to build on, verbatim
+      - anything that did not come from the run: a pasted profile, an always-present catalogue,
+        a retrieved memory. **Compaction compresses the run, not what was pasted into it.**
+        Measured before this rule existed: a two-skill catalogue was summarised out of existence
+        -- not degraded, gone, so the model could no longer see two things it was able to do --
+        and a three-line profile came back as three extracted facts plus a summary about itself.
+        A retrieved memory is left alone for a different reason: it is already a summary, and
+        the id in it is what makes the full text openable
 
     What happens to the rest:
       - current messages and observations are SUMMARIZED -- they carry the story
@@ -279,7 +287,8 @@ def compact(items, keep_recent=6):
 
     keep, story, raw = [], [], []
     for item in current:
-        if item.pinned or item.kind == "state" or item.turn > cutoff:
+        if (item.pinned or item.kind == "state" or item.turn > cutoff
+                or route(item) not in ("run", "called")):
             keep.append(item)
         elif item.kind == "tool_result":
             raw.append(item)

@@ -68,6 +68,9 @@ def form_tool(model, holder, name="submit",
     return Tool(fill, name=name, description=description, args=model)
 
 
+STOPPED = "Stopped before finishing"
+
+
 def answer(agent, request, model=Response):
     """Run an agent that finishes by filling in a form, and return the form it filled in."""
     holder = []
@@ -83,9 +86,17 @@ def answer(agent, request, model=Response):
 
     if holder:
         return holder[0]
+    text = conversation.messages[-1]["content"]
+    # Runtime stopped it -- a budget ran out, or it was going round in circles. Runtime then has
+    # the agent answer from what it had gathered, with no tools, so it could not have called
+    # `submit` even if it wanted to. That answer is kept, but flagged as what it is, for any form:
+    # an agent stopped mid-job has not filled in anyone's form. failures.attempt looks for this.
+    if conversation.stopped:
+        return Response(answer=text, confident=False, visibility="internal",
+                        unknowns=f"{STOPPED}: {conversation.stopped}. This is its best answer from "
+                                 "what it had gathered, and nothing in it is checked.")
     # It answered in prose instead of calling the tool. Said plainly rather than parsed into a
     # Response, because a form nobody filled in should not look like one that was.
-    text = conversation.messages[-1]["content"]
     if model is not Response:
         raise ValueError(f"{agent.name} did not call submit; it said: {text[:200]}")
     return Response(answer=text, confident=False, visibility="internal",

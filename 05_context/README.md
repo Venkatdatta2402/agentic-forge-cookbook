@@ -183,10 +183,62 @@ service, and raw results far larger than the sentences about them.
 | `latest_plan()` and replanning (2) | Supersession, done by hand for one kind of item. `supersede()` does it for anything with an `about` |
 | `Scratchpad` (4) | Task state as `state` items, one per key, so rewriting a key supersedes it |
 | `Journal`, `Recall`, `embed()` (4) | Retrieval, unchanged. And `embed()` again, as a relevance function for selection |
+| `Retrieve`'s summary-or-body rule (4) | `retrieved()` follows it: a journal with summaries injects summaries, and the `#id` goes in the item's **content**, because an id carried only in a label does not survive a renderer that was not asked for labels (nb 2) |
+| `open_memory` (4) | Needs nothing from this chapter. It is a tool, so its result comes back through `Act` → `Observe` → `available()` like any other — which is the point of the second stage costing no new machinery |
+| `EXTRACTORS` (4) | Part of a component's policy, beside its budget: `Observe(extractors=EXTRACTORS)` keeps a memory listing's ids, which the default path lost in 3 runs of 4 (nb 5) |
+| Memory's four routes (4) | `available(profile=, catalogue=)` makes the pasted and always-present routes items too, and `Trace` meters all four, because they spend one budget (nb 6) |
 | "Importance rated by a model moves no ranking" (4) | Why `IMPORTANCE` is a fixed table by kind |
 | `unit()` min-max normalisation (4) | Reused directly, so selection's weights mean what they say |
 | Any object with `.run(conversation)` is a component (2) | **The hook this chapter needed, already there.** `Focus` narrows a conversation and forwards the call, so per-component context needed no runtime change — the same hook chapter 4 hung `Recall` on |
 | `Observe`'s "do not convert anything" paragraph (2) | Shown to be a patch for a context problem: with the request out of scope, the original prompt stops converting on its own (nb 5) |
+
+### Folded in from `04_memory` after the fact
+
+`04_memory` grew after this chapter was written, and three of its conclusions landed on work
+done here. Each one is now in the code, and two of them found a bug on the way in:
+
+- **Two-stage recall** (`selection.retrieved()`, nb 2). The store decides, not a setting: a
+  journal with summaries injects summaries. Injecting bodies from a summarising store is the
+  expensive mistake and it hides, because the model then has no reason to open anything and the
+  answers stay right. Measured here at 568 characters against 1,019 for the same memories in
+  full; chapter 4, on longer write-ups, measured 363 against 2,136.
+- **`EXTRACTORS`** (nb 5). Reproduced in this chapter's own harness: running `Observe` over a
+  memory listing, all three `#ids` survived **1 run in 4**. With `extractors=` they survive by
+  construction and cost **no model call**. This is a different class of loss from the rest of
+  the chapter — it does not degrade an answer, it removes the second stage.
+- **Four routes** (`available(profile=, catalogue=)` and `Trace.routes`, nb 6). Before
+  selection, 88% of what is available is raw tool results; afterwards the shape inverts. That
+  was always happening; it is now visible, which is the whole reason to make them items — and
+  what it made visible was a bug, below.
+
+**A route can be dropped to nothing, and that needed both a warning and a guarantee.** Once the
+skills catalogue became items, selection dropped *all* of it at a tight budget — the entries are
+unpinned and they score below the incident's own findings — so the model was asked what to do
+about a connection pool with `resize_pool` invisible. Two fixes, because there are two problems:
+
+- **silence**, which is always wrong: `Trace` now reports any route that had something to offer
+  and ended with nothing (`!! emptied: catalogue`), whether or not a floor was asked for, and
+  measures it *after* compression so a compaction doing its job is not mistaken for a loss
+- **a guarantee**, which is a policy choice: `select(floors={"catalogue": 2, "state": 1})` keeps
+  at least that many items from a group — matched on route or kind, best-scoring ones first —
+  and refuses when a floor does not fit rather than half-keeping it
+
+Measured in nb 6: without floors the model sees 0 of its 2 skills at a 400-token budget; with
+them, 2 of 2, paid for out of the run's own history (218 tokens become 188). The short list of
+what is worth a floor is the catalogue and task state; the request and the rules are already
+pinned, and everything else should be allowed to lose, or a budget means nothing.
+
+Two further bugs, both found by making the routes measurable:
+
+- **Compaction was eating the routes it should never touch.** A two-skill catalogue was
+  summarised out of existence — not shortened, gone, so the model could no longer see two
+  things it was able to do — and a three-line profile came back as three extracted facts plus
+  a summary about itself. The rule now in `compact()`: **compaction compresses the run, not
+  what was pasted into it.**
+- **A near-duplicate rule survived extraction.** The read-only rule came back as a fresh
+  `constraint` beside the pinned one it was extracted from, differing by a comma, which the
+  exact-substring check let through. Dedupe is now on word overlap as well, and a model can
+  still phrase one past it.
 
 Two changes were made to earlier chapters, both forced by this one:
 

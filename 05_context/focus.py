@@ -154,16 +154,20 @@ class Focus:
         Focus(Observe(), prepare=current_pass)
     """
 
-    def __init__(self, component, scratchpad=None, constraints=(), prepare=None, **policy):
+    def __init__(self, component, scratchpad=None, constraints=(), prepare=None,
+                 profile=None, catalogue=(), **policy):
         self.component = component
         self.scratchpad = scratchpad
         self.constraints = constraints
+        self.profile = profile
+        self.catalogue = catalogue
         self.prepare = prepare
         self.policy = policy
         self.last = None            # what this component was given, for inspection
 
     def items(self, conversation):
-        items = available(conversation, self.scratchpad, self.constraints)
+        items = available(conversation, self.scratchpad, self.constraints,
+                          profile=self.profile, catalogue=self.catalogue)
         chosen = select(items, **self.policy).kept if self.policy else items
         return self.prepare(chosen, conversation) if self.prepare else chosen
 

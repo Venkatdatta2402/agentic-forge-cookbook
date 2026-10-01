@@ -78,7 +78,41 @@ def tokens(items):
     return sum(i.tokens for i in items)
 
 
-def available(conversation, scratchpad=None, constraints=()):
+# Which way a piece of information got here. `04_memory` separates four, and they are easy to
+# confuse because they end up in the same prompt: a profile is PASTED every turn, a journal is
+# INJECTED by a retrieval, `Records` and `Graph` are CALLED as tools, and skills are PICKED from
+# a catalogue that is always present. They spend one budget between them, which is the only
+# reason this chapter needs to tell them apart.
+ROUTES = {
+    "profile": "pasted",
+    "catalogue": "catalogue",
+    "retrieval": "injected",
+    "constraints": "rules",
+    "scratchpad": "run",
+    "notes": "run",
+    "conversation": "run",
+}
+
+
+def route(item):
+    if item.source.startswith("journal#"):
+        return "injected"
+    if item.source.startswith("step_outputs"):
+        return "called"
+    if item.source.startswith(("extracted from", "summary of")):
+        return "compressed"
+    return ROUTES.get(item.source.split(",")[0], "run")
+
+
+def by_route(items):
+    """{route: tokens} -- where a context's size actually went."""
+    totals = {}
+    for item in items:
+        totals[route(item)] = totals.get(route(item), 0) + item.tokens
+    return dict(sorted(totals.items(), key=lambda kv: -kv[1]))
+
+
+def available(conversation, scratchpad=None, constraints=(), profile=None, catalogue=()):
     """Everything this run is holding, as `Item`s, oldest first.
 
     Reads the conversation the way the runtime writes it, not the way the API does:
@@ -98,6 +132,17 @@ def available(conversation, scratchpad=None, constraints=()):
 
     `constraints` are rules stated outside the conversation, pinned. Chapter 1's
     `conversation.notes` come in as facts, and a chapter 4 `Scratchpad`'s entries as state.
+
+    `profile` and `catalogue` are the other two ways memory reaches a prompt, which `04_memory`
+    separates out: a profile (a `KeyValue` store, read by key and pasted in every turn) and an
+    always-present catalogue of skills the model picks from. They arrive as items for one
+    reason: **they spend the same budget as everything else.** Left outside the item list they
+    are invisible to selection, to every measurement in this chapter, and to the trace -- which
+    is how a prompt ends up half profile without anyone deciding that.
+
+    Neither is pinned. A profile line the run never needs should be droppable, and a catalogue
+    entry that goes is a capability the model can no longer see, which is a decision worth
+    having to make rather than one made silently.
     """
     messages = conversation.messages
     items = []
@@ -156,6 +201,11 @@ def available(conversation, scratchpad=None, constraints=()):
                               source="scratchpad"))
     for rule in constraints:
         items.append(Item("constraint", rule, 0, source="constraints", pinned=True))
+    for key, value in (profile.items() if hasattr(profile, "items") else
+                       getattr(profile, "data", {}).items() if profile is not None else ()):
+        items.append(Item("fact", f"{key}: {value}", 0, about=f"profile:{key}", source="profile"))
+    for skill in catalogue:
+        items.append(Item("instruction", skill, 0, source="catalogue"))
 
     return sorted(items, key=lambda i: i.turn)
 
