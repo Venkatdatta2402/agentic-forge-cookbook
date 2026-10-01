@@ -1,4 +1,5 @@
 import concurrent.futures
+import difflib
 import json
 import time
 
@@ -6,6 +7,34 @@ from act import pending_decision
 from chat import count_tokens
 from llm import chat
 from think import latest_plan, render, resolve_args, step_dependencies
+
+
+def _similar_args(a, b, threshold=0.8):
+    # compared on the argument VALUES, not the JSON text: the keys are identical in any two calls
+    # to the same tool, and counting them made '{"timezone": "Asia/Tokyo"}' and
+    # '{"timezone": "Asia/Seoul"}' look 85% alike
+    def values(text):
+        try:
+            args = json.loads(text)
+        except (TypeError, ValueError):
+            return str(text)
+        return " ".join(str(v) for v in args.values()) if isinstance(args, dict) else str(args)
+
+    return difflib.SequenceMatcher(None, values(a), values(b)).ratio() >= threshold
+
+
+def _finisher(components):
+    # Which component gets the last word when a run is stopped: the last Think in the loop,
+    # looking inside a Loop too. Every pattern ends on a Think that can answer -- ReWOO's
+    # solver, the search patterns' way out, the debate's moderator -- and a pattern with no
+    # Think at all has nothing that could answer, so it keeps the plain stopping message.
+    found = None
+    for component in components:
+        if hasattr(component, "components"):
+            found = _finisher(component.components) or found
+        elif callable(getattr(component, "finish", None)):
+            found = component
+    return found
 
 
 class Runtime:
@@ -47,6 +76,10 @@ class Runtime:
 
     def run(self, conversation):
         self._started_at = time.monotonic()
+        # why this run was cut short, or None if it ended on an answer the model chose to give.
+        # Set on the conversation rather than read out of the last message: since a stopped run
+        # now ends with a real answer (see _end_gracefully), the text alone no longer says so.
+        conversation.stopped = None
         while not self.finished:
             reason = self._stop_reason(conversation)
             if reason is not None:
@@ -115,8 +148,14 @@ class Runtime:
         # budget -- otherwise the same tokens get handed to a second branch while the first is
         # still working through them. Only the pooled budgets appear here; see the note above.
         reserved = getattr(conversation, "reserved_budget", None) or {}
+        iterations = None if self.max_iterations is None else max(0, self.max_iterations - self._iterations)
+        # iterations count COMPONENTS, so "16" on a Think/Act/Observe loop is about five model
+        # turns, which nobody reading the number guesses. A Think is told turns, because that is
+        # the unit it spends in. Only meaningful for a loop that cycles.
+        cycle = len(self.loop) - self.repeat_from if self.repeat_from is not None else 0
         return {
-            "iterations": None if self.max_iterations is None else max(0, self.max_iterations - self._iterations),
+            "iterations": iterations,
+            "turns": None if iterations is None or cycle <= 0 else iterations // cycle,
             "tool_calls": None if self.max_tool_calls is None else max(
                 0, self.max_tool_calls - self._tool_calls_made(conversation) - reserved.get("tool_calls", 0)),
             "tokens": None if self.max_tokens is None else max(
@@ -155,9 +194,61 @@ class Runtime:
             if pairs[0] == pairs[2] and pairs[1] == pairs[3] and pairs[0] != pairs[1]:
                 return "oscillating between the same two calls"
 
+        # The same question in slightly different words, getting the same answer back. The
+        # identical-arguments check above never sees this, and it is the commonest way a model
+        # re-searches: 04_memory's recall agent asked "checkout slowed 6th of November ..." and
+        # then "checkout slowed ON 6th of November ...", and got the same listing twice. A repeat
+        # that returns the same thing has taught the agent nothing, so it stops here and answers
+        # from what it has (see _end_gracefully). Measured cost: that agent searched again because
+        # Observe had dropped the id it needed, and a second listing sometimes kept the id -- so
+        # this can cut off a lucky recovery. The fix for THAT is an extractor that keeps the
+        # listing verbatim, not a looser check here.
+        #
+        # All three conditions, not just "same result". Bare values coincide legitimately:
+        # get_current_time for Tokyo and for Seoul both return "20:49", and stopping there would
+        # cut a three-city question short. Arguments that are nearly the same text are what make
+        # it a repeat rather than a coincidence.
+        answered = [d for d in recent if "result" in d]
+        if len(answered) >= 2:
+            before, last = answered[-2:]
+            if (before["tool"] == last["tool"] and before["result"] == last["result"]
+                    and _similar_args(before["content"], last["content"])):
+                return f"`{last['tool']}` was asked the same thing again and returned the same result"
+
         return None
 
     def _end_gracefully(self, conversation, reason, abandoned=()):
+        conversation.stopped = reason
+
+        # A budget or doom-loop stop used to end on "Stopping: ... partial progress", discarding
+        # whatever the tools had already found -- even when the answer was sitting in the last
+        # result and the model had merely failed to notice. So the Think gets one more turn,
+        # with no tools, and answers from what is there, saying what it could not find.
+        #
+        # Not when cancelled: `cancel` is how a caller says "stop now" -- a user pressing stop,
+        # an abandoned branch, chapter 6's `submit` and handoffs -- and every one of those wants
+        # the run over, not another model call. And not when no tool has returned anything,
+        # because then there is nothing to answer from and the honest message is the stop.
+        if reason != "cancelled":
+            # the budget can run out in the one step between the model deciding to answer and
+            # Act delivering it -- in which case the answer already exists and only needs saying
+            decided = pending_decision(conversation)
+            if decided is not None and decided.get("type") == "respond":
+                decided["applied"] = True
+                conversation.messages.append(
+                    {"role": "assistant", "content": decided["content"], "stopped": reason})
+                return conversation
+
+        finisher = _finisher(self.loop)
+        # a result counts whether or not Observe got to it: a stop between Act and Observe leaves
+        # it only on the call, and Think.finish knows to look there
+        gathered = any(m.get("role") == "tool" or "result" in m for m in conversation.messages)
+        if reason != "cancelled" and finisher is not None and gathered:
+            answer = finisher.finish(conversation, reason)
+            if answer:
+                conversation.messages.append({"role": "assistant", "content": answer, "stopped": reason})
+                return conversation
+
         last = conversation.messages[-1] if conversation.messages else None
         progress = f" Last step: {last['role']} -> {last['content']!r}." if last else " No steps completed."
         # said out loud rather than dropped: work was paid for and thrown away, and a run that
@@ -167,6 +258,7 @@ class Runtime:
         conversation.messages.append({
             "role": "assistant",
             "content": f"Stopping: {reason}.{progress}{cut} This is partial progress, not a final answer.",
+            "stopped": reason,
         })
         return conversation
 

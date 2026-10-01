@@ -32,7 +32,7 @@ import concurrent.futures
 import re
 from dataclasses import dataclass, field
 
-from context import Item, tokens
+from context import Item, route, tokens
 from recall import unit
 
 # Importance is a property of what KIND of thing an item is, fixed in advance. Not rated by a
@@ -125,7 +125,7 @@ def supersede(items):
 
 
 def select(items, budget=None, query=None, kinds=None, relevance=overlap, keep_last=0,
-           w_relevance=0.5, w_importance=0.3, w_recency=0.2, half_life=8):
+           floors=None, w_relevance=0.5, w_importance=0.3, w_recency=0.2, half_life=8):
     """The items this operation should be given, within `budget` tokens.
 
     `query` is what relevance is measured against. Defaults to the request item's content,
@@ -136,6 +136,20 @@ def select(items, budget=None, query=None, kinds=None, relevance=overlap, keep_l
     answering the user usually does not.
 
     `half_life` is in turns: an item that many turns old scores half on recency.
+
+    `floors` is the other guarantee: `{"catalogue": 2, "state": 1}` means at least that many
+    items from that group survive, whatever they score, with the group's best-scoring ones
+    chosen. A name is matched against the item's route (`context.route`) or its kind, so it can
+    speak about either.
+
+    It exists because of a measured failure. Once a skills catalogue became items, selection
+    dropped **all of it** at a 700-token budget: the entries are unpinned, they scored below the
+    incident's own findings, and the model was then asked what to do about a connection pool
+    with `resize_pool` invisible to it. A dropped fact makes an answer worse; a dropped
+    catalogue entry removes something the agent could do, and nothing in the answer says so.
+
+    Like the pinned items, a floor that does not fit the budget is refused rather than quietly
+    broken.
 
     `keep_last` is a GUARANTEE, and `w_recency` is not. Recency is one term in a score: an old
     item with strong relevance outranks a recent one, and the greedy fill can skip a recent item
@@ -180,8 +194,26 @@ def select(items, budget=None, query=None, kinds=None, relevance=overlap, keep_l
              for n, (item, r, m, c) in enumerate(zip(candidates, rel, imp, rec))),
             key=lambda s: (-s[0], s[1]),
         )
-        spent = tokens(pinned)
+        # floors, chosen AFTER scoring so each group keeps its best rather than its first
+        promised = []
+        for name, least in (floors or {}).items():
+            group = [item for _, _, item in scored
+                     if name in (route(item), item.kind) and id(item) not in chosen]
+            for item in group[:least]:
+                chosen.add(id(item))
+                promised.append(item)
+        if budget is not None and tokens(pinned) + tokens(promised) > budget:
+            raise ValueError(
+                f"pinned items and the floors {floors} come to "
+                f"{tokens(pinned) + tokens(promised)} tokens, over the budget of {budget}. A "
+                "floor is a promise, so this is refused rather than half-kept. Raise the budget, "
+                "lower a floor, or compress what they hold."
+            )
+
+        spent = tokens(pinned) + tokens(promised)
         for score, _, item in scored:
+            if id(item) in chosen:
+                continue
             if budget is None or spent + item.tokens <= budget:
                 chosen.add(id(item))
                 spent += item.tokens
@@ -192,14 +224,42 @@ def select(items, budget=None, query=None, kinds=None, relevance=overlap, keep_l
     return Selection(kept, sorted(dropped, key=lambda d: d[0].turn))
 
 
-def retrieved(recall, query, k=3, turn=0):
+SUMMARY_HINT = ("The memories above are summaries. Call open_memory(memory_id=N) for the full "
+                "text of one before answering from it.")
+
+
+def retrieved(recall, query, k=3, turn=0, hint=True):
     """A chapter 4 `Recall` asked `query`, its hits as `memory` items.
 
     `Recall` already did the ranking -- similarity floor, reinforcement, top k -- so this does
     not rank again. It only says what came back and where from.
+
+    **What goes in depends on the store, not on a setting** -- the rule `04_memory`'s `Retrieve`
+    settles. A journal that writes summaries has a second stage, so the summary goes in and
+    `open_memory` fetches a body when the model wants one. A journal without them has no second
+    stage, so the entry itself goes in. Injecting bodies from a summarising store is the
+    expensive mistake: 2,136 characters for three memories against 363, measured in
+    `04_memory/05_memory_in_the_loop`, and the model then has no reason to open anything, so
+    two-stage recall silently stops happening while the answers stay right.
+
+    **The id is in the CONTENT, not only in `about`.** It is what makes the entry openable, so
+    it has to survive every renderer: `about` only reaches the model when construction is asked
+    for labels, and `04_memory` measured ids surviving one live run in three once a listing had
+    been through a paraphrase. A fact the loop depends on does not belong in an attribute.
     """
-    return [Item("memory", text, turn, about=f"journal#{eid}", source=f"journal#{eid}")
-            for _, eid, _, text in recall(query, k=k)]
+    items, summarised = [], False
+    for _, eid, at, text in recall(query, k=k):
+        row = recall.journal.get(eid)
+        summary = row["summary"] if row is not None and row["summary"] else None
+        summarised |= summary is not None
+        items.append(Item("memory", f"#{eid}  {at}  {summary or text}", turn,
+                          about=f"journal#{eid}", source=f"journal#{eid}"))
+    if items and summarised and hint:
+        # An instruction about how to use the data, so it renders as one -- and unpinned, because
+        # it is true only for the calls that actually retrieved a summary. `instruction` carries
+        # the top importance, so a budget has to be very tight before it goes.
+        items.append(Item("instruction", SUMMARY_HINT, turn, source="retrieval"))
+    return items
 
 
 def gather(select_fn, *retrieve_fns):

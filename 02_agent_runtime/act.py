@@ -77,6 +77,11 @@ class Act:
             return None
 
         conversation.pending = self.execute(decision["tool"], decision["content"])
+        # what the tool really returned, kept on the call that produced it. Observe rewrites the
+        # result before the model sees it, and a rewording differs from run to run -- so the
+        # only reliable way to tell that two calls got the same answer is to compare these.
+        # Runtime's doom-loop check does exactly that (see Runtime._doom_loop).
+        decision["result"] = conversation.pending["content"]
         return None
 
     @staticmethod

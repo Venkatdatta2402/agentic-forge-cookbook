@@ -6,7 +6,9 @@ Every notebook in this chapter produced one of these by accident:
                      three model calls to repair an argument, three more agent runs behind them
     it ran out       a specialist hit its iteration cap and returned "Stopping: reached the
                      maximum of 8 iterations... This is partial progress, not a final answer."
-                     The supervisor read that as an answer and carried on
+                     The supervisor read that as an answer and carried on. (Runtime now ends a
+                     stopped run on the agent's best answer instead, which reads even more like a
+                     real one -- all the more reason the stop has to arrive as a failure form.)
     it cannot be used  an agent wrote prose instead of calling `submit`; another answered
                      `confident: true` with nothing behind it; a third marked its reply
                      `internal` and the supervisor forwarded it to a journalist anyway
@@ -20,11 +22,13 @@ reply may leave the building -- which is exactly the kind of code that multi-age
 short of, because the interesting part looks like it is happening inside the agents.
 """
 
-from messages import Response, answer
+from messages import STOPPED, Response, answer
 
-# Runtime says this when a budget runs out. It is an ordinary assistant message, so nothing
-# downstream can tell it from an answer unless it looks.
-STOPPED = "Stopping: reached the maximum"
+# What `messages.answer` writes into `unknowns` when Runtime stopped the agent. It used to be a
+# check on the answer text itself, for Runtime's "Stopping: reached the maximum..." message. A
+# stopped run now ends with the agent's best answer instead, which is a real answer and reads
+# like one -- so the text can no longer say it was cut short, and the conversation's `stopped`
+# is what does.
 
 
 def failure(reason, detail=""):
@@ -50,8 +54,10 @@ def attempt(agent, request, model=Response, retries=0):
         except Exception as raised:                      # noqa: BLE001 -- the caller decides, not us
             last = failure(f"{agent.name} raised {type(raised).__name__}", str(raised))
             continue
-        if isinstance(response, Response) and STOPPED in response.answer:
-            last = failure(f"{agent.name} ran out of budget before finishing", response.answer)
+        if isinstance(response, Response) and response.unknowns.startswith(STOPPED):
+            # the reason, then what it had got to -- kept, because it is often most of the answer
+            last = failure(f"{agent.name} was stopped before finishing",
+                           f"{response.unknowns[len(STOPPED) + 2:]} Its answer so far: {response.answer}")
             continue
         return response
     return last

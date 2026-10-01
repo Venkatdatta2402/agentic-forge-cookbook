@@ -35,7 +35,7 @@ is a question you will ask far more often than you expect.
 from dataclasses import dataclass, field
 
 from compression import compact, compressible, truncate, why_compress
-from context import available, tokens
+from context import available, by_route, tokens
 from focus import Focus
 from selection import gather, overlap, retrieved, select
 
@@ -66,6 +66,10 @@ class Policy:
     # or inside the recent window compaction leaves alone.
     compress_when: float = 0.4
     boundary: object = None           # callable(items, conversation) -> items
+    # {group: fewest items that must survive}, matched against a route or a kind. What a
+    # component must not be without: a skills catalogue it is expected to use, the plan it is
+    # working to. See `select(floors=)` for the failure this exists for.
+    floors: dict = None
 
     def __str__(self):
         name = lambda f: getattr(f, "__name__", type(f).__name__)
@@ -92,6 +96,11 @@ class Trace:
     retrieved: int = 0
     final: int = 0
     reasons: list = field(default_factory=list)
+    routes: dict = field(default_factory=dict)      # where the final tokens came from
+    # routes that had something to offer and ended with nothing. Reported whether or not a
+    # floor was asked for, because the failure worth naming is not that a route was dropped --
+    # that is often right -- but that it was dropped without anyone seeing it.
+    emptied: list = field(default_factory=list)
 
     def __str__(self):
         parts = [f"available {self.available}t"]
@@ -102,17 +111,27 @@ class Trace:
         if self.retrieved:
             parts.append(f"retrieved {self.retrieved}t")
         parts.append(f"-> {self.final}t")
+        if self.routes:
+            parts.append("(" + ", ".join(f"{name} {n}t" for name, n in self.routes.items()) + ")")
+        if self.emptied:
+            parts.append("!! emptied: " + ", ".join(self.emptied))
         return "  ".join(parts)
 
 
 class ContextSystem:
     """Everything shared between components, and the one method that applies a policy."""
 
-    def __init__(self, scratchpad=None, constraints=(), recall=None, history_limit=None):
+    def __init__(self, scratchpad=None, constraints=(), recall=None, history_limit=None,
+                 profile=None, catalogue=()):
         self.scratchpad = scratchpad
         self.constraints = constraints
         self.recall = recall
         self.history_limit = history_limit
+        # the pasted and always-present routes. Held here rather than per policy because every
+        # component draws on the same profile and the same catalogue; what differs is how much
+        # of them survives that component's budget.
+        self.profile = profile
+        self.catalogue = catalogue
         self.traces = []
         # (messages at the time, the compacted items that stand in for them). Notebook 3 was
         # emphatic that compression must never edit the record, and `compact()` obeys that: it
@@ -151,6 +170,11 @@ class ContextSystem:
                      for i in items]
             trace.compressed = "truncate"
 
+        # what selection is choosing from, measured AFTER compression: compaction moves the run
+        # and the raw results into `compressed` legitimately, and reading this any earlier
+        # reported "emptied: called" every time a compaction did its job.
+        offered = by_route(items)
+
         # 2. the boundary, BEFORE selection. It says what is admissible at all, so scoring
         #    anything outside it is work thrown away -- measured: with the boundary applied last,
         #    a single Observe context scored 2002 tokens and then discarded all but 22 of them.
@@ -167,7 +191,8 @@ class ContextSystem:
                                       if i.kind == "request"), "")
         chosen, memories = gather(
             lambda: select(items, budget=policy.budget, query=query, kinds=policy.kinds,
-                           relevance=policy.relevance, keep_last=policy.keep_last),
+                           relevance=policy.relevance, keep_last=policy.keep_last,
+                           floors=policy.floors),
             *([lambda: retrieved(policy.retrieve, query, k=policy.retrieve_k)]
               if policy.retrieve is not None else []),
         )
@@ -175,15 +200,23 @@ class ContextSystem:
         items = chosen.kept + memories
 
         trace.final = tokens(items)
+        trace.routes = by_route(items)
+        # a boundary is a deliberate "this pass only", so the routes it excludes are not news
+        if policy.boundary is None:
+            trace.emptied = [name for name in offered if name not in trace.routes]
         self.traces.append(trace)
         return items
+
+    def available(self, conversation):
+        return available(conversation, self.scratchpad, self.constraints,
+                         profile=self.profile, catalogue=self.catalogue)
 
     def focus(self, component, policy):
         """`component`, wrapped so that every call gets a context built by this system."""
         return Focus(component, scratchpad=self.scratchpad, constraints=self.constraints,
+                     profile=self.profile, catalogue=self.catalogue,
                      prepare=lambda items, conversation: self.apply(items, conversation, policy))
 
     def items(self, conversation, policy):
         """The context a policy produces, without a component -- for a call you make yourself."""
-        return self.apply(available(conversation, self.scratchpad, self.constraints),
-                          conversation, policy)
+        return self.apply(self.available(conversation), conversation, policy)

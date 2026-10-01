@@ -282,6 +282,65 @@ def _collect_tool(conversation):
     }
 
 
+def history(conversation):
+    # The conversation as chat messages, in the native tool-calling shape -- see the note at
+    # the top of Think._build_messages for why that shape and not narrated prose. A function
+    # of its own because two callers need exactly this: Think.run, and Think.finish, which
+    # answers from the same history with no tools on offer.
+    messages = []
+    pending_call_id = None
+    for m in conversation.messages:
+        role = m["role"]
+        if role in ("system", "user", "assistant"):
+            messages.append({"role": role, "content": m["content"]})
+        elif role == "decision" and m.get("type") == "tool_call":
+            pending_call_id = f"call_{len(messages)}"
+            messages.append({
+                "role": "assistant",
+                # the model's own one-line rationale for this call, replayed so later turns
+                # see why it did what it did and not just that it did it
+                "content": m.get("reasoning"),
+                "tool_calls": [{
+                    "id": pending_call_id,
+                    "type": "function",
+                    "function": {"name": m["tool"], "arguments": m["content"]},
+                }],
+            })
+        elif role == "tool" and pending_call_id is not None:
+            messages.append({"role": "tool", "tool_call_id": pending_call_id, "content": m["content"]})
+            pending_call_id = None
+        elif role == "tool":
+            # A tool observation with no tool_call before it: a fork's merged branch results,
+            # or a search round's survivors. These used to be narrated as the agent's own past
+            # turn, which put an ASSISTANT message last in the request -- and a model handed a
+            # trailing assistant message continues it rather than replying. Tree of Thoughts
+            # answered " This approach seems preferable as it fosters a supportive
+            # environment", a sentence fragment picking up mid-thought from the pruning
+            # rationale above it.
+            #
+            # They are things that happened TO the agent, not things it said, so they go in as
+            # user turns -- which is also what ends the turn and asks for a fresh reply.
+            # Labelled as plainly as possible, because `user` is the only role that both
+            # ends the turn AND is not the agent's own voice -- and the model will otherwise
+            # read the contents as something the USER said. Sent as bare "Results:", Tree of
+            # Thoughts replied "Glad you like StrideRise!", thanking the user for praise
+            # nobody had given. It is neither the agent's turn nor the user's, and the text
+            # has to say so, since the role cannot.
+            # The wording is load-bearing twice over. Bare "Results:" and Tree of Thoughts
+            # replied "Glad you like StrideRise!", reading the block as praise from the user.
+            # Calling them "results for you to judge" then produced a critique of a candidate
+            # instead of an answer -- it did what the label asked. This says whose words they
+            # are and nothing about what to do with them.
+            messages.append({"role": "user", "content": (
+                "[Results of work you delegated. Not a message from the user.]\n"
+                + m["content"])})
+        else:
+            # plan and critique messages, and fork decisions -- genuinely the agent's own
+            # output, so they stay as its past turns.
+            messages.append({"role": "assistant", "content": m["content"]})
+    return messages
+
+
 class Fork:
     # A fork the CALLER declares, rather than one a model decides. It emits exactly the decision
     # Think produces for `delegate` -- same "fork" type, same fields -- so Act needs no new branch
@@ -391,12 +450,73 @@ class Think:
         return not (last and last.get("source") == "branches")
 
     def _sampling_kwargs(self):
+        # read with getattr because finish() can land on any Think subclass, and several
+        # (PlannerThink, SelectThink) have their own __init__ that never sets these
         kwargs = {}
-        if self.temperature is not None:
+        if getattr(self, "temperature", None) is not None:
             kwargs["temperature"] = self.temperature
-        if self.top_p is not None:
+        if getattr(self, "top_p", None) is not None:
             kwargs["top_p"] = self.top_p
         return kwargs
+
+    def finish(self, conversation, reason):
+        """The last word on a run that Runtime is stopping: an answer from what is already there.
+
+        Called by Runtime._end_gracefully, never declared in a loop. No tools are offered, so
+        answering is the only move left -- the same reason ReWOO's solver holds none. Returns the
+        answer text, or None if none came back, and Runtime then falls back to its plain stopping
+        message.
+        """
+        messages = history(conversation)
+        # A stop can land between steps, leaving a tool call with no result after it -- which
+        # the API rejects outright. Between Act and Observe the tool HAS run, and Act kept what
+        # it returned on the call, so that goes in as the result: it may be the very thing the
+        # answer needs. Between Think and Act (the doom-loop check fires on a repeated call the
+        # moment it is decided) nothing ran, and the call is dropped.
+        last = conversation.messages[-1] if conversation.messages else {}
+        if messages and messages[-1].get("tool_calls"):
+            if last.get("type") == "tool_call" and "result" in last:
+                messages.append({"role": "tool", "tool_call_id": messages[-1]["tool_calls"][0]["id"],
+                                 "content": last["result"]})
+            else:
+                messages.pop()
+        # LAST, as a labelled turn, and phrased as "only what the results say". Both measured
+        # against gpt-oss-120b on 04_memory's recall agent, stopped after one search:
+        #   - as a leading system message ("answer the request now"), it ignored the note and
+        #     tried to search again, 3 runs of 3 -- a 400, since no tools were on offer
+        #   - moved last but still "answer the request", it answered 3 of 3 -- with a batch size
+        #     and a recovery time that appear nowhere in anything it was shown. Asked to answer,
+        #     it produced an answer.
+        #   - as below, 6 of 6 right: "not found" with only the listing, the exact figures once
+        #     the memory had been opened
+        # An invented answer is worse than no answer, which is why the wording is this strict.
+        messages.append({"role": "user", "content": (
+            f"[The agent running this conversation has stopped you ({reason}). Not a message "
+            "from the user.]\n"
+            "You cannot call any more tools. Reply to the user's request using ONLY facts that "
+            "appear in the tool results above -- nothing from general knowledge, no estimates, "
+            "no typical values. Give every part of the request those results answer. For any "
+            "part they do not answer, say that it was not found. Nothing about your process or "
+            "the stop."
+        )})
+        for _ in range(2):
+            try:
+                response = client.chat.completions.create(
+                    model=getattr(self, "model", DEFAULT_MODEL), messages=messages,
+                    **self._sampling_kwargs())
+            except BadRequestError:
+                # it tried to call a tool anyway -- gpt-oss will even invent one it was never
+                # offered (`web.run`) -- and Groq rejects that when no tools are on offer
+                messages = [*messages, {"role": "user", "content": (
+                    "There are no tools. Reply in plain text, from the results above only.")}]
+                continue
+            text = (response.choices[0].message.content or "").strip()
+            if text:
+                return text
+            # same empty-reply case as run(), asked again once -- for the reply, not for "an
+            # answer", which is the word that invited invention above
+            messages = [*messages, {"role": "user", "content": "Write that reply out as text."}]
+        return None
 
     def _build_messages(self, conversation, explain=None):
         # reconstructs the REAL native tool-calling shape (an assistant message carrying a
@@ -479,6 +599,20 @@ class Think:
             "belong. Otherwise just carry on."
         ) if plan is not None else ""
 
+        # How much room is left, for a Think that can spend it. Without this the model has no
+        # idea a budget exists until Runtime stops it -- it cannot tell a sixth search is
+        # expensive when nothing says there are only five turns in the run. Turns rather than
+        # iterations: iterations count components, and "16" on a three-component loop is five.
+        budget = getattr(conversation, "remaining_budget", None) or {}
+        left = [f"{budget[key]:.0f} {label}" for key, label in (("turns", "turns"), ("tool_calls", "tool calls"))
+                if budget.get(key) is not None]
+        budget_note = (
+            f"\nBudget left before this run is stopped: about {' and '.join(left)}, counting the "
+            "one you answer in. When it runs out you will have to answer from whatever the "
+            "results above show, so do not spend it looking again for something they already "
+            "tell you."
+        ) if self.tools and left else ""
+
         messages = [{
             "role": "system",
             "content": (
@@ -494,59 +628,10 @@ class Think:
                 + when_to_delegate
                 + when_to_advance
                 + when_to_replan
+                + budget_note
             ),
         }]
-        pending_call_id = None
-        for m in conversation.messages:
-            role = m["role"]
-            if role in ("system", "user", "assistant"):
-                messages.append({"role": role, "content": m["content"]})
-            elif role == "decision" and m.get("type") == "tool_call":
-                pending_call_id = f"call_{len(messages)}"
-                messages.append({
-                    "role": "assistant",
-                    # the model's own one-line rationale for this call, replayed so later turns
-                    # see why it did what it did and not just that it did it
-                    "content": m.get("reasoning"),
-                    "tool_calls": [{
-                        "id": pending_call_id,
-                        "type": "function",
-                        "function": {"name": m["tool"], "arguments": m["content"]},
-                    }],
-                })
-            elif role == "tool" and pending_call_id is not None:
-                messages.append({"role": "tool", "tool_call_id": pending_call_id, "content": m["content"]})
-                pending_call_id = None
-            elif role == "tool":
-                # A tool observation with no tool_call before it: a fork's merged branch results,
-                # or a search round's survivors. These used to be narrated as the agent's own past
-                # turn, which put an ASSISTANT message last in the request -- and a model handed a
-                # trailing assistant message continues it rather than replying. Tree of Thoughts
-                # answered " This approach seems preferable as it fosters a supportive
-                # environment", a sentence fragment picking up mid-thought from the pruning
-                # rationale above it.
-                #
-                # They are things that happened TO the agent, not things it said, so they go in as
-                # user turns -- which is also what ends the turn and asks for a fresh reply.
-                # Labelled as plainly as possible, because `user` is the only role that both
-                # ends the turn AND is not the agent's own voice -- and the model will otherwise
-                # read the contents as something the USER said. Sent as bare "Results:", Tree of
-                # Thoughts replied "Glad you like StrideRise!", thanking the user for praise
-                # nobody had given. It is neither the agent's turn nor the user's, and the text
-                # has to say so, since the role cannot.
-                # The wording is load-bearing twice over. Bare "Results:" and Tree of Thoughts
-                # replied "Glad you like StrideRise!", reading the block as praise from the user.
-                # Calling them "results for you to judge" then produced a critique of a candidate
-                # instead of an answer -- it did what the label asked. This says whose words they
-                # are and nothing about what to do with them.
-                messages.append({"role": "user", "content": (
-                    "[Results of work you delegated. Not a message from the user.]\n"
-                    + m["content"])})
-            else:
-                # plan and critique messages, and fork decisions -- genuinely the agent's own
-                # output, so they stay as its past turns.
-                messages.append({"role": "assistant", "content": m["content"]})
-        return messages
+        return messages + history(conversation)
 
     def run(self, conversation):
         base = self._build_messages(conversation)
