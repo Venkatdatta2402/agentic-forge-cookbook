@@ -23,8 +23,8 @@ Chapters build roughly in order, but each one should be usable on its own.
 | `05_context` | Context engineering and window management |
 | `06_orchestration` | Coordinating multiple agents |
 | `07_mcp` | Model Context Protocol — reaching tools that live in someone else's process |
-| `08_guardrails` | Safety and constraint enforcement |
-| `09_frameworks` | Surveying existing agent frameworks |
+| `08_frameworks` | Building one real project per agent framework — LangChain, LangGraph, CrewAI, AutoGen, LlamaIndex, Mem0, LangSmith, Langfuse — and the same project again from this repo's own parts |
+| `09_guardrails` | Safety and constraint enforcement (not started) |
 
 `projects/` applies chapters together into full systems. `playground/` is
 unstructured scratch space, added only if needed.
