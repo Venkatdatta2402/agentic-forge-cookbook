@@ -1,0 +1,29 @@
+{
+ "build": "scratch",
+ "qid": "Q3",
+ "finding": {
+  "entity": "yes",
+  "value": 45.5,
+  "answer": "Yes, the Trailhead promotion boosted daily tent units from an average of 3.1 to 4.6, a 45.5% rise.",
+  "data_issues": [
+   "70 duplicate order_id rows were dropped.",
+   "Rows with unparsable order_date values were removed."
+  ]
+ },
+ "usage": {
+  "calls": 6,
+  "prompt": 11984,
+  "completion": 4416,
+  "total": 16400,
+  "seconds": 123
+ },
+ "turns": 7,
+ "speakers": [
+  "planner",
+  "analyst",
+  "reviewer",
+  "reporter"
+ ],
+ "stop_reason": "reporter answered",
+ "error": null
+}

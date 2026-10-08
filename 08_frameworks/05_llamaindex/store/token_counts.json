@@ -1,0 +1,13 @@
+{
+ "LlamaIndex's count": {
+  "prompt": 2178,
+  "completion": 497,
+  "total": 2675
+ },
+ "the API's usage": {
+  "calls": 1,
+  "prompt": 2178,
+  "completion": 497,
+  "total": 2675
+ }
+}

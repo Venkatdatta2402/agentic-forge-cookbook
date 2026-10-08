@@ -1,0 +1,27 @@
+{
+ "build": "autogen",
+ "qid": "Q3",
+ "finding": null,
+ "usage": {
+  "calls": 7,
+  "total": 24565,
+  "source": "the client's own count, from progress.log"
+ },
+ "turns": 10,
+ "speakers": [
+  "user",
+  "planner",
+  "analyst",
+  "analyst",
+  "analyst",
+  "analyst"
+ ],
+ "stop_reason": null,
+ "error": "RuntimeError: BudgetExceeded: token budget of 20,000 reached (24,565 spent)\nTraceback:\nTraceback (most recent call last):\n\n  File \"C:\\Users\\91879\\anaconda3\\envs\\agentic-forge\\Lib\\site-packages\\autogen_agentchat\\teams\\_group_chat\\_chat_agent_container.py\", line 133, in handle_request\n    async for msg in self._agent.on_messages_stream(self._message_buffer, ctx.cancellation_token):\n    ...<4 lines>...\n            await self._log_message(msg)\n\n  File \"C:\\Users\\91879\\anaconda3\\envs\\agentic-forge\\Lib\\site-packages\\autogen_agentchat\\agents\\_assistant_agent.py\", line 953, in on_messages_stream\n    async for inference_output in self._call_llm(\n    ...<15 lines>...\n            yield inference_output\n\n  File \"C:\\Users\\91879\\anaconda3\\envs\\agentic-forge\\Lib\\site-packages\\autogen_agentchat\\agents\\_assistant_agent.py\", line 1109, in _call_llm\n    model_result = await model_client.create(\n                   ^^^^^^^^^^^^^^^^^^^^^^^^^^\n    ...<4 lines>...\n    )\n    ^\n\n  File \"C:\\Users\\91879\\OneDrive\\AI Projects (Venkat)\\agentic-forge-cookbook\\08_frameworks\\04_autogen\\analysis_team.py\", line 91, in create\n    raise BudgetExceeded(f\"token budget of {budget:,} reached ({Logged.spent:,} spent)\")\n\nanalysis_team.BudgetExceeded: token budget of 20,000 reached (24,565 spent)\n",
+ "usage on messages": {
+  "calls": 5,
+  "prompt": 13824,
+  "completion": 3745,
+  "total": 17569
+ }
+}

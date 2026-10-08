@@ -1,0 +1,70 @@
+{
+ "build": "scratch-skills",
+ "qid": "Q1",
+ "finding": {
+  "entity": "South",
+  "value": 37.6,
+  "answer": "South experienced the strongest net revenue growth between Q2 and Q3 2026. Its revenue increased by 37.6% compared to the previous quarter. This makes South the top\u2011performing region for that period.",
+  "data_issues": [
+   "Dropped 144 returned rows",
+   "Dropped 65 duplicate order_id rows"
+  ]
+ },
+ "usage": {
+  "calls": 7,
+  "prompt": 9283,
+  "completion": 3774,
+  "total": 13057,
+  "seconds": 41
+ },
+ "usage on messages": null,
+ "skills read": [
+  "net-revenue",
+  "period-growth"
+ ],
+ "checked duplicates": true,
+ "plans": [
+  "**Plan (numbered steps)**  \n\n1. **Load & inspect the export**  \n   - Verify that all required columns (`order_date`, `region`, `units`, `unit_price`, `discount`, `returned`) are present and correctly typed (dates as dates, numeric fields as numbers).  \n   - Spot\u2011check a few rows to confirm `discount` is expressed as a fraction (0\u202f\u2013\u202f1) and that `returned` is a clear binary flag (e.g.,\u202fTRUE/FALSE or\u202f1/0).  \n\n2. **Clean the data**  \n   - Remove any rows where `returned` = TRUE (or the equivalent) \u2013 these must be excluded from revenue.  \n   - Filter out rows with missing or obviously erroneous values (e.g., negative units, unit_price \u2264\u202f0, discount\u202f<\u202f0 or\u202f>\u202f1).  \n   - De\u2011duplicate on `order_id` if duplicates exist.  \n\n3. **Calculate net revenue per order** (from the *net\u2011revenue* procedure)  \n   - For each remaining row: `net_rev = units \u00d7 unit_price \u00d7 (1 \u2013 discount)`.  \n\n4. **Assign each order to a quarter**  \n   - Convert `order_date` to a date, then map it to Q2\u202f2026 (April\u202f1\u202f\u2013\u202fJune\u202f30) or Q3\u202f2026 (July\u202f1\u202f\u2013\u202fSept\u202f30).  \n   - Discard any orders outside these two quarters.  \n\n5. **Aggregate revenue by region and quarter**  \n   - Sum `net_rev` for each `region` within Q2 and again within Q3.  \n\n6. **Compute quarter\u2011over\u2011quarter growth** (per the *period\u2011growth* procedure)  \n   - For each region: `growth_% = ((Revenue_Q3 / Revenue_Q2) \u2013 1) \u00d7 100`.  \n   - Keep both quarter totals and the growth percentage.  \n\n7. **Identify the top\u2011growing region**  \n   - Rank regions by `growth_%` and select the highest value.  \n\n8. **Validate the result**  \n   - Ensure no region has a Q2 revenue of zero (which would make the percentage undefined).  \n   - Double\u2011check that the summed revenues match the raw totals when recomputed manually for a random region.  \n\n9. **Report**  \n   - State the region with the greatest net\u2011revenue growth and the exact percentage increase, rounded to a sensible number of decimals (e.g.,\u202f1\u202fdp).  "
+ ],
+ "transcript": [
+  {
+   "source": "user",
+   "kind": "",
+   "text": "Which region grew net revenue the most from Q2 to Q3 2026, and by what percentage? Net revenue is units x unit price after discount, excluding returned orders."
+  },
+  {
+   "source": "planner",
+   "kind": "",
+   "text": "**Plan (numbered steps)**  \n\n1. **Load & inspect the export**  \n   - Verify that all required columns (`order_date`, `region`, `units`, `unit_price`, `discount`, `returned`) are present and correctly typed (dates as dates, numeric fields as numbers).  \n   - Spot\u2011check a few rows to confirm `discount` is expressed as a fraction (0\u202f\u2013\u202f1) and that `returned` is a clear binary flag (e.g.,\u202fTRUE/FALSE or\u202f1/0).  \n\n2. **Clean the data**  \n   - Remove any rows where `returned` = TRUE (or the equivalent) \u2013 these must be excluded from revenue.  \n   - Filter out rows with missing or obviously erroneous values (e.g., negative units, unit_price \u2264\u202f0, discount\u202f<\u202f0 or\u202f>\u202f1).  \n   - De\u2011duplicate on `order_id` if duplicates exist.  \n\n3. **Calculate net revenue per order** (from the *net\u2011revenue* procedure)  \n   - For each remaining row: `net_rev = units \u00d7 unit_price \u00d7 (1 \u2013 discount)`.  \n\n4. **Assign each order to a quarter**  \n   - Convert `order_date` to a date, then map it to Q2\u202f2026 (April\u202f1\u202f\u2013\u202fJune\u202f30) or Q3\u202f2026 (July\u202f1\u202f\u2013\u202fSept\u202f30).  \n   - Discard any orders outside these two quarters.  \n\n5. **Aggregate revenue by region and quarter**  \n   - Sum `net_rev` for each `region` within Q2 and again within Q3.  \n\n6. **Compute quarter\u2011over\u2011quarter growth** (per the *period\u2011growth* procedure)  \n   - For each region: `growth_% = ((Revenue_Q3 / Revenue_Q2) \u2013 1) \u00d7 100`.  \n   - Keep both quarter totals and the growth percentage.  \n\n7. **Identify the top\u2011growing region**  \n   - Rank regions by `growth_%` and select the highest value.  \n\n8. **Validate the result**  \n   - Ensure no region has a Q2 revenue of zero (which would make the percentage undefined).  \n   - Double\u2011check that the summed revenues match the raw totals when recomputed manually for a random region.  \n\n9. **Report**  \n   - State the region with the greatest net\u2011revenue growth and the exact percentage increase, rounded to a sensible number of decimals (e.g.,\u202f1\u202fdp).  "
+  },
+  {
+   "source": "runner",
+   "kind": "CodeExecutionEvent",
+   "text": "The program:\n```python\nimport pandas as pd, sys, numpy as np, os, json, textwrap\n\n# Load CSV\ntry:\n    df = pd.read_csv('orders.csv')\nexcept Exception as e:\n    print('Error loading orders.csv:', e)\n    sys.exit()\n\n# Required columns\nrequired = ['order_date', 'region', 'units', 'unit_price', 'discount', 'returned']\nmissing = [c for c in required if c not in df.columns]\nif missing:\n    print('Missing columns:', missing)\n    sys.exit()\n\n# Print suspicious data findings\nsuspicious_msgs = []\n# Convert order_date to datetime, coerce errors\ndf['order_date'] = pd.to_datetime(df['order_date'], errors='coerce')\ninvalid_dates = df['order_date'].isna().sum()\nif invalid_dates:\n    suspicious_msgs.append(f'Found {invalid_dates} rows with invalid order_date, dropped them')\n    df = df.dropna(subset=['order_date'])\n\n# Ensure numeric types\nfor col in ['units', 'unit_price', 'discount']:\n    df[col] = pd.to_numeric(df[col], errors='coerce')\n    bad = df[col].isna().sum()\n    if bad:\n        suspicious_msgs.append(f'Found {bad} rows with non-numeric {col}, dropped them')\n        df = df.dropna(subset=[col])\n\n# Standardize returned flag to boolean\n# Accept True/False, 1/0, yes/no, Y/N\nif df['returned'].dtype == object:\n    df['returned'] = df['returned'].astype(str).str.lower().map({\n        'true': True, 'false': False,\n        '1': True, '0': False,\n        'yes': True, 'no': False,\n        'y': True, 'n': False\n    })\nelse:\n    df['returned'] = df['returned'].astype(bool)\n\n# Remove returned rows\nreturned_count = df['returned'].sum()\nif returned_count:\n    suspicious_msgs.append(f'Dropped {returned_count} returned rows')\n    df = df[~df['returned']]\n\n# Remove rows with negative or zero units, unit_price <=0, discount out of [0,1]\nneg_units = (df['units'] <= 0).sum()\nif neg_units:\n    suspicious_msgs.append(f'Dropped {neg_units} rows with non-positive units')\n    df = df[df['units'] > 0]\n\nneg_price = (df['unit_price'] <= 0).sum()\nif neg_price:\n    suspicious_msgs.append(f'Dropped {neg_price} rows with non-positive unit_price')\n    df = df[df['unit_price'] > 0]\n\nbad_discount = ((df['discount'] < 0) | (df['discount'] > 1)).sum()\nif bad_discount:\n    suspicious_msgs.append(f'Dropped {bad_discount} rows with discount outside [0,1]')\n    df = df[(df['discount'] >= 0) & (df['discount'] <= 1)]\n\n# Deduplicate on order_id if exists\nif 'order_id' in df.columns:\n    before = len(df)\n    df = df.drop_duplicates(subset=['order_id'])\n    after = len(df)\n    dup_removed = before - after\n    if dup_removed:\n        suspicious_msgs.append(f'Dropped {dup_removed} duplicate order_id rows')\n\n# Compute net_rev\ndf['net_rev'] = df['units'] * df['unit_price'] * (1 - df['discount'])\n\n# Filter Q2 and Q3 2026\nstart_q2 = pd.Timestamp('2026-04-01')\nend_q2 = pd.Timestamp('2026-06-30')\nstart_q3 = pd.Timestamp('2026-07-01')\nend_q3 = pd.Timestamp('2026-09-30')\n\nmask_q2 = (df['order_date'] >= start_q2) & (df['order_date'] <= end_q2)\nmask_q3 = (df['order_date'] >= start_q3) & (df['order_date'] <= end_q3)\n\nq2 = df[mask_q2]\nq3 = df[mask_q3]\n\n# Aggregate revenue by region\nrev_q2 = q2.groupby('region')['net_rev'].sum()\nrev_q3 = q3.groupby('region')['net_rev'].sum()\n\n# Align regions present in both\ncommon_regions = rev_q2.index.intersection(rev_q3.index)\nrev_q2 = rev_q2.loc[common_regions]\nrev_q3 = rev_q3.loc[common_regions]\n\n# Exclude zero Q2 revenue to avoid division by zero\nnonzero = rev_q2 != 0\nrev_q2 = rev_q2[nonzero]\nrev_q3 = rev_q3[nonzero]\n\n# Compute growth %\ngrowth = ((rev_q3 / rev_q2) - 1) * 100\n\n# Find region with max growth\nif growth.empty:\n    print('No region with valid growth data')\n    sys.exit()\nmax_region = growth.idxmax()\nmax_growth = growth.max()\n\n# Output suspicious messages first\nfor msg in suspicious_msgs:\n    print(msg)\n# Output answer: region and percentage (rounded to 2 decimal places)\nprint(max_region)\nprint(round(max_growth, 2))\n```\nWhat it printed (exit 0):\n```\nDropped 144 returned rows\nDropped 65 duplicate order_id rows\nSouth\n37.57\n```"
+  },
+  {
+   "source": "analyst",
+   "kind": "",
+   "text": "South\n37.57%"
+  },
+  {
+   "source": "reviewer",
+   "kind": "",
+   "text": "APPROVED"
+  },
+  {
+   "source": "reporter",
+   "kind": "",
+   "text": "{\"entity\":\"South\",\"value\":37.6,\"answer\":\"South experienced the strongest net revenue growth between Q2 and Q3 2026. Its revenue increased by 37.6% compared to the previous quarter. This makes South the top\u2011performing region for that period.\",\"data_issues\":[\"Dropped 144 returned rows\",\"Dropped 65 duplicate order_id rows\"]}"
+  }
+ ],
+ "turns": 6,
+ "speakers": [
+  "planner",
+  "analyst",
+  "reviewer",
+  "reporter"
+ ],
+ "stop_reason": "reporter answered",
+ "error": null
+}

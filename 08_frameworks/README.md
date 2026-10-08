@@ -33,10 +33,10 @@ reproduced as functions (`*_checks.py`), and offline tests (`test_*.py`) that co
 | `02_langgraph` | LangGraph | **Kestrel Labs' accounts-payable desk** — invoices matched, routed, investigated by an agent, and held for people for days: persistence, human-in-the-loop, resume in another process, rewind | yes | ✅ |
 | `03_crewai` | CrewAI | **Tallyfold's security questionnaire** — three specialists answering in parallel from a policy pack, a lead assembling, code guardrails sending work back; sequential and hierarchical crews. Runs on qwen3.8-27b (see below) | yes | ✅ |
 | `04_autogen` | AutoGen | **Brightwater's analysis team** — a planner, an analyst that writes and runs pandas, a reviewer and a reporter, answering three questions from an order export with two problems planted in it: group chat, code execution, termination, structured messages | yes | ✅ |
-| `05_llamaindex` | LlamaIndex | "ask the cookbook": a knowledge agent over this repo's own READMEs and notebooks | — | planned |
+| `05_llamaindex` | LlamaIndex | **Ask the cookbook** — answers questions about this repo from its READMEs, notebook prose and modules: splitting prose and code, a vector index refreshed as files change, fused retrieval, a floor that turns off-topic questions away, cited answers, retrieval evaluation, and an agent that searches and opens files | the agent only | ✅ |
 | `06_mem0` | Mem0 | a running coach that remembers each runner across weeks of sessions | yes | planned |
-| `07_langsmith` | LangSmith | tracing, a dataset and evaluations for the `02_langgraph` desk | — | planned |
-| `08_langfuse` | Langfuse | the same desk in production: costs, prompt versions, scores, monitoring | — | planned |
+| `07_langsmith` | LangSmith | tracing, a dataset and evaluations for the `05_llamaindex` cookbook assistant, including an answer judge that holds up | — | planned |
+| `08_langfuse` | Langfuse | the same assistant, traced and judged with Langfuse, against LangSmith: costs, prompt versions, scores, monitoring | — | planned |
 
 The split the chapter follows: LangChain is **building blocks** for LLM applications, LangGraph is
 **stateful orchestration**, CrewAI is **role and task** multi-agent systems, AutoGen is **agents in
@@ -88,6 +88,23 @@ Windows' default output encoding. It does not run inside a Jupyter kernel on Win
 output never reach the other agents. The scratch build is a case file on chapter 6's board, where the
 evidence is a field the code runner owns.
 
+**`05_llamaindex`**:
+
+- **The one-shot engine.** It answered all 15 README-reader questions with a right word and an answer file cited (48,093 tokens). It turned away all 3 off-topic questions before calling a model. The floor that does this has a thin margin: 0.702 for the lowest question the cookbook answers against 0.624 for the highest it does not. The floor has to be applied to raw vector scores, because after fusion a score is rank arithmetic.
+- **The agent, and the from-scratch build.** Only the agent was built twice. LlamaIndex's agent sends everything it has found on every call, so on a two-sided question its 8th request reached 8,172 tokens and Groq refused it. Its memory limit does not trim within a run. The scratch agent (chapter 2's loop, with chapter 5 choosing each call's context) kept every call near 4,300 tokens of context and answered both questions. That cost more tokens overall, not fewer.
+- **Checked line by line,** that answer had every hazard right and real citations, but put four facts on the wrong side. That is what `07_langsmith` and `08_langfuse` evaluate claim by claim.
+- **What it took to build.** The agent's tools needed four fixes, each found by watching it fail:
+  - results sized to fit the request limit;
+  - passages that say which lines of their file they are;
+  - no floor on the agent's search;
+  - a cap of eight tool calls with a final answer.
+- **Behaviours to know.** Each is reproduced offline:
+  - with no model set, LlamaIndex reaches for OpenAI;
+  - a loaded index forgets its splitter;
+  - `refresh_ref_docs` never removes a deleted file;
+  - a first build resumes only if it was saved along the way;
+  - `citation_chunk_size=512` splits passages into extra sources.
+
 ## Versions, and what it took to install them
 
 All eight frameworks share the repo's one environment — `environment.yml` is still the single source
@@ -131,6 +148,7 @@ Each folder's tests run offline and cost nothing:
 ```
 cd 08_frameworks/02_langgraph && python test_ap.py
 cd 08_frameworks/01_langchain && python test_claims.py
+cd 08_frameworks/05_llamaindex && python test_ask.py
 ```
 
 The notebooks run on the `agentic-forge` kernel from inside their folder. Live sections spend real

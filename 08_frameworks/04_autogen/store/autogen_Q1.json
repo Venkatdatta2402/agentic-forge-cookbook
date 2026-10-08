@@ -1,0 +1,35 @@
+{
+ "build": "autogen",
+ "qid": "Q1",
+ "finding": {
+  "entity": "West",
+  "value": 77.6,
+  "answer": "West region showed the strongest net\u2011revenue growth, increasing by 77.6% from Q2 to Q3\u202f2026. This reflects a substantial rise in sales after accounting for discounts and returns.",
+  "data_issues": [
+   "Discount values >1 were detected and converted from percentages to proportions.",
+   "Returned flag values were normalized to boolean."
+  ]
+ },
+ "usage": {
+  "calls": 7,
+  "total": 21856,
+  "source": "the client's own count, from progress.log"
+ },
+ "turns": 10,
+ "speakers": [
+  "user",
+  "planner",
+  "analyst",
+  "analyst",
+  "analyst",
+  "analyst"
+ ],
+ "stop_reason": "'reporter' answered",
+ "error": null,
+ "usage on messages": {
+  "calls": 4,
+  "prompt": 8843,
+  "completion": 2198,
+  "total": 11041
+ }
+}

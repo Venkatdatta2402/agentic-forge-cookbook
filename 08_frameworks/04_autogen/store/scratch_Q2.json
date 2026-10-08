@@ -1,0 +1,34 @@
+{
+ "build": "scratch",
+ "qid": "Q2",
+ "finding": {
+  "entity": "tents",
+  "value": 19.4,
+  "answer": "The tents category had the highest return rate in Q3 2026, with a return rate of 19.4% of orders. This reflects that roughly one in five tent orders were returned, which may warrant a review of product quality or customer expectations.",
+  "data_issues": [
+   "Duplicate order_id values (70) were found; orders were aggregated by order_id using the most frequent category and treating any returned line item as a returned order.",
+   "No inconsistent returned flags were detected across duplicate order_ids.",
+   "No orders were linked to multiple categories."
+  ]
+ },
+ "usage": {
+  "calls": 9,
+  "prompt": 13349,
+  "completion": 5310,
+  "total": 18659,
+  "seconds": 85
+ },
+ "usage on messages": null,
+ "turns": 10,
+ "speakers": [
+  "planner",
+  "analyst",
+  "reviewer",
+  "planner",
+  "analyst",
+  "reviewer",
+  "reporter"
+ ],
+ "stop_reason": "reporter answered",
+ "error": null
+}
