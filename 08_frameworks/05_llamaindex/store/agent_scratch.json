@@ -1,0 +1,138 @@
+{
+ "runs": [
+  {
+   "question": "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?",
+   "answer": "**What the shared board (chapter\u202f6) is**\n\n* A **shared state object** that agents read from and write to during a case.  \n* Each board defines **fields**, an **owner** for each field, and a set of **readers**.  \n* Writing is done through a tool that records the author, so the board can enforce \u201cwho may set which field\u201d.  \n* Reading is done by **injecting** the board\u2019s current values into an agent\u2019s context.  \n* The board is used to coordinate multiple agents (e.g., engineering and support) without one agent having to ask the other directly. Ownership decisions are made up\u2011front, not at runtime.\u202f[06_orchestration/notebooks/03_communication_state_and_collaboration.ipynb\u202f\u00a7\u202fCommunication,\u202fShared\u202fState\u202fand\u202fCollaboration,\u202flines\u202f53\u201167;\u202f78\u201186]\n\n**What the memory stores (chapter\u202f4) are**\n\n* Four durable stores, each chosen **by the type of query** the memory will be asked:  \n\n  | Store | Query type | Example |\n  |------|------------|---------|\n  | `KeyValue` | lookup by name | \u201cwhat is this user\u2019s timezone\u201d |\n  | `Records` | filter, order, count | \u201cwhich deployment failed most recently\u201d |\n  | `Journal` | literal or similarity search | \u201cwhere did `PGRST204` come from\u201d |\n  | `Graph` | walk relationships | \u201cwho else touched this\u201d |\n\n* The stores are **persisted** (files, SQLite, Neo4j) so an agent can be restarted and still answer the same questions.\u202f[04_memory/notebooks/02_stores.ipynb\u202f\u00a7\u202fStores,\u202flines\u202f11\u201117;\u202f66\u201172]\n\n* Procedural knowledge (how to act) does **not** need a store; it lives in the model\u2019s system prompt or a decorator.\u202f[04_memory/notebooks/04_types_of_memory.ipynb\u202f\u00a7\u202fTypes\u202fof\u202fMemory,\u202flines\u202f80\u201194]\n\n**When to use each**\n\n* **Shared board** \u2013 when several agents need to **collaborate on a single, evolving case**, sharing specific pieces of data with explicit ownership and read\u2011access rules. It is the mechanism for real\u2011time coordination (e.g., engineering writes a risk field, support writes a customer reply) without having to query a long\u2011term store.  \n\n* **Memory stores** \u2013 when an agent needs to **persist information** that will be retrieved later based on the nature of the question: exact key look\u2011ups, filtered reports, full\u2011text or semantic search, or graph traversals. Use the appropriate store according to \u201cwhat will be asked\u201d of that memory (key\u2011value for exact facts, records for counting/filtering, journal for prose search, graph for relationship walks).  \n\nIn short, the **board** is a *short\u2011lived, structured collaboration surface* with ownership rules, while the **stores** are *long\u2011term, query\u2011driven databases* for recalling facts, logs, and relationships.",
+   "stopped": "reached the maximum of 8 tool calls",
+   "calls": [
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"shared board chapter 6\"}"
+    },
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"memory store chapter 4\"}"
+    },
+    {
+     "tool": "open_file",
+     "args": "{\"line_end\":200,\"line_start\":1,\"path\":\"04_memory/stores.py\"}"
+    },
+    {
+     "tool": "open_file",
+     "args": "{\"line_end\":120,\"line_start\":1,\"path\":\"06_orchestration/state.py\"}"
+    },
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"shared board use case\"}"
+    },
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"04_memory stores\"}"
+    },
+    {
+     "tool": "open_file",
+     "args": "{\"line_end\":200,\"line_start\":1,\"path\":\"04_memory/notebooks/02_stores.ipynb\"}"
+    },
+    {
+     "tool": "open_file",
+     "args": "{\"line_end\":120,\"line_start\":40,\"path\":\"06_orchestration/notebooks/03_communication_state_and_collaboration.ipynb\"}"
+    }
+   ],
+   "context per call": [
+    "available 125t  no compression  selected 125t  -> 125t  (run 125t)",
+    "available 1839t  no compression  selected 982t  -> 982t  (run 982t)  !! emptied: called",
+    "available 3065t  no compression  selected 1595t  -> 1595t  (run 1595t)  !! emptied: called",
+    "available 5947t  no compression  selected 3036t  -> 3036t  (run 3036t)  !! emptied: called",
+    "available 8853t  no compression  selected 4489t  -> 4489t  (run 4489t)  !! emptied: called",
+    "available 10601t  no compression  selected 3922t  -> 3922t  (run 3922t)  !! emptied: called",
+    "available 11227t  no compression  selected 4235t  -> 4235t  (run 4235t)  !! emptied: called",
+    "available 15913t  no compression  selected 4268t  -> 4268t  (run 4268t)  !! emptied: called",
+    "available 15948t  no compression  selected 4303t  -> 4303t  (run 4303t)  !! emptied: called"
+   ],
+   "usage": {
+    "calls": 9,
+    "prompt": 30959,
+    "completion": 1885,
+    "total": 32844,
+    "largest request": 5005,
+    "largest call (in + out)": 5554,
+    "per call": [
+     552,
+     1435,
+     2108,
+     3748,
+     5137,
+     4498,
+     4923,
+     4889,
+     5554
+    ],
+    "refused request": null
+   }
+  },
+  {
+   "question": "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.",
+   "answer": "**How the two builds wait for a person**\n\n| Aspect | LangGraph desk (`ap_graph.py`) | From\u2011scratch case file (`ap_scratch.py`\u202f+\u202f`case.py`) |\n|--------|------------------------------|----------------------------------------------------|\n| **Waiting mechanism** | The graph node calls `interrupt()`. The run is paused and the checkpoint is stored. When a reply arrives the node is **re\u2011invoked** from its first line. The node returns a `Wait` object that tells the system which field to wait on. | The case file stores a `waiting` entry in the shared board. The step returns a `Wait` object, the desk sets `desk.waiting` and clears `desk.next`. When a person writes the expected field, `answer()` writes the value, clears the waiting flag and advances `next` to the next step. |\n| **What can go wrong** | \u2022 **Duplicate actions** \u2013 because a resumed node starts at the top, any side\u2011effect (e.g., sending an email) is performed **again** when the run is resumed. <br>\u2022 **Answer\u2011to\u2011question mismatch** \u2013 answers are matched by *position* in the interrupt list; a deployment that changes the order of `interrupt()` calls can cause an answer to be applied to the wrong question. <br>\u2022 **Anyone can answer** \u2013 `Command(resume=\u2026)` can carry any payload; the graph does not enforce that the responder is the designated owner, so an unauthorized party can supply a reply. <br>\u2022 **Durability limits** \u2013 the check\u2011pointer only makes the *workflow* durable. External state (e.g., the in\u2011memory `P.PAYMENTS` list) is not persisted, so a run that crosses processes can cause actions (payment) to be missed or run twice. <br>\u2022 **Step\u2011limit & recursion quirks** \u2013 the default step limit (10\u202f007) stops a runaway loop, but a loop that repeatedly calls `interrupt()` is not limited because each resume is a new `invoke`. <br>\u2022 **Complex behaviours missing** \u2013 parallelism, streaming, rewinding/forking, timeout, or API serving are not provided out\u2011of\u2011the\u2011box. | \u2022 **No duplicate side\u2011effects** \u2013 because the step that asked the question is *finished* before waiting, the same action (e.g., sending an email) is never run a second time. <br>\u2022 **Answer matched by field name** \u2013 each answer is written to a named field (`approval:tomasz`, `approval:ines`, \u2026). The case file stores the answer in that field, so reordering of questions does not mis\u2011route answers. <br>\u2022 **Ownership enforcement** \u2013 only the owner of a field may write it; attempts by anyone else raise `Denied`. This prevents unauthorized answers. <br>\u2022 **Audit trail** \u2013 every write is also a row in the `Records` SQLite table, so any process can pick up the case later and the history is durable. <br>\u2022 **Limited capabilities** \u2013 the case\u2011file design does **not** support parallel execution, streaming, rewinding/forking, step\u2011level time\u2011outs, or serving the workflow over an API; those behaviours have to be built manually. |\n| **Key code excerpts** | ```python\\n# ap_graph.py \u2026\\nwhile \u2026\\n    after = self.steps[case.values[\\\"next\\\"]](case)\\n    if isinstance(after, Wait):\\n        case.set(\\\"desk\\\", \\\"waiting\\\", after.ask())\\n        case.set(\\\"desk\\\", \\\"next\\\", None)\\n        return case.values[\\\"waiting\\\"]\\n```<br>Resumed nodes run again from the first line \u2192 duplicate sends. | ```python\\n# case.py\\ndef answer(self, thread, party, field, value):\\n    case = self.case(thread)\\n    waiting = case.values.get(\\\"waiting\\\")\\n    if not waiting or waiting[\\\"field\\\"] != field:\\n        raise ValueError(...)\\n    case.set(party, field, value)          # only owner can write\\n    case.set(\\\"desk\\\", \\\"waiting\\\", None)\\n    case.set(\\\"desk\\\", \\\"next\\\", waiting[\\\"then\\\"])\\n    return self._go(case)\\n```<br>Answers are matched to the explicit field and the step proceeds only once. |\n| **Summary** | LangGraph\u2019s checkpoint\u2011based waiting is powerful (parallelism, streaming, rewinding, etc.) but comes with pitfalls: duplicate side\u2011effects on resume, positional answer matching, and no built\u2011in ownership checks. | The from\u2011scratch case\u2011file waiting is simpler and safer for human\u2011driven steps: each question is a named field, ownership is enforced, and actions are not re\u2011executed. It lacks the richer orchestration features that LangGraph provides. |\n\n**Sources** \u2013 waiting implementation and pitfalls for LangGraph are discussed in the \u201cRun and show\u201d section (duplicate sends, positional matching, anyone can answer, step\u2011limit, durability)\u301008_frameworks/02_langgraph/ap_desk.ipynb \u00a7 Part 2 \u00b7 Run and show, lines 493\u2011502\u3011. The case\u2011file waiting logic and ownership checks are shown in the `answer` and `_go` methods of `case.py`\u301008_frameworks/02_langgraph/ap_desk.ipynb \u00a7 Part 1 \u00b7 Build, lines 367\u2011392\u3011.",
+   "stopped": null,
+   "calls": [
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"chapter 8 LangGraph desk from-scratch case file wait for a person\"}"
+    },
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"LangGraph desk wait for a person what can go wrong\"}"
+    },
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"case file wait for a person what can go wrong case.py\"}"
+    },
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"Anyone can answer case file\"}"
+    },
+    {
+     "tool": "open_file",
+     "args": "{\"line_end\":420,\"line_start\":340,\"path\":\"08_frameworks/02_langgraph/ap_desk.ipynb\"}"
+    },
+    {
+     "tool": "search_cookbook",
+     "args": "{\"query\":\"LangGraph anyone can answer\"}"
+    },
+    {
+     "tool": "open_file",
+     "args": "{\"line_end\":520,\"line_start\":460,\"path\":\"08_frameworks/02_langgraph/ap_desk.ipynb\"}"
+    }
+   ],
+   "context per call": [
+    "available 137t  no compression  selected 137t  -> 137t  (run 137t)",
+    "available 2089t  no compression  selected 1113t  -> 1113t  (run 1113t)  !! emptied: called",
+    "available 3983t  no compression  selected 2060t  -> 2060t  (run 2060t)  !! emptied: called",
+    "available 5899t  no compression  selected 3018t  -> 3018t  (run 3018t)  !! emptied: called",
+    "available 7687t  no compression  selected 3912t  -> 3912t  (run 3912t)  !! emptied: called",
+    "available 10135t  no compression  selected 4178t  -> 4178t  (run 4178t)  !! emptied: called",
+    "available 12077t  no compression  selected 4255t  -> 4255t  (run 4255t)  !! emptied: called",
+    "available 14641t  no compression  selected 4313t  -> 4313t  (run 4313t)  !! emptied: called"
+   ],
+   "usage": {
+    "calls": 8,
+    "prompt": 26855,
+    "completion": 3016,
+    "total": 29871,
+    "largest request": 4838,
+    "largest call (in + out)": 6598,
+    "per call": [
+     610,
+     1660,
+     2688,
+     3702,
+     4658,
+     4897,
+     5058,
+     6598
+    ],
+    "refused request": null
+   }
+  }
+ ]
+}

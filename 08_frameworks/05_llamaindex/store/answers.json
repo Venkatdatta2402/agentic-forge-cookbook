@@ -1,0 +1,226 @@
+{
+ "answers": [
+  {
+   "question": "The README says extract() asks the API to enforce the schema first. If the API enforces it, why validate as well?",
+   "answer": "`extract()` first asks the model to return JSON that matches the **shape** described by the schema (right field names and types). This is useful \u2013 it eliminates a whole class of failures when the model supports the `json_schema` mode \u2013 but it does **not** guarantee that the values make sense. A JSON schema cannot express constraints such as \u201cone score per candidate\u201d, \u201cindices must be within the list length\u201d, or \u201cscores must be between\u202f0\u202fand\u202f10\u201d. Those kinds of errors are still possible even though the output is schema\u2011valid, so the function must still run a Pydantic validation step to catch them and give the model concrete feedback for a retry\u202f[Source\u202f1][Source\u202f2].\n\nIn addition, not every model can enforce a JSON schema (e.g., the older llama\u20113.3\u201170b model). When the API rejects the `json_schema` request, `extract()` falls back to plain JSON and relies entirely on the validation loop to detect problems\u202f[Source\u202f4]. Thus the second line of defence \u2013 validating the returned JSON against the Pydantic model \u2013 is necessary both to catch \u201csense\u201d errors and to handle models that cannot enforce the schema in the first place.",
+   "sources": [
+    "01_foundations/notebooks/05_structured_outputs.ipynb \u00a7 Structured Outputs > Retries",
+    "01_foundations/llm.py",
+    "01_foundations/notebooks/05_structured_outputs.ipynb \u00a7 Structured Outputs",
+    "01_foundations/README.md \u00a7 Foundations",
+    "01_foundations/notebooks/06_function_calling.ipynb \u00a7 Tool Calling"
+   ],
+   "refused": false,
+   "best score": 0.7273440635842182
+  },
+  {
+   "question": "What counts as a doom loop, and what does the runtime do when it detects one?",
+   "answer": "A **doom loop** is any pattern of repeated, unproductive activity that the runtime\u2019s loop\u2011detector flags as \u201cstuck\u201d.  \nThe `_doom_loop` routine looks for four concrete shapes:\n\n* **Identical tool calls** \u2013 the same tool is invoked twice in a row with exactly the same arguments\u30104\u2020L1-L5\u3011.  \n* **Repeated errors** \u2013 the tool returns the same error message on two consecutive attempts\u30104\u2020L7-L9\u3011.  \n* **Oscillation** \u2013 the conversation alternates between two different tool calls in an A\u2011B\u2011A\u2011B pattern (four recent decisions form two identical pairs)\u30104\u2020L11-L15\u3011.  \n* **Same result with near\u2011identical arguments** \u2013 a tool is asked essentially the same question again and returns the same result (the arguments are judged \u201csimilar\u201d)\u30104\u2020L17-L23\u3011.\n\nWhen any of these conditions is met, the method returns a descriptive string (e.g., \u201cthe same tool call with identical arguments repeated\u201d).  \n\n**What the runtime does:**  \nThe `Runtime` monitors the output of `_doom_loop`. If a non\u2011`None` reason is returned, it treats the situation as a doom\u2011loop stop: the outer runtime halts the agent\u2019s execution and performs a *graceful stop* that reports what actually happened rather than continuing indefinitely\u30103\u2020L9-L12\u3011. In other words, the runtime aborts the loop, emits a stop\u2011event that includes the detected reason, and prevents further budget consumption or endless cycling.  \n\n(Notice that the inner `Loop` component itself does **not** receive doom\u2011loop protection; that protection lives in the outer `Runtime`\u30101\u2020L13-L15\u3011.)",
+   "sources": [
+    "02_agent_runtime/notebooks/03_retries_and_reflection.ipynb \u00a7 Retries and Reflection",
+    "02_agent_runtime/runtime.py",
+    "02_agent_runtime/notebooks/02_the_agent_loop.ipynb",
+    "02_agent_runtime/runtime.py",
+    "02_agent_runtime/notebooks/02_the_agent_loop.ipynb \u00a7 The Agent Loop > A loop that can't stop"
+   ],
+   "refused": false,
+   "best score": 0.787174881812906
+  },
+  {
+   "question": "Why do Graph and forking use threads instead of asyncio.gather?",
+   "answer": "Graph and forking rely on\u202f`concurrent.futures.ThreadPoolExecutor`\u202finstead of\u202f`asyncio.gather`\u202fbecause the notebooks they run in already have an active event loop. Starting a new asyncio loop from library code would clash with that existing loop and make debugging painful. Since the operations they perform are all blocking I/O (e.g., HTTP requests or sleeps), the GIL is released while the thread waits, so threads handle the work just as well as coroutines without the event\u2011loop conflict\u202f[1].",
+   "sources": [
+    "02_agent_runtime/notebooks/04_planning.ipynb \u00a7 Planning > The argument that doesn't exist yet",
+    "01_foundations/notebooks/08_asyncio.ipynb \u00a7 AsyncIO",
+    "01_foundations/notebooks/08_asyncio.ipynb \u00a7 AsyncIO",
+    "01_foundations/notebooks/08_asyncio.ipynb",
+    "01_foundations/notebooks/08_asyncio.ipynb \u00a7 AsyncIO"
+   ],
+   "refused": false,
+   "best score": 0.7267510121851168
+  },
+  {
+   "question": "Why can't the runtime's time budget stop a tool that hangs, and what can?",
+   "answer": "The runtime\u2019s **`max_seconds`** budget is only examined **between** components of the loop, not while a component is actually running. When the loop reaches an `Act` step it calls the tool function directly, and the runtime does not get a chance to check the clock again until that call returns\u202f\u2014\u202fso a tool that blocks (e.g., waiting on a never\u2011responding server) holds up the whole agent and the time\u2011budget logic never fires\u202f[3].\n\nThe helper `invoke()` that the notebooks use does run the tool on a separate thread and applies a Python\u2011level timeout, but the timeout only stops the **waiting** part of the agent; it does **not** kill the thread that is executing the tool. Python cannot terminate a thread from the outside, so the hanging work continues in the background even after the timeout expires\u202f[3].\n\nTo actually stop a misbehaving tool you need to run it in an isolated process that can be killed, such as the sandbox shown in the repository\u2019s `09_sandbox` example. Running the tool in a separate process (or otherwise using an external watchdog that can terminate the process) allows the runtime\u2019s overall time budget to be respected because the process can be aborted when the budget is exceeded\u202f[3].",
+   "sources": [
+    "02_agent_runtime/notebooks/02_the_agent_loop.ipynb \u00a7 The Agent Loop",
+    "02_agent_runtime/notebooks/02_the_agent_loop.ipynb \u00a7 The Agent Loop > A loop that can't stop",
+    "03_tools/notebooks/03_invocation.ipynb \u00a7 Invocation",
+    "03_tools/README.md \u00a7 Tools",
+    "03_tools/notebooks/03_invocation.ipynb"
+   ],
+   "refused": false,
+   "best score": 0.7600974808028063
+  },
+  {
+   "question": "What is the difference between a tool that refuses and one that is broken, and which does the model get to see?",
+   "answer": "A **refused** result means the tool was able to run but deliberately answered \u201cno\u201d (or gave a reason why it can\u2019t fulfil the request).\u202fIt is treated as a normal, recoverable outcome that the model can act on \u2013 for example, \u201cno weather station for\u202fNarnia, try a larger nearby city.\u201d\u202fA **broken** result means the tool failed because of an internal error or bug (e.g., an exception other than\u202f`ToolError`).\u202fThe model cannot fix such a failure, so it is considered a problem that should be hidden from the model\u2019s reasoning.\n\nOnly the **refused** kind is passed back to the model in the conversation.\u202fWhen a tool returns a **broken** result, the `for_the_model` flag is set to\u202f`False`; the conversation receives a generic message like \u201c\\<tool\\> could not be completed,\u201d while the detailed error stays in `Result.value` for a human reader\u202f[Source\u202f2][Source\u202f3].  \n\nThus, the model sees refusals, but broken\u2011tool failures are kept out of the model\u2019s view.",
+   "sources": [
+    "07_mcp/notebooks/02_mcp_client.ipynb \u00a7 MCP Client",
+    "03_tools/notebooks/03_invocation.ipynb \u00a7 Invocation",
+    "03_tools/README.md \u00a7 Tools",
+    "07_mcp/remote.py",
+    "03_tools/notebooks/05_built_in_tools.ipynb \u00a7 Built-in Tools"
+   ],
+   "refused": false,
+   "best score": 0.7128222361653269
+  },
+  {
+   "question": "Why shouldn't agent memory start with a vector database?",
+   "answer": "Agent memory should not begin with a vector database because most of what an agent needs to remember are **exact facts that can be addressed by name** (e.g., a user\u2019s timezone, a preferred language, a project root). These look\u2011ups are best served by a simple key\u2011value store that returns a precise value instantly. A vector index, by contrast, answers such queries only *approximately*\u2014it performs similarity search and ranking, which adds unnecessary latency and can return the wrong answer when an exact match is required. In other words, the database is not the problem; the query is. Starting with a vector store therefore makes the most common memory accesses slower and less reliable, and it is a strictly worse solution for the majority of long\u2011term memory needs\u30101\u2020L9-L15\u3011\u30103\u2020L13-L20\u3011.",
+   "sources": [
+    "04_memory/README.md",
+    "04_memory/notebooks/01_what_memory_is.ipynb \u00a7 What Memory Is",
+    "04_memory/notebooks/02_stores.ipynb",
+    "04_memory/notebooks/04_types_of_memory.ipynb \u00a7 Types of Memory > Procedural memory is mostly not in a store",
+    "04_memory/README.md \u00a7 Memory"
+   ],
+   "refused": false,
+   "best score": 0.7587588238019025
+  },
+  {
+   "question": "Why is recall injected into the loop while remembering is a tool the agent calls?",
+   "answer": "Recall (reading) is built into the loop as an **injected component**, while remembering (writing) is exposed only as a **tool** that the model must call explicitly.  \n\n* The loop treats any object with a\u202f`.run(conversation)` method as a component, so the `Retrieve` component is placed before the `Think` step and automatically injects any relevant memories into the prompt on every turn. This \u201creading is injected\u201d design means the model sees the memory context before it decides how to answer, regardless of whether it asked for it\u202f\u3010Source\u202f4\u3011.  \n\n* By contrast, writing to memory is implemented as a tool (`remember`) that the model can invoke when it decides something is worth keeping. Because the runtime has no place to hold a memory handle, the tool\u2019s closure captures the journal and returns a line like \u201cremembered as #26\u201d\u202f\u3010Source\u202f5\u3011.  \n\n* The notebook notes that this separation was intentional: **recall by injection, write by tool**\u202f\u3010Source\u202f2\u3011, and that reading is injected rather than offered so the model gets the information up\u2011front, while writing must be a deliberate action by the agent.  \n\nThus, recall is injected to give the model immediate context each turn, whereas remembering is a tool so the model only writes to memory when it explicitly chooses to do so.",
+   "sources": [
+    "04_memory/notebooks/05_memory_in_the_loop.ipynb \u00a7 Memory in the Loop",
+    "04_memory/README.md \u00a7 Memory",
+    "04_memory/notebooks/05_memory_in_the_loop.ipynb \u00a7 Memory in the Loop",
+    "04_memory/notebooks/05_memory_in_the_loop.ipynb",
+    "04_memory/memory_tools.py"
+   ],
+   "refused": false,
+   "best score": 0.7646924608569946
+  },
+  {
+   "question": "What does compaction leave untouched, and why?",
+   "answer": "**Compaction (`compact()`) deliberately does **not** modify** several kinds of items:\n\n| What is left untouched | Why it is left untouched |\n|------------------------|--------------------------|\n| **Pinned items** \u2013 rules, instructions, requests | A summarizer would paraphrase them, and a paraphrased rule is a *different* rule, so they must stay word\u2011for\u2011word.\u202f[Source\u202f1] |\n| **Task\u2011state items** \u2013 the current plan and scratchpad | They are already the run\u2019s own summary of where things stand; summarising them would lose step numbers or other essential structure.\u202f[Source\u202f1] |\n| **The last `keep_recent` turns** (the most recent few messages) | The next step of the run builds directly on these turns, so they must be kept verbatim.\u202f[Source\u202f1] |\n| **Anything that did not originate from the run** \u2013 e.g., a pasted profile, an always\u2011present catalogue, a retrieved memory | These are external summaries; the run\u2019s compression only targets its own conversation, not pre\u2011existing material.\u202f[Source\u202f2] |\n| **Constraints** (a special class of pinned items) | Summaries would change the meaning of a constraint; they must be kept exactly or omitted entirely.\u202f[Source\u202f5] |\n| **Task state** (again emphasized) | Already a compressed representation; further summarisation would discard needed detail.\u202f[Source\u202f5] |\n\nIn short, `compact()` protects anything that is either **essential for correct reasoning** (rules, current plan, recent dialogue) or **already a safe summary** (external resources), because altering them could change meaning, lose critical context, or break the next step of the agent\u2019s execution.\u202f[Source\u202f1][Source\u202f2][Source\u202f5]",
+   "sources": [
+    "05_context/notebooks/03_context_compression.ipynb \u00a7 Context Compression",
+    "05_context/compression.py",
+    "05_context/notebooks/03_context_compression.ipynb \u00a7 Context Compression",
+    "05_context/compression.py",
+    "05_context/notebooks/03_context_compression.ipynb \u00a7 Context Compression"
+   ],
+   "refused": false,
+   "best score": 0.7022499856802122
+  },
+  {
+   "question": "What is the difference between handing off a conversation and delegating to another agent?",
+   "answer": "Handing a conversation off and delegating to another agent are two distinct ways of involving a specialist.\n\n* **Hand\u2011off** \u2013 The current agent *steps out* of the dialogue and transfers ownership of the whole chat to a new agent. The new agent sees the entire transcript (including the user\u2019s original messages) and answers the user directly, using its own voice. The transfer is performed by a `transfer_to_<name>` tool; when it is called the current agent\u2019s loop is cancelled and the next turn is answered by the new owner\u202f[Source\u202f2].\n\n* **Delegation** \u2013 The supervising agent stays in charge of the conversation. When it needs expertise it *asks* another agent for an answer, receives the response, and then rewrites or forwards that answer back to the user. The supervisor never leaves the loop; it merely forwards the specialist\u2019s output and can continue to route subsequent turns\u202f[Source\u202f2]. In the code, this is implemented by adding the specialist\u2019s tools to the supervisor\u2019s runtime, but the supervisor\u2019s persona remains the one that replies to the user\u202f[Source\u202f1].\n\nThus, a hand\u2011off moves the whole dialogue to the specialist, while delegation keeps the original agent as the intermediary that mediates between the user and the specialist.",
+   "sources": [
+    "06_orchestration/supervisor.py",
+    "06_orchestration/notebooks/02_delegation_and_supervision.ipynb \u00a7 Delegation and Supervision",
+    "06_orchestration/notebooks/02_delegation_and_supervision.ipynb",
+    "02_agent_runtime/notebooks/05_sub_agents.ipynb",
+    "02_agent_runtime/notebooks/05_sub_agents.ipynb \u00a7 Sub-Agents"
+   ],
+   "refused": false,
+   "best score": 0.7467100990476414
+  },
+  {
+   "question": "Why did the multi-agent desk in chapter 6 skip two of its own patterns, and what fixed it?",
+   "answer": "The desk\u2019s first implementation only executed three of the five patterns because two of the patterns never got a chance to run.\u202fEngineering answered the customer but never called the **`record`** tool, so the fields **`cell_lot`** and **`risk`** were never written to the shared board.\u202fSince **`risk`** was missing, the **event** that should have fired the lawyer and the **fan\u2011out** that decides whether to widen the recall never triggered, so those two patterns were silently skipped\u202f\u30101\u2020L1-L4\u3011\u30102\u2020L1-L4\u3011.  \n\nThe fix was to make those missing fields part of the **form** that engineering returns and let the surrounding code write them to the board.\u202fBy adding `cell_lot` and `risk` to the `Finding` model (the form) and having the code populate them, the board now contains a `risk` value, the event fires, the lawyer runs, and the widening\u2011decision fan\u2011out executes.\u202fThis change restores all five patterns (at the cost of about\u202f26\u202f% more tokens)\u202f\u30102\u2020L5-L12\u3011\u30103\u2020L1-L9\u3011.",
+   "sources": [
+    "06_orchestration/README.md \u00a7 Orchestration",
+    "06_orchestration/notebooks/05_build_a_multi_agent_system.ipynb \u00a7 Build a Multi-Agent System > One system, five patterns",
+    "06_orchestration/notebooks/05_build_a_multi_agent_system.ipynb \u00a7 Build a Multi-Agent System",
+    "06_orchestration/notebooks/05_build_a_multi_agent_system.ipynb \u00a7 Build a Multi-Agent System",
+    "06_orchestration/notebooks/05_build_a_multi_agent_system.ipynb \u00a7 Build a Multi-Agent System"
+   ],
+   "refused": false,
+   "best score": 0.7640313572069245
+  },
+  {
+   "question": "Does running an MCP server as a separate process sandbox it? Could it read my API keys?",
+   "answer": "Running an MCP server in its own process does **not** give you a security sandbox. The server is started as a child of the notebook (or whatever process launches it), so it inherits the parent\u2019s environment and therefore any credentials that are present there. As the notebooks point out, the server can read those variables (e.g.,\u202f`FORGE_FAKE_API_KEY`), open files, and reach the network with the same authority as the launching process. The separation only isolates **failures** (crashes) \u2013 not the ability to access secrets such as API keys\u202f\u30101\u2020L1-L9\u3011\u30103\u2020L1-L5\u3011.",
+   "sources": [
+    "07_mcp/notebooks/05_mcp_transport.ipynb \u00a7 MCP Transport",
+    "07_mcp/notebooks/01_mcp_concepts.ipynb \u00a7 MCP Concepts",
+    "07_mcp/README.md \u00a7 MCP",
+    "07_mcp/README.md \u00a7 MCP",
+    "07_mcp/server.py"
+   ],
+   "refused": false,
+   "best score": 0.7853715358356124
+  },
+  {
+   "question": "Why can verified() only run on the MCP server's side?",
+   "answer": "`verified()` asks **\u201cdid the thing actually happen?\u201d** \u2013 it can only be answered where the thing is supposed to happen. The client runs in a different process and has no access to the remote world that the tool manipulates, so it cannot perform the check itself. The server, however, lives in the same environment as the tool\u2019s side\u2011effects and can inspect that environment directly. Therefore the verification must be executed on the MCP server, and its result is carried back to the client in the `_meta` field of the response.  \n\n* The notebook notes that \u201cthe server is the only place it can happen at all\u201d because \u201cthe client has no access to the world being checked\u201d\u30102\u2020L1-L5\u3011.  \n* The same point is reiterated in the chapter summary: \u201c`verified()` \u2026 the server is the **only** place it works\u201d\u30104\u2020L5-L7\u3011.  \n* Source\u202f5 also emphasizes that running `verified()` on the server lets the kind ride back in `_meta`, confirming that verification must occur where the world actually is\u30105\u2020L1-L4\u3011.  \n\nThus, `verified()` can only run on the MCP server side because only the server has direct access to the external state that needs to be checked.",
+   "sources": [
+    "07_mcp/notebooks/02_mcp_client.ipynb \u00a7 MCP Client",
+    "07_mcp/notebooks/04_mcp_server.ipynb \u00a7 MCP Server",
+    "07_mcp/README.md \u00a7 MCP",
+    "07_mcp/notebooks/04_mcp_server.ipynb \u00a7 MCP Server",
+    "07_mcp/README.md \u00a7 MCP"
+   ],
+   "refused": false,
+   "best score": 0.7551832424517855
+  },
+  {
+   "question": "Why is CrewAI pinned to an old version in this repo?",
+   "answer": "CrewAI is deliberately locked to the old\u202f0.193.2 release because newer releases introduce dependency pins that clash with the rest of the repository.\u202fEvery CrewAI version\u202f\u2265\u202f0.201 forces `chromadb~=1.1` and, from\u202f1.7 onward, `mcp~=1.28`. Installing those would downgrade `mcp` from\u202f2.2\u202fto\u202f1.28 (breaking the\u202f07_mcp\u202fmodule) and downgrade `chromadb` from\u202f1.5.9\u202fto\u202f1.1 (breaking the store used in\u202f04_memory). Pinning to 0.193.2 avoids those conflicts and keeps the single\u2011environment setup working\u202f\u30101\u2020L9-L16\u3011\u30102\u2020L13-L20\u3011.",
+   "sources": [
+    "08_frameworks/README.md \u00a7 Frameworks",
+    "08_frameworks/03_crewai/security_questionnaire.ipynb \u00a7 Part 2 \u00b7 Run and show",
+    "08_frameworks/03_crewai/security_questionnaire.ipynb \u00a7 Part 1 \u00b7 Build",
+    "05_context/notebooks/03_context_compression.ipynb \u00a7 Context Compression",
+    "08_frameworks/03_crewai/security_questionnaire.ipynb \u00a7 Part 1 \u00b7 Build"
+   ],
+   "refused": false,
+   "best score": 0.739695960882395
+  },
+  {
+   "question": "Why couldn't AutoGen's TokenUsageTermination enforce the token budget?",
+   "answer": "AutoGen\u2019s built\u2011in\u202f`TokenUsageTermination` can\u2019t stop a run when the token budget is hit because it only looks at the tokens attached to the messages that an agent actually emits, and it does so **between agent turns**.\u202fDuring a single turn (e.g., the analyst\u2019s turn) the model may make many internal calls\u2014writing code, executing it, retrying, reflecting\u2014whose token usage is never reflected in a message, so those tokens are invisible to the termination check. As a result AutoGen reported only\u202f36,682\u202ftokens even though the API had billed\u202f56,624\u202ftokens. The budget therefore has to be enforced in the model client itself, where every call can be counted before it is made\u30102\u2020L1-L7\u3011\u30101\u2020L4-L7\u3011.",
+   "sources": [
+    "08_frameworks/README.md \u00a7 Frameworks",
+    "08_frameworks/04_autogen/analysis_team.ipynb \u00a7 Part 2 \u00b7 Run and show",
+    "08_frameworks/04_autogen/analysis_team.ipynb \u00a7 Part 1 \u00b7 Build",
+    "08_frameworks/04_autogen/analysis_team.py",
+    "08_frameworks/04_autogen/analysis_team.ipynb \u00a7 Part 1 \u00b7 Build"
+   ],
+   "refused": false,
+   "best score": 0.7504923442884188
+  },
+  {
+   "question": "How does the scratch accounts-payable desk wait for a person without re-running a step?",
+   "answer": "The scratch desk never \u201cre\u2011runs\u201d a step that needs a human.  \nWhen a step reaches a point that requires input, it **returns a `Wait` object** that records:\n\n* the field that will hold the answer,  \n* the party who owns that field, and  \n* the name of the next step to run after the answer (`then`).  \n\n```python\nreturn Wait(\"approval:tomasz\", \"tomasz\", then=\"record_approval\", \u2026)\n```\n\nThe desk\u2019s engine stores this `Wait` in the case file (`waiting`) and clears the current `next` step, then pauses:\n\n```python\ncase.set(\"desk\", \"waiting\", after.ask())\ncase.set(\"desk\", \"next\", None)\nreturn case.values[\"waiting\"]\n```\n\nWhen the designated person later writes the answer field, the `answer` method validates that the field matches the current `waiting` request, writes the value, clears `waiting`, and **sets `next` to the step named in the original `Wait`**:\n\n```python\ncase.set(party, field, value)          # only the field's owner may write it\ncase.set(\"desk\", \"waiting\", None)\ncase.set(\"desk\", \"next\", waiting[\"then\"])\n```\n\nThe runtime loop (`_go`) then continues from that `next` step without re\u2011executing the earlier logic. Because the original step already finished and only the `Wait` was stored, nothing is re\u2011run; the workflow simply picks up where it left off once the person answers.\n\nThus, the scratch accounts\u2011payable desk \u201cwaits\u201d by returning a `Wait` object, persisting that waiting state in the case file, and resuming directly to the next step after the answer is recorded, avoiding any re\u2011execution of the previous step\u3010Source\u202f2\u2020L1-L9\u3011\u3010Source\u202f3\u2020L1-L13\u3011.",
+   "sources": [
+    "08_frameworks/02_langgraph/ap_scratch.py",
+    "08_frameworks/02_langgraph/ap_desk.ipynb \u00a7 Part 1 \u00b7 Build",
+    "08_frameworks/02_langgraph/ap_desk.ipynb \u00a7 Part 1 \u00b7 Build",
+    "08_frameworks/02_langgraph/ap_desk.ipynb",
+    "08_frameworks/02_langgraph/ap_scratch.py"
+   ],
+   "refused": false,
+   "best score": 0.7747924115496971
+  },
+  {
+   "question": "How do I fine-tune Llama 3 on my own data?",
+   "answer": "The cookbook does not cover that.",
+   "sources": [],
+   "refused": true,
+   "best score": 0.6241215047432838
+  },
+  {
+   "question": "What is the capital of Australia?",
+   "answer": "The cookbook does not cover that.",
+   "sources": [],
+   "refused": true,
+   "best score": 0.5392700160934193
+  },
+  {
+   "question": "Can I bring my dog on the plane?",
+   "answer": "The cookbook does not cover that.",
+   "sources": [],
+   "refused": true,
+   "best score": 0.5468342001514395
+  }
+ ],
+ "usage": {
+  "calls": 15,
+  "prompt": 41087,
+  "completion": 7006,
+  "total": 48093
+ }
+}

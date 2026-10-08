@@ -1,0 +1,145 @@
+{
+ "runs": [
+  {
+   "question": "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?",
+   "answer": "**What the two things are**\n\n* **Chapter\u202f6 \u2013\u202fShared board**  \n  *Implemented in `06_orchestration/state.py`* \u2013 a tiny in\u2011memory object that several agents read from and (only on declared fields) write to while they are working on a case.  \n  *Key points*  \n\n  * \u201cThis is **not memory**. `04_memory` keeps what should outlive a run \u2026 What this holds is the **working state of that case**, alive for minutes, read on nearly every turn \u2026\u201d\u301006_orchestration/state.py\u2020L1-L7\u3011  \n  * The board is defined by three wiring decisions made **once when the agents are wired together**:  \n    * who may **read** a field (`readers`)\u301006_orchestration/state.py\u2020L9-L12\u3011  \n    * who may **write** a field (`owner`)\u301006_orchestration/state.py\u2020L12-L14\u3011  \n    * what stays private (nothing is written to the board)\u301006_orchestration/state.py\u2020L15-L16\u3011  \n  * Reads are injected into an agent\u2019s prompt (`view(agent)`), writes are a tool that records the author and checks ownership\u301006_orchestration/state.py\u2020L17-L20\u3011\u301006_orchestration/state.py\u2020L66-L73\u3011.\n\n* **Chapter\u202f4 \u2013\u202fMemory stores**  \n  *Implemented in `04_memory/stores.py`* \u2013 four persistent data\u2011stores that survive process restarts and are used to answer **later queries**.  \n  *Key points*  \n\n  * \u201cFour stores, and how a memory ends up in one rather than another. The shape it takes follows from **what will be asked of it later**.\u201d\u301004_memory/stores.py\u2020L1-L5\u3011  \n  * The four stores are:  \n\n    * **KeyValue** \u2013 exact\u2011name look\u2011ups (e.g., a timezone)\u301004_memory/stores.py\u2020L6-L7\u3011  \n    * **Records** \u2013 filter / order / count (e.g., deploy logs)\u301004_memory/stores.py\u2020L7-L8\u3011  \n    * **Journal** \u2013 full\u2011text / vector search for prose or \u201cresemblance\u201d queries\u301004_memory/stores.py\u2020L8-L9\u3011  \n    * **Graph** \u2013 walk relationships (e.g., ownership graphs)\u301004_memory/stores.py\u2020L9-L10\u3011  \n\n  * All stores persist to disk (SQLite, Chroma, Neo4j) \u2013 they are **long\u2011term memory**\u301004_memory/stores.py\u2020L49-L52\u3011.\n\n**How they differ**\n\n| Aspect | Shared board (Ch\u202f6) | Memory stores (Ch\u202f4) |\n|--------|--------------------|----------------------|\n| **Lifetime** | Lives only for the duration of a single case (minutes). | Persists across runs, stored on disk. |\n| **Purpose** | Coordination\u2011state that agents need *right now* (who owns what, what the team has agreed on). | Long\u2011term factual or procedural knowledge that agents may retrieve later. |\n| **Structure** | Fixed set of fields with explicit owners/readers; writes are recorded in a simple dict + history. | Separate stores each optimized for a query pattern (key\u2011value, SQL\u2011like, full\u2011text, graph). |\n| **Access pattern** | Injected into each turn\u2019s prompt (`view(agent)`) and written via a tool that checks ownership. | Accessed via store\u2011specific tools (`get`, `find`, `query`, etc.) that may involve SQL, FTS, embeddings, or graph traversals. |\n| **Ownership / trust** | Ownership is declared up\u2011front; a field that two agents can both set is considered **untrustworthy**\u301006_orchestration/state.py\u2020L12-L14\u3011. | Trust is not enforced by the store; authorship may be recorded (e.g., Journal vs. Records) but both can be read by any agent that queries the store. |\n\n**When to use each**\n\n*Use a **shared board** when*  \n\n* You need a **short\u2011lived, mutable view of the current case** that every participating agent can see instantly (e.g., \u201crisk\u201d, \u201cbatch\u201d, \u201ccustomer reply\u201d).  \n* You want to enforce **ownership** so that only the designated agent can set a field and others can rely on its value.  \n* The information is **transient** \u2013 once the case is closed, the board can be discarded.\n\n*Use **memory stores** when*  \n\n* You need **persistent knowledge** that survives beyond a single interaction (e.g., a list of time\u2011zones, historic deploy records, past incident notes).  \n* The query pattern matches one of the four store types (exact name lookup, filtered counting, full\u2011text / similarity search, or relationship traversal).  \n* You want to **recall** information later, possibly in a different run or by a different agent, without re\u2011creating the case context.\n\nIn short, the shared board is the **working\u2011state \u201cwhiteboard\u201d** that agents collaborate on in real time, while the memory stores are the **long\u2011term databases** that supply the factual and procedural background that agents draw on across sessions.",
+   "stopped": null,
+   "calls": [
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "chapter 6 shared board"
+     },
+     "returned chars": 3698
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "chapter 4 memory stores"
+     },
+     "returned chars": 2627
+    },
+    {
+     "tool": "open_file",
+     "args": {
+      "line_end": 200,
+      "line_start": 1,
+      "path": "04_memory/stores.py"
+     },
+     "returned chars": 5740
+    },
+    {
+     "tool": "open_file",
+     "args": {
+      "line_end": 120,
+      "line_start": 1,
+      "path": "06_orchestration/state.py"
+     },
+     "returned chars": 5690
+    },
+    {
+     "tool": "open_file",
+     "args": {
+      "line_end": 120,
+      "line_start": 60,
+      "path": "04_memory/README.md"
+     },
+     "returned chars": 4861
+    }
+   ],
+   "usage": {
+    "calls": 6,
+    "prompt": 18311,
+    "completion": 1767,
+    "total": 20078,
+    "largest request": 6242,
+    "largest call (in + out)": 7599,
+    "per call": [
+     483,
+     1353,
+     2067,
+     3536,
+     5040,
+     7599
+    ]
+   }
+  },
+  {
+   "question": "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.",
+   "answer": null,
+   "stopped": "APIStatusError: Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` in organization `org_01m4beagpdeant5g7fpzp3ryz0` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 8172, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}",
+   "calls": [
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "chapter 8 LangGraph desk wait for a person"
+     },
+     "returned chars": 2509
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "LangGraph desk waiting person case file wait for a person"
+     },
+     "returned chars": 3639
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "LangGraph desk waiting person Wait node run again from its first line"
+     },
+     "returned chars": 3041
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "ap_scratch wait person case file Wait"
+     },
+     "returned chars": 3851
+    },
+    {
+     "tool": "open_file",
+     "args": {
+      "line_end": 260,
+      "line_start": 150,
+      "path": "08_frameworks/02_langgraph/ap_graph.py"
+     },
+     "returned chars": 5853
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "case file wait what can go wrong"
+     },
+     "returned chars": 3728
+    },
+    {
+     "tool": "open_file",
+     "args": {
+      "line_end": 200,
+      "line_start": 1,
+      "path": "08_frameworks/02_langgraph/case.py"
+     },
+     "returned chars": 5649
+    }
+   ],
+   "usage": {
+    "calls": 7,
+    "prompt": 22402,
+    "completion": 1071,
+    "total": 23473,
+    "largest request": 6410,
+    "largest call (in + out)": 6723,
+    "per call": [
+     529,
+     1226,
+     2217,
+     3007,
+     4149,
+     5622,
+     6723
+    ]
+   }
+  }
+ ]
+}

@@ -6,6 +6,13 @@ __pycache__/
 
 # generated stores (04_memory)
 store/
+# ...except chapter 8's saved results and the LlamaIndex index, all JSON: they cost quota to make again
+# (live model runs; the index takes ~920 of the free tier's 1,000 daily Gemini embeddings). Run databases
+# and progress logs stay out.
+!08_frameworks/*/store/
+08_frameworks/*/store/*
+!08_frameworks/*/store/*.json
+!08_frameworks/*/store/index/
 
 # stdio servers' stderr (07_mcp)
 server.log

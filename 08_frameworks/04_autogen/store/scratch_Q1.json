@@ -1,0 +1,26 @@
+{
+ "build": "scratch",
+ "qid": "Q1",
+ "finding": {
+  "entity": "West",
+  "value": 77.6,
+  "answer": "West grew net revenue the most from Q2 to Q3 2026, with a 77.6% increase. This growth was calculated using net revenue = units\u202f\u00d7\u202funit_price\u202f\u00d7\u202f(1\u202f-\u202fdiscount) after excluding returned orders. All data fields passed validation checks, so no data issues were identified.",
+  "data_issues": []
+ },
+ "usage": {
+  "calls": 5,
+  "prompt": 6802,
+  "completion": 2489,
+  "total": 9291,
+  "seconds": 40
+ },
+ "turns": 6,
+ "speakers": [
+  "planner",
+  "analyst",
+  "reviewer",
+  "reporter"
+ ],
+ "stop_reason": "reporter answered",
+ "error": null
+}

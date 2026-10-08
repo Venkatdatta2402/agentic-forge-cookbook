@@ -1,0 +1,32 @@
+{
+ "build": "autogen",
+ "qid": "Q2",
+ "finding": {
+  "entity": "tents",
+  "value": 19.4,
+  "answer": "The product category with the highest return rate in Q3\u202f2026 is tents, with a return rate of 19.4\u202f%. We removed duplicate order IDs and verified dates and return flags before calculating the rates.",
+  "data_issues": [
+   "Duplicate order_id values were found and deduplicated by keeping the first occurrence."
+  ]
+ },
+ "usage": {
+  "calls": 5,
+  "total": 10203,
+  "source": "the client's own count, from progress.log"
+ },
+ "turns": 7,
+ "speakers": [
+  "user",
+  "planner",
+  "analyst",
+  "analyst"
+ ],
+ "stop_reason": "'reporter' answered",
+ "error": null,
+ "usage on messages": {
+  "calls": 4,
+  "prompt": 6288,
+  "completion": 1784,
+  "total": 8072
+ }
+}
