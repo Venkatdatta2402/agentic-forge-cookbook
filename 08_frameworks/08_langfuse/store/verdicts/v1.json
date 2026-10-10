@@ -1,0 +1,1209 @@
+{
+ "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "claims": [
+   {
+    "claim": "The shared board is a tiny, in-memory “board”.",
+    "quote": "A tiny, in‑memory “board”",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L6",
+    "why": ""
+   },
+   {
+    "claim": "Several agents read from the shared board.",
+    "quote": "several agents read from",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1, L5",
+    "why": ""
+   },
+   {
+    "claim": "Only a few agents write to the shared board.",
+    "quote": "(only a few) write to",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L12, L89-91",
+    "why": ""
+   },
+   {
+    "claim": "Agents use the shared board while working on the same case.",
+    "quote": "while they are working on the same case.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1, L4-5",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is an ordinary Python object.",
+    "quote": "An ordinary Python object",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L6",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is kept in RAM.",
+    "quote": "kept in RAM",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L6",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is injected into each agent’s context.",
+    "quote": "injected into each agent’s context.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L6-7, L17",
+    "why": ""
+   },
+   {
+    "claim": "The shared board's lifetime is minutes.",
+    "quote": "Minutes",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L5",
+    "why": ""
+   },
+   {
+    "claim": "The shared board exists only while agents are actively handling the case.",
+    "quote": "only while the agents are actively handling the case.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L4-5",
+    "why": ""
+   },
+   {
+    "claim": "Visibility and write-rights for the shared board are declared per-field.",
+    "quote": "Visibility and write‑rights are declared per‑field (`readers`, `owner`).",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L11-12",
+    "why": ""
+   },
+   {
+    "claim": "Anything an agent keeps private never goes on the shared board.",
+    "quote": "Anything an agent keeps private never goes on the board.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L15",
+    "why": ""
+   },
+   {
+    "claim": "The shared board code lives in `06_orchestration/state.py` lines 1-7.",
+    "quote": "【06_orchestration/state.py†L1-L7】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1-7",
+    "why": ""
+   },
+   {
+    "claim": "The shared board code lives in `06_orchestration/state.py` lines 9-16.",
+    "quote": "【06_orchestration/state.py†L9-L16】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L9-16",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are four persistent stores.",
+    "quote": "Four persistent stores",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L1, L49",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are KeyValue, Records, Journal, Graph.",
+    "quote": "(KeyValue, Records, Journal, Graph)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L6-11",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores hold the agent’s long-term knowledge.",
+    "quote": "that hold the agent’s long‑term knowledge.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L3",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores live as files on disk.",
+    "quote": "Files on disk",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L3, 04_memory/stores.py L49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores use SQLite, Chroma, Neo4j.",
+    "quote": "(SQLite, Chroma, Neo4j)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores can live as a running service.",
+    "quote": "or a running service.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores outlive a run.",
+    "quote": "Outlives a run",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L3, 04_memory/stores.py L49",
+    "why": ""
+   },
+   {
+    "claim": "Data in memory stores is kept for future sessions.",
+    "quote": "data is kept for future sessions.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L3, 04_memory/stores.py L49",
+    "why": ""
+   },
+   {
+    "claim": "Access to memory stores is not about per-field owners.",
+    "quote": "Access is not about per‑field owners",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L3-4",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are queried according to the shape of the question.",
+    "quote": "the stores are queried according to the shape of the question",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L3-4, L12",
+    "why": ""
+   },
+   {
+    "claim": "Query shapes for memory stores include exact key, filtered rows, full-text search, graph walk.",
+    "quote": "(exact key, filtered rows, full‑text search, graph walk).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L6-11",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores code lives in `04_memory/stores.py` lines 1-10.",
+    "quote": "【04_memory/stores.py†L1-L10】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L1-10",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores code lives in `04_memory/stores.py` lines 49-51.",
+    "quote": "【04_memory/stores.py†L49-L51】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L49-51",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is coordination state for a single ongoing workflow.",
+    "quote": "The shared board is coordination state for a *single* ongoing workflow",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1, L4-5",
+    "why": ""
+   },
+   {
+    "claim": "The stores are a memory layer that survives runs.",
+    "quote": "the stores are a *memory layer* that survives runs",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L3, 04_memory/stores.py L49",
+    "why": ""
+   },
+   {
+    "claim": "The stores answer arbitrary future queries.",
+    "quote": "and answers arbitrary future queries.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Board data disappears when the process ends.",
+    "quote": "Board data disappears when the process ends",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L5-6, 04_memory/stores.py L50",
+    "why": ""
+   },
+   {
+    "claim": "Stores are written to disk or a service.",
+    "quote": "stores are written to disk or a service",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L49",
+    "why": ""
+   },
+   {
+    "claim": "Stores survive restarts.",
+    "quote": "and survive restarts.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L49-50",
+    "why": ""
+   },
+   {
+    "claim": "The board lets you declare per-field readers and owners.",
+    "quote": "The board lets you declare per‑field readers and owners",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L11-12",
+    "why": ""
+   },
+   {
+    "claim": "The board turns writes into a controlled tool.",
+    "quote": "turning writes into a controlled tool (`Shared.tools`).",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L18-19, L89",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are organized by query pattern.",
+    "quote": "Memory stores are organized by query pattern",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L3-4, L6-11",
+    "why": ""
+   },
+   {
+    "claim": "Memory store query patterns include key-value, record filtering, journal search, graph traversal.",
+    "quote": "(key‑value, record filtering, journal search, graph traversal)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L6-11",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are not organized by who may write them.",
+    "quote": "rather than by who may write them.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L3-4",
+    "why": ""
+   },
+   {
+    "claim": "Board reads are “injection”.",
+    "quote": "Board reads are “injection”",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L17",
+    "why": ""
+   },
+   {
+    "claim": "The board is rendered into the prompt for each agent.",
+    "quote": "the board is rendered into the prompt for each agent.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L17",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are accessed via `read` operations.",
+    "quote": "Memory stores are accessed via `read` (exact lookup) or `retrieve` (ranked search) operations.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are accessed via `retrieve` operations.",
+    "quote": "Memory stores are accessed via `read` (exact lookup) or `retrieve` (ranked search) operations.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "`read` is for exact lookup in memory stores.",
+    "quote": "`read` (exact lookup)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "`retrieve` is for ranked search in memory stores.",
+    "quote": "`retrieve` (ranked search)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Use the shared board when several agents need to collaborate on a single case.",
+    "quote": "Use when several agents need to collaborate on a *single case*",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1, L4-5",
+    "why": ""
+   },
+   {
+    "claim": "Use the shared board when agents must share intermediate results in real time.",
+    "quote": "and must share intermediate results",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1, L4-5",
+    "why": ""
+   },
+   {
+    "claim": "Use the shared board when agents must share decisions in real time.",
+    "quote": "decisions",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1, L4-5",
+    "why": ""
+   },
+   {
+    "claim": "Use the shared board when agents must share flags in real time.",
+    "quote": "or flags in real time",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1, L4-5",
+    "why": ""
+   },
+   {
+    "claim": "Examples for shared board use include \"which batch is being processed\", \"who has claimed this field\", \"has the legal review been completed\".",
+    "quote": "(e.g., “which batch is being processed”, “who has claimed this field”, “has the legal review been completed”).",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L12-14",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is ideal for short-term coordination.",
+    "quote": "It is ideal for short‑term coordination",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L1, L5",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is ideal for enforcing ownership.",
+    "quote": "enforcing ownership",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L12-14, L19",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is ideal for triggering side-effects via watchers.",
+    "quote": "and triggering side‑effects via watchers.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores when you need information that should persist beyond the current run.",
+    "quote": "Use when you need information that should persist beyond the current run",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L3, 04_memory/stores.py L49",
+    "why": ""
+   },
+   {
+    "claim": "Examples for memory store use include user preferences, historical logs, deployment records, troubleshooting notes, ownership graphs.",
+    "quote": ": user preferences, historical logs, deployment records, troubleshooting notes, ownership graphs, etc.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L6-11",
+    "why": ""
+   },
+   {
+    "claim": "Choose the appropriate store based on how the data will be queried.",
+    "quote": "Choose the appropriate store based on how the data will be queried",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L3-4",
+    "why": ""
+   },
+   {
+    "claim": "For exact key queries, use KeyValue store.",
+    "quote": "(exact key → KeyValue",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L6",
+    "why": ""
+   },
+   {
+    "claim": "For filtered/countable rows queries, use Records store.",
+    "quote": "; filtered/countable rows → Records",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L7",
+    "why": ""
+   },
+   {
+    "claim": "For free-text or semantic search queries, use Journal store.",
+    "quote": "; free‑text or semantic search → Journal",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L8-9",
+    "why": ""
+   },
+   {
+    "claim": "For relationships queries, use Graph store.",
+    "quote": "; relationships → Graph).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py L10-11",
+    "why": ""
+   },
+   {
+    "claim": "If data is only relevant for the duration of a multi-agent workflow, put it on the shared board.",
+    "quote": "If the data is only relevant for the duration of a multi‑agent workflow, put it on the shared board",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L4-5",
+    "why": ""
+   },
+   {
+    "claim": "If data must be recalled later, store it in one of the chapter-4 memory stores.",
+    "quote": "; if it must be recalled later, written once and read many times, store it in one of the chapter‑4 memory stores.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py L3",
+    "why": ""
+   },
+   {
+    "claim": "If data is written once and read many times, store it in one of the chapter-4 memory stores.",
+    "quote": "written once and read many times, store it in one of the chapter‑4 memory stores.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 35306,
+  "scored": true
+ },
+ "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit compare in chapter 8's LangGraph project?": {
+  "claims": [
+   {
+    "claim": "The `Runtime` in Chapter 2 looks at recent decision messages (tool calls).",
+    "quote": "The `Runtime` looks at the recent *decision* messages (tool calls)",
+    "verdict": "supported",
+    "source": "runtime.py 182",
+    "why": ""
+   },
+   {
+    "claim": "If the last two calls are the same tool with identical arguments, the `Runtime` treats this as a “doom‑loop” and stops the run.",
+    "quote": "if the last two calls are **the same tool with identical arguments**, it treats this as a “doom‑loop” and stops the run",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "The condition for stopping is `if len(recent) >= 2 and len({(d[\"tool\"], d[\"content\"]) for d in recent[-2:]}) == 1: return \"the same tool call with identical arguments repeated\"`.",
+    "quote": "if len(recent) >= 2 and len({(d[\"tool\"], d[\"content\"]) for d in recent[-2:]}) == 1: return \"the same tool call with identical arguments repeated\"",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "When the condition is met, the runtime returns a stop reason.",
+    "quote": "When this condition is met the runtime returns a stop reason",
+    "verdict": "supported",
+    "source": "runtime.py 186",
+    "why": ""
+   },
+   {
+    "claim": "The runtime calls `_end_gracefully`.",
+    "quote": "then calls `_end_gracefully`",
+    "verdict": "supported",
+    "source": "runtime.py 220",
+    "why": ""
+   },
+   {
+    "claim": "`_end_gracefully` gives the agent one final turn with no tool calls.",
+    "quote": "gives the agent **one final turn with no tool calls**",
+    "verdict": "supported",
+    "source": "runtime.py 225-226",
+    "why": ""
+   },
+   {
+    "claim": "The final turn allows the agent to summarise what it has found before ending the run.",
+    "quote": "so it can summarise what it has found before ending the run",
+    "verdict": "supported",
+    "source": "runtime.py 226",
+    "why": ""
+   },
+   {
+    "claim": "The code for this logic is in `02_agent_runtime/runtime.py` at lines 185-187.",
+    "quote": "【02_agent_runtime/runtime.py†L185-L187】",
+    "verdict": "contradicted",
+    "source": "runtime.py 185-186",
+    "why": "The relevant code is on lines 185-186, not 185-187. Line 187 is not part of the provided evidence for this specific logic."
+   },
+   {
+    "claim": "The code for this logic is in `02_agent_runtime/runtime.py` at lines 220-227.",
+    "quote": "【02_agent_runtime/runtime.py†L220-L227】",
+    "verdict": "supported",
+    "source": "runtime.py 220-227",
+    "why": ""
+   },
+   {
+    "claim": "An agent that keeps invoking the same tool over and over is halted after the second identical call.",
+    "quote": "an agent that keeps invoking the same tool over and over is halted after the **second identical call**",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "In the LangGraph example, the framework imposes a default step limit of 10 007.",
+    "quote": "In the LangGraph example the framework imposes a **default step limit of 10 007**",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499",
+    "why": ""
+   },
+   {
+    "claim": "An investigator that calls the same tool forever is stopped only after the limit is reached.",
+    "quote": "an investigator that calls the same tool forever is stopped only after the limit is reached",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499-501",
+    "why": ""
+   },
+   {
+    "claim": "The default step limit is 10,007.",
+    "quote": "The default step limit is 10,007.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499",
+    "why": ""
+   },
+   {
+    "claim": "With the default limit, the same agent ran 5 004 model calls (92 seconds) before LangGraph stopped it.",
+    "quote": "with the default limit, the same agent ran **5 004 model calls** (92 seconds) before LangGraph stopped it.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "This information is from `08_frameworks/02_langgraph/ap_desk.ipynb` at lines 499-502.",
+    "quote": "【08_frameworks/02_langgraph/ap_desk.ipynb†L499-L502】",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499-502",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph does not detect a repeated‑tool pattern.",
+    "quote": "LangGraph does **not** detect a repeated‑tool pattern",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph simply counts steps.",
+    "quote": "it simply counts steps",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph stops when the (large) limit is exceeded.",
+    "quote": "stops when the (large) limit is exceeded",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2's `Runtime` is triggered to stop by two consecutive identical tool calls (doom‑loop detection).",
+    "quote": "Two consecutive identical tool calls (doom‑loop detection)",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2's `Runtime` stops immediately after the second repeat.",
+    "quote": "stops immediately after the second repeat.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8's LangGraph is triggered to stop by a hard step counter.",
+    "quote": "A hard step counter",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499, 501",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8's LangGraph run stops only after reaching the default limit of 10 007 steps.",
+    "quote": "the run stops only after reaching the default limit of 10 007 steps",
+    "verdict": "supported",
+    "source": "point 3, ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8's LangGraph was observed to stop after ~5 000 model calls.",
+    "quote": "(observed after ~5 000 model calls).",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2's `Runtime` results in quick termination.",
+    "quote": "Quick termination",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2's `Runtime` provides one extra “no‑tool” turn for the agent to summarise.",
+    "quote": "with one extra “no‑tool” turn for the agent to summarise.",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8's LangGraph results in a long‑running loop that can continue for thousands of calls.",
+    "quote": "Long‑running loop can continue for thousands of calls",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8's LangGraph is halted by the generic limit.",
+    "quote": "before the generic limit halts it.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2’s runtime actively watches for a repeated tool call.",
+    "quote": "Chapter 2’s runtime actively watches for a repeated tool call",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2’s runtime stops on the second occurrence of a repeated tool call.",
+    "quote": "stops on the second occurrence",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph in Chapter 8 relies on a high numeric step limit.",
+    "quote": "LangGraph in Chapter 8 relies on a high numeric step limit",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph's high numeric step limit allows many more repetitions before halting.",
+    "quote": "allowing many more repetitions before halting.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 19550,
+  "scored": true
+ },
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "claims": [
+   {
+    "claim": "A node that needs a person calls `interrupt()`.",
+    "quote": "A node that needs a person calls `interrupt()`.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 526",
+    "why": ""
+   },
+   {
+    "claim": "The node is paused.",
+    "quote": "The node is *paused*",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 526",
+    "why": ""
+   },
+   {
+    "claim": "The whole thread is checkpointed.",
+    "quote": "the whole thread is checkpointed.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 519",
+    "why": ""
+   },
+   {
+    "claim": "When the person replies the thread is resumed with `graph.invoke(Command(resume=…))`.",
+    "quote": "When the person replies the thread is resumed with `graph.invoke(Command(resume=…))`.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497",
+    "why": ""
+   },
+   {
+    "claim": "The step returns a `Wait` object.",
+    "quote": "The step returns a `Wait` object (`return Wait(field, owner, then=next_step)`).",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 384, 526",
+    "why": ""
+   },
+   {
+    "claim": "The `Wait` ends the step.",
+    "quote": "The `Wait` **ends the step**",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "The answer is written to the field that owns it.",
+    "quote": "the answer is written to the field that owns it",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 376",
+    "why": ""
+   },
+   {
+    "claim": "The next step is started.",
+    "quote": "the next step is started (`case.set(party, field, value)` → `case.set(\"desk\",\"next\", waiting[\"then\"])`).",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 378",
+    "why": ""
+   },
+   {
+    "claim": "The node is stored in the check-pointer.",
+    "quote": "The node is stored in the check‑pointer",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 519",
+    "why": ""
+   },
+   {
+    "claim": "Its code is still there.",
+    "quote": "its code is still there.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "On resume the node runs again from its first line.",
+    "quote": "On resume the node runs **again from its first line**.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 526",
+    "why": ""
+   },
+   {
+    "claim": "The step is finished.",
+    "quote": "The step is finished",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "The next step runs only after the field is filled.",
+    "quote": "the next step runs only after the field is filled.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 386",
+    "why": ""
+   },
+   {
+    "claim": "No code is re-executed.",
+    "quote": "No code is re‑executed.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366",
+    "why": ""
+   },
+   {
+    "claim": "Any effect that happened *before* the `interrupt()` is performed again.",
+    "quote": "Because the node is re‑executed from the top, any effect that happened *before* the `interrupt()` is performed again.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 539",
+    "why": ""
+   },
+   {
+    "claim": "A node that sends an email and then waits for the reply sends it twice.",
+    "quote": "A node that sends an email and then waits for the reply sends it twice.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 493-494`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 493‑494]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493-494",
+    "why": ""
+   },
+   {
+    "claim": "The email is sent once.",
+    "quote": "the email is sent **once**",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "The reply starts the next step.",
+    "quote": "the reply starts the next step.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 526",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 392-404`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 392‑404]",
+    "verdict": "contradicted",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 493, 527",
+    "why": "The claim about the email being sent once is supported, but the source lines provided by the answer (392-404) are not present in the evidence. The correct lines are 366, 493, and 527."
+   },
+   {
+    "claim": "Answers are matched by position in the list of `interrupt()` calls.",
+    "quote": "Answers are matched **by position** in the list of `interrupt()` calls.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "If a deployment changes the order of those calls, an answer can be applied to the wrong question.",
+    "quote": "If a deployment changes the order of those calls, an answer can be applied to the wrong question.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 495-496`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 495‑496]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 495-496",
+    "why": ""
+   },
+   {
+    "claim": "Each answer is stored in a field that is owned by the specific person.",
+    "quote": "Each answer is stored in a field that is owned by the specific person (`case.set(party, field, value)`).",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 528",
+    "why": ""
+   },
+   {
+    "claim": "The field name is the owner’s name.",
+    "quote": "The field name is the owner’s name",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366",
+    "why": ""
+   },
+   {
+    "claim": "Answers cannot be swapped.",
+    "quote": "answers cannot be swapped.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 528",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 366-382`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 366‑382]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366-382",
+    "why": ""
+   },
+   {
+    "claim": "`Command(resume=…)` can be issued by *any* code.",
+    "quote": "`Command(resume=…)` can be issued by *any* code",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497, 539",
+    "why": ""
+   },
+   {
+    "claim": "The graph itself does not check that the right person is answering.",
+    "quote": "the graph itself does not check that the right person is answering.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497, 529",
+    "why": ""
+   },
+   {
+    "claim": "Invoice B waits for Tomasz, and Mira answers it.",
+    "quote": "Invoice B waits for Tomasz, and Mira answers it.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 497-498`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 497‑498]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497-498",
+    "why": ""
+   },
+   {
+    "claim": "The `case.answer` method checks that the waiting field matches the supplied `field`.",
+    "quote": "The `case.answer` method checks that the waiting field matches the supplied `field`",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 374",
+    "why": ""
+   },
+   {
+    "claim": "The `case.answer` method checks that the writer is the field’s owner.",
+    "quote": "that the writer is the field’s **owner**",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 376",
+    "why": ""
+   },
+   {
+    "claim": "Otherwise it raises `ValueError` or `Denied`.",
+    "quote": "otherwise it raises `ValueError` or `Denied`.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 375, 529",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 371-378`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 371‑378]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 371-378",
+    "why": ""
+   },
+   {
+    "claim": "A resumed node is a brand-new `invoke`.",
+    "quote": "A resumed node is a brand‑new `invoke`",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 503",
+    "why": ""
+   },
+   {
+    "claim": "The global `recursion_limit` is never hit.",
+    "quote": "the global `recursion_limit` is never hit.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 503",
+    "why": ""
+   },
+   {
+    "claim": "A loop that keeps calling `interrupt()` can run forever.",
+    "quote": "A loop that keeps calling `interrupt()` can run forever",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 503",
+    "why": ""
+   },
+   {
+    "claim": "A vendor repeatedly resending the same wrong invoice is an example of a loop that can run forever.",
+    "quote": "e.g., a vendor repeatedly resending the same wrong invoice",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 503",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 503-504`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 503‑504]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 503-504",
+    "why": ""
+   },
+   {
+    "claim": "The case-file logic does not re-run a step.",
+    "quote": "The case‑file logic does not re‑run a step",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366",
+    "why": ""
+   },
+   {
+    "claim": "The same infinite-loop problem does not arise in the same way.",
+    "quote": "the same infinite‑loop problem does not arise in the same way.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence states the case file has 'chapter 2's doom-loop check; held after 3' (530), which is a different mechanism for handling loops, rather than stating the 'same infinite-loop problem does not arise in the same way.'"
+   },
+   {
+    "claim": "Retries are layered (`RetryPolicy` on the node + OpenAI SDK retries).",
+    "quote": "Retries are layered (`RetryPolicy` on the node + OpenAI SDK retries)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 505",
+    "why": ""
+   },
+   {
+    "claim": "This can cause many repeated calls before giving up.",
+    "quote": "which can cause many repeated calls before giving up.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 505",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 505-506`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 505‑506]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 505-506",
+    "why": ""
+   },
+   {
+    "claim": "The case file does not have node-level retry policies.",
+    "quote": "The case file does not have node‑level retry policies",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence does not explicitly state that the case file lacks node-level retry policies."
+   },
+   {
+    "claim": "Each write is a single atomic operation.",
+    "quote": "each write is a single atomic operation",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence does not explicitly state that each write in the case file is a single atomic operation."
+   },
+   {
+    "claim": "This particular explosion does not occur.",
+    "quote": "this particular explosion does not occur.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "This is an inference from the previous claims about the case file, not explicitly stated in the evidence."
+   },
+   {
+    "claim": "If a tool call is refused, the run can end with the thread parked at the last good checkpoint.",
+    "quote": "If a tool call is refused, the run can end with the thread parked at the last good checkpoint",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 539",
+    "why": ""
+   },
+   {
+    "claim": "A later `invoke(None, config)` continues from there.",
+    "quote": "a later `invoke(None, config)` continues from there.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 507",
+    "why": ""
+   },
+   {
+    "claim": "This claim is found in `08_frameworks/02_langgraph/ap_desk.ipynb, lines 507-508`.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 507‑508]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 507-508",
+    "why": ""
+   },
+   {
+    "claim": "The case file’s `set` method raises `Denied` or `ValueError` immediately.",
+    "quote": "The case file’s `set` method raises `Denied` or `ValueError` immediately",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 375, 524",
+    "why": ""
+   },
+   {
+    "claim": "This makes the failure explicit.",
+    "quote": "making the failure explicit.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence states that ValueError or Denied is raised, but does not explicitly state that this 'makes the failure explicit.'"
+   },
+   {
+    "claim": "Both designs let a workflow pause for days and be resumed later.",
+    "quote": "Both designs let a workflow pause for days and be resumed later",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 519",
+    "why": ""
+   },
+   {
+    "claim": "They do it in fundamentally different ways.",
+    "quote": "but they do it in fundamentally different ways.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 519",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph uses `interrupt()` which checkpoints the whole node.",
+    "quote": "LangGraph uses `interrupt()` which checkpoints the whole node.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 519, 526",
+    "why": ""
+   },
+   {
+    "claim": "On resume the node starts over.",
+    "quote": "On resume the node starts over",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 526",
+    "why": ""
+   },
+   {
+    "claim": "This can cause duplicate actions.",
+    "quote": "which can cause duplicate actions",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "This can cause mismatched answers.",
+    "quote": "mismatched answers",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "This can cause unauthenticated resumes.",
+    "quote": "unauthenticated resumes",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497, 529",
+    "why": ""
+   },
+   {
+    "claim": "This can cause loops that evade the normal recursion guard.",
+    "quote": "and loops that evade the normal recursion guard.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 503",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case file uses a `Wait` that ends the step.",
+    "quote": "The from‑scratch case file uses a `Wait` that **ends** the step",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "The answer writes to a dedicated, owned field.",
+    "quote": "the answer writes to a dedicated, owned field",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 528",
+    "why": ""
+   },
+   {
+    "claim": "The answer triggers the next step.",
+    "quote": "and triggers the next step.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "This prevents duplicate side-effects.",
+    "quote": "This prevents duplicate side‑effects",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 527",
+    "why": ""
+   },
+   {
+    "claim": "This prevents mis-ordered answers.",
+    "quote": "and mis‑ordered answers",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 528",
+    "why": ""
+   },
+   {
+    "claim": "This enforces ownership.",
+    "quote": "and enforces ownership",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 376, 529",
+    "why": ""
+   },
+   {
+    "claim": "It still relies on correct field ownership.",
+    "quote": "but it still relies on correct field ownership",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 376",
+    "why": ""
+   },
+   {
+    "claim": "It will raise an error if the wrong field is answered.",
+    "quote": "and will raise an error if the wrong field is answered.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 374-375",
+    "why": ""
+   },
+   {
+    "claim": "The case-file approach is safer for actions that must not be repeated.",
+    "quote": "the case‑file approach is safer for actions that must not be repeated",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 537",
+    "why": ""
+   },
+   {
+    "claim": "The case-file approach is safer for guaranteeing that the right person answers.",
+    "quote": "and for guaranteeing that the right person answers",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 529",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph approach is more flexible.",
+    "quote": "while the LangGraph approach is more flexible",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 532-533, 535",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph approach requires extra safeguards (auth checks, idempotent actions, explicit loop limits) to avoid the pitfalls listed above.",
+    "quote": "but requires extra safeguards (auth checks, idempotent actions, explicit loop limits) to avoid the pitfalls listed above.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 539",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 43192,
+  "scored": true
+ }
+}

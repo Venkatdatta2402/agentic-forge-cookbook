@@ -1,0 +1,94 @@
+{
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": [
+  {
+   "kind": "agent",
+   "answer": null,
+   "stopped": "BadRequestError: Error code: 400 - {'error': {'message': 'Tool choice is none, but model called a tool', 'type': 'invalid_request_error', 'code': 'tool_use_failed', 'failed_generation': '{\"name\": \"search_cookbook\", \"arguments\": {\"query\":\"Wait(\",\"path\":\"08_frameworks/02_langgraph/ap_desk.ipynb\"}}'}}",
+   "calls": [
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "LangGraph desk wait for a person"
+     },
+     "returned chars": 2509
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "class Wait"
+     },
+     "returned chars": 3765
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "ap_scratch wait"
+     },
+     "returned chars": 3871
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "ap_desk Wait"
+     },
+     "returned chars": 3378
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "hazard"
+     },
+     "returned chars": 3782
+    },
+    {
+     "tool": "search_cookbook",
+     "args": {
+      "query": "ap_scratch checkpointer"
+     },
+     "returned chars": 1578
+    },
+    {
+     "tool": "open_file",
+     "args": {
+      "line_end": 240,
+      "line_start": 140,
+      "path": "08_frameworks/02_langgraph/ap_scratch.py"
+     },
+     "returned chars": 5674
+    },
+    {
+     "tool": "open_file",
+     "args": {
+      "line_end": 120,
+      "line_start": 1,
+      "path": "08_frameworks/02_langgraph/case.py"
+     },
+     "returned chars": 5699
+    }
+   ],
+   "usage": {
+    "calls": 9,
+    "prompt": 33809,
+    "completion": 1421,
+    "total": 35230,
+    "largest request": 6294,
+    "largest call (in + out)": 6587,
+    "per call": [
+     586,
+     1289,
+     2222,
+     3267,
+     4167,
+     5269,
+     5515,
+     6587,
+     6328
+    ],
+    "retried": 4
+   },
+   "trace": "72517d35368ad5755fa2eac7a8715cb5",
+   "seconds": 485.3,
+   "then": "asked again after the step-limit answer got the findings as plain text"
+  }
+ ]
+}

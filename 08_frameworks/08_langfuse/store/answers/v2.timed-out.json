@@ -1,0 +1,147 @@
+{
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "kind": "agent",
+  "answer": null,
+  "stopped": "WorkflowTimeoutError: Operation timed out after 300.0 seconds. Currently active steps: parse_agent_output",
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 8 LangGraph desk wait for a person"
+    },
+    "returned chars": 2509
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "ap_scratch waiting person case file wait"
+    },
+    "returned chars": 3873
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "ap_scratch Wait waiting"
+    },
+    "returned chars": 3824
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "ap_desk Wait"
+    },
+    "returned chars": 3378
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph hazards"
+    },
+    "returned chars": 3766
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 120,
+     "line_start": 1,
+     "path": "08_frameworks/02_langgraph/ap_checks.py"
+    },
+    "returned chars": 4669
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "ap_graph Wait person"
+    },
+    "returned chars": 3883
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 420,
+     "line_start": 340,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 4937
+   }
+  ],
+  "usage": {
+   "calls": 9,
+   "prompt": 34817,
+   "completion": 1274,
+   "total": 36091,
+   "largest request": 6373,
+   "largest call (in + out)": 6618,
+   "per call": [
+    578,
+    1290,
+    2360,
+    3416,
+    4291,
+    5385,
+    6034,
+    6119,
+    6618
+   ],
+   "retried": 0
+  },
+  "trace": "3f622fadac1d5386f0a605e7b2514268",
+  "seconds": 301.6
+ },
+ "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit compare in chapter 8's LangGraph project?": {
+  "kind": "agent",
+  "answer": null,
+  "stopped": "WorkflowTimeoutError: Operation timed out after 300.0 seconds. Currently active steps: run_agent_step",
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 2 runtime stop agent keeps calling same tool"
+    },
+    "returned chars": 3744
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 8 LangGraph limit"
+    },
+    "returned chars": 3883
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 210,
+     "line_start": 170,
+     "path": "02_agent_runtime/runtime.py"
+    },
+    "returned chars": 3083
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 520,
+     "line_start": 480,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 4104
+   }
+  ],
+  "usage": {
+   "calls": 4,
+   "prompt": 7558,
+   "completion": 760,
+   "total": 8318,
+   "largest request": 3210,
+   "largest call (in + out)": 3510,
+   "per call": [
+    595,
+    1503,
+    2710,
+    3510
+   ],
+   "retried": 0
+  },
+  "trace": "a12de5b2d9a2114f60a7e0191aa7c271",
+  "seconds": 1025.0
+ }
+}

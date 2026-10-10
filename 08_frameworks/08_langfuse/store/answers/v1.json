@@ -1,0 +1,251 @@
+{
+ "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "kind": "agent",
+  "answer": "**What the two concepts are**\n\n| Chapter | What it is | Where it lives | Lifetime | Who can see / change it |\n|--------|------------|----------------|----------|--------------------------|\n| **06 Orchestration – the *shared board*** | A tiny, in‑memory “board” that several agents read from and (only a few) write to while they are working on the same case. | An ordinary Python object kept in RAM and injected into each agent’s context. | Minutes – only while the agents are actively handling the case. | Visibility and write‑rights are declared per‑field (`readers`, `owner`). Anything an agent keeps private never goes on the board. |【06_orchestration/state.py†L1-L7】【06_orchestration/state.py†L9-L16】 |\n| **04 Memory – the *stores*** | Four persistent stores (KeyValue, Records, Journal, Graph) that hold the agent’s long‑term knowledge. | Files on disk (SQLite, Chroma, Neo4j) or a running service. | Outlives a run; data is kept for future sessions. | Access is not about per‑field owners; the stores are queried according to the shape of the question (exact key, filtered rows, full‑text search, graph walk). |【04_memory/stores.py†L1-L10】【04_memory/stores.py†L49-L51】 |\n\n**Key differences**\n\n* **Purpose** – The shared board is coordination state for a *single* ongoing workflow; the stores are a *memory layer* that survives runs and answers arbitrary future queries.  \n* **Persistence** – Board data disappears when the process ends; stores are written to disk or a service and survive restarts.  \n* **Granularity of control** – The board lets you declare per‑field readers and owners, turning writes into a controlled tool (`Shared.tools`). Memory stores are organized by query pattern (key‑value, record filtering, journal search, graph traversal) rather than by who may write them.  \n* **Access pattern** – Board reads are “injection”: the board is rendered into the prompt for each agent. Memory stores are accessed via `read` (exact lookup) or `retrieve` (ranked search) operations.  \n\n**When to use each**\n\n* **Shared board** – Use when several agents need to collaborate on a *single case* and must share intermediate results, decisions, or flags in real time (e.g., “which batch is being processed”, “who has claimed this field”, “has the legal review been completed”). It is ideal for short‑term coordination, enforcing ownership, and triggering side‑effects via watchers.  \n\n* **Memory stores** – Use when you need information that should persist beyond the current run: user preferences, historical logs, deployment records, troubleshooting notes, ownership graphs, etc. Choose the appropriate store based on how the data will be queried (exact key → KeyValue; filtered/countable rows → Records; free‑text or semantic search → Journal; relationships → Graph).  \n\nIf the data is only relevant for the duration of a multi‑agent workflow, put it on the shared board; if it must be recalled later, written once and read many times, store it in one of the chapter‑4 memory stores.",
+  "stopped": null,
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 6 shared board"
+    },
+    "returned chars": 3698
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 4 memory stores"
+    },
+    "returned chars": 2627
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 200,
+     "line_start": 1,
+     "path": "04_memory/stores.py"
+    },
+    "returned chars": 5775
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 200,
+     "line_start": 1,
+     "path": "06_orchestration/state.py"
+    },
+    "returned chars": 5731
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 130,
+     "line_start": 60,
+     "path": "04_memory/README.md"
+    },
+    "returned chars": 5735
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 55,
+     "line_start": 45,
+     "path": "04_memory/stores.py"
+    },
+    "returned chars": 663
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 30,
+     "line_start": 1,
+     "path": "06_orchestration/state.py"
+    },
+    "returned chars": 1593
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 15,
+     "line_start": 1,
+     "path": "04_memory/stores.py"
+    },
+    "returned chars": 1126
+   }
+  ],
+  "usage": {
+   "calls": 10,
+   "prompt": 41546,
+   "completion": 2777,
+   "total": 44323,
+   "largest request": 6290,
+   "largest call (in + out)": 7209,
+   "per call": [
+    483,
+    1353,
+    2067,
+    3544,
+    5067,
+    6024,
+    6292,
+    6198,
+    7209,
+    6086
+   ],
+   "retried": 0
+  },
+  "trace": "9cb053329216420747e1a734d3b8732b",
+  "seconds": 270.0
+ },
+ "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit compare in chapter 8's LangGraph project?": {
+  "kind": "agent",
+  "answer": "**Chapter 2 – the `Runtime` stop logic**\n\nThe `Runtime` looks at the recent *decision* messages (tool calls) and, if the last two calls are **the same tool with identical arguments**, it treats this as a “doom‑loop” and stops the run:\n\n```python\nif len(recent) >= 2 and len({(d[\"tool\"], d[\"content\"]) for d in recent[-2:]}) == 1:\n    return \"the same tool call with identical arguments repeated\"\n```\n\nWhen this condition is met the runtime returns a stop reason, then calls `_end_gracefully`, which gives the agent **one final turn with no tool calls** so it can summarise what it has found before ending the run【02_agent_runtime/runtime.py†L185-L187】【02_agent_runtime/runtime.py†L220-L227】.  \nThus an agent that keeps invoking the same tool over and over is halted after the **second identical call**.\n\n---\n\n**Chapter 8 – LangGraph’s step‑limit**\n\nIn the LangGraph example the framework imposes a **default step limit of 10 007**. The notebook notes that an investigator that calls the same tool forever is stopped only after the limit is reached:\n\n> “The default step limit is 10,007. … Measured while building this: with the default limit, the same agent ran **5 004 model calls** (92 seconds) before LangGraph stopped it.”【08_frameworks/02_langgraph/ap_desk.ipynb†L499-L502】\n\nSo LangGraph does **not** detect a repeated‑tool pattern; it simply counts steps and stops when the (large) limit is exceeded.\n\n---\n\n### Comparison\n\n| Aspect | Chapter 2 (`Runtime`) | Chapter 8 (LangGraph) |\n|--------|----------------------|-----------------------|\n| **What triggers a stop** | Two consecutive identical tool calls (doom‑loop detection) – stops immediately after the second repeat. | A hard step counter; the run stops only after reaching the default limit of 10 007 steps (observed after ~5 000 model calls). |\n| **Result** | Quick termination with one extra “no‑tool” turn for the agent to summarise. | Long‑running loop can continue for thousands of calls before the generic limit halts it. |\n\nIn short, Chapter 2’s runtime actively watches for a repeated tool call and stops on the second occurrence, whereas LangGraph in Chapter 8 relies on a high numeric step limit, allowing many more repetitions before halting.",
+  "stopped": null,
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 2 runtime stop agent keeps calling same tool"
+    },
+    "returned chars": 3744
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 8 LangGraph limit"
+    },
+    "returned chars": 3883
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 230,
+     "line_start": 150,
+     "path": "02_agent_runtime/runtime.py"
+    },
+    "returned chars": 5871
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 520,
+     "line_start": 480,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 4104
+   }
+  ],
+  "usage": {
+   "calls": 5,
+   "prompt": 12894,
+   "completion": 1603,
+   "total": 14497,
+   "largest request": 4907,
+   "largest call (in + out)": 5681,
+   "per call": [
+    558,
+    1489,
+    2577,
+    4192,
+    5681
+   ],
+   "retried": 0
+  },
+  "trace": "00a8c552f1faf382815ad0d546d4ab29",
+  "seconds": 81.2
+ },
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "kind": "agent",
+  "answer": "**How the two implementations pause for a human**\n\n|                     | **LangGraph desk** | **From‑scratch “case file”** |\n|---------------------|-------------------|------------------------------|\n| **Mechanism** | A node that needs a person calls `interrupt()`. The node is *paused* and the whole thread is checkpointed. When the person replies the thread is resumed with `graph.invoke(Command(resume=…))`. | The step returns a `Wait` object (`return Wait(field, owner, then=next_step)`). The `Wait` **ends the step**; the answer is written to the field that owns it and the next step is started (`case.set(party, field, value)` → `case.set(\"desk\",\"next\", waiting[\"then\"])`). |\n| **What the pause looks like** | The node is stored in the check‑pointer, but its code is still there. On resume the node runs **again from its first line**. | The step is finished; the next step runs only after the field is filled. No code is re‑executed. |\n\n**What can go wrong**\n\n| Issue | LangGraph desk | From‑scratch case file |\n|-------|----------------|------------------------|\n| **Duplicate side‑effects** (e.g., sending the same email twice) | Because the node is re‑executed from the top, any effect that happened *before* the `interrupt()` is performed again. The notebook notes: “A node that sends an email and then waits for the reply sends it twice.” [08_frameworks/02_langgraph/ap_desk.ipynb, lines 493‑494] | The step ends when the `Wait` is returned, so the email is sent **once** and the reply starts the next step. [08_frameworks/02_langgraph/ap_desk.ipynb, lines 392‑404] |\n| **Answer‑to‑question matching** | Answers are matched **by position** in the list of `interrupt()` calls. If a deployment changes the order of those calls, an answer can be applied to the wrong question. [08_frameworks/02_langgraph/ap_desk.ipynb, lines 495‑496] | Each answer is stored in a field that is owned by the specific person (`case.set(party, field, value)`). The field name is the owner’s name, so answers cannot be swapped. [08_frameworks/02_langgraph/ap_desk.ipynb, lines 366‑382] |\n| **Who is allowed to answer** | `Command(resume=…)` can be issued by *any* code; the graph itself does not check that the right person is answering. The notebook shows “Invoice B waits for Tomasz, and Mira answers it.” [08_frameworks/02_langgraph/ap_desk.ipynb, lines 497‑498] | The `case.answer` method checks that the waiting field matches the supplied `field` and that the writer is the field’s **owner**; otherwise it raises `ValueError` or `Denied`. [08_frameworks/02_langgraph/ap_desk.ipynb, lines 371‑378] |\n| **Infinite loops / recursion limits** | A resumed node is a brand‑new `invoke`, so the global `recursion_limit` is never hit. A loop that keeps calling `interrupt()` can run forever (e.g., a vendor repeatedly resending the same wrong invoice). [08_frameworks/02_langgraph/ap_desk.ipynb, lines 503‑504] | The case‑file logic does not re‑run a step, so the same infinite‑loop problem does not arise in the same way. |\n| **Retry behaviour** | Retries are layered (`RetryPolicy` on the node + OpenAI SDK retries), which can cause many repeated calls before giving up. [08_frameworks/02_langgraph/ap_desk.ipynb, lines 505‑506] | The case file does not have node‑level retry policies; each write is a single atomic operation, so this particular explosion does not occur. |\n| **Error handling on tool failures** | If a tool call is refused, the run can end with the thread parked at the last good checkpoint; a later `invoke(None, config)` continues from there. [08_frameworks/02_langgraph/ap_desk.ipynb, lines 507‑508] | The case file’s `set` method raises `Denied` or `ValueError` immediately, making the failure explicit. |\n\n**Summary**\n\n*Both designs let a workflow pause for days and be resumed later, but they do it in fundamentally different ways.*  \n\n- **LangGraph** uses `interrupt()` which checkpoints the whole node. On resume the node starts over, which can cause duplicate actions, mismatched answers, unauthenticated resumes, and loops that evade the normal recursion guard.  \n- **The from‑scratch case file** uses a `Wait` that **ends** the step; the answer writes to a dedicated, owned field and triggers the next step. This prevents duplicate side‑effects and mis‑ordered answers, and enforces ownership, but it still relies on correct field ownership and will raise an error if the wrong field is answered.\n\nThus, the case‑file approach is safer for actions that must not be repeated and for guaranteeing that the right person answers, while the LangGraph approach is more flexible but requires extra safeguards (auth checks, idempotent actions, explicit loop limits) to avoid the pitfalls listed above.",
+  "stopped": null,
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 8 LangGraph desk wait for a person"
+    },
+    "returned chars": 2509
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph desk waiting person case file wait for a person"
+    },
+    "returned chars": 3639
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph desk waiting"
+    },
+    "returned chars": 2886
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 420,
+     "line_start": 340,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 4937
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph hazards waiting"
+    },
+    "returned chars": 3778
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 520,
+     "line_start": 490,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 3422
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 520,
+     "line_start": 460,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 5071
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 410,
+     "line_start": 390,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 1246
+   }
+  ],
+  "usage": {
+   "calls": 10,
+   "prompt": 40555,
+   "completion": 3161,
+   "total": 43716,
+   "largest request": 6417,
+   "largest call (in + out)": 7881,
+   "per call": [
+    528,
+    1227,
+    2197,
+    3064,
+    4220,
+    5310,
+    6376,
+    6362,
+    6551,
+    7881
+   ],
+   "retried": 0
+  },
+  "trace": "ab851acaea65b0a1e624764bace801d6",
+  "seconds": 264.8
+ }
+}

@@ -1,0 +1,92 @@
+{
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "kind": "agent",
+  "answer": null,
+  "stopped": "WorkflowTimeoutError: Operation timed out after 300.0 seconds. Currently active steps: run_agent_step",
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 8 LangGraph desk wait for a person"
+    },
+    "returned chars": 2509
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph desk waiting person case file wait for a person"
+    },
+    "returned chars": 3639
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph desk waiting person Wait node run again from its first line"
+    },
+    "returned chars": 3041
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "case file wait for a person Wait"
+    },
+    "returned chars": 3679
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 260,
+     "line_start": 150,
+     "path": "08_frameworks/02_langgraph/ap_graph.py"
+    },
+    "returned chars": 5909
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 200,
+     "line_start": 1,
+     "path": "08_frameworks/02_langgraph/case.py"
+    },
+    "returned chars": 5699
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph desk wait for a person Wait node resumed"
+    },
+    "returned chars": 3858
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 520,
+     "line_start": 480,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 4104
+   }
+  ],
+  "usage": {
+   "calls": 8,
+   "prompt": 28247,
+   "completion": 1327,
+   "total": 29574,
+   "largest request": 6423,
+   "largest call (in + out)": 6619,
+   "per call": [
+    529,
+    1226,
+    2217,
+    2998,
+    4019,
+    5633,
+    6619,
+    6333
+   ],
+   "retried": 1
+  },
+  "trace": "0ca31f190d223198c000808ef7163ccd",
+  "seconds": 300.8
+ }
+}
