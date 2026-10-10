@@ -35,8 +35,8 @@ reproduced as functions (`*_checks.py`), and offline tests (`test_*.py`) that co
 | `04_autogen` | AutoGen | **Brightwater's analysis team** — a planner, an analyst that writes and runs pandas, a reviewer and a reporter, answering three questions from an order export with two problems planted in it: group chat, code execution, termination, structured messages | yes | ✅ |
 | `05_llamaindex` | LlamaIndex | **Ask the cookbook** — answers questions about this repo from its READMEs, notebook prose and modules: splitting prose and code, a vector index refreshed as files change, fused retrieval, a floor that turns off-topic questions away, cited answers, retrieval evaluation, and an agent that searches and opens files | the agent only | ✅ |
 | `06_mem0` | Mem0 | a running coach that remembers each runner across weeks of sessions | yes | planned |
-| `07_langsmith` | LangSmith | tracing, a dataset and evaluations for the `05_llamaindex` cookbook assistant, including an answer judge that holds up | — | planned |
-| `08_langfuse` | Langfuse | the same assistant, traced and judged with Langfuse, against LangSmith: costs, prompt versions, scores, monitoring | — | planned |
+| `07_langsmith` | LangSmith | **Evaluating the cookbook assistant**: `05_llamaindex`'s assistant traced, run on a 10-question dataset whose reference points rest on quoted lines of the repo, scored by free checks and a claim-by-claim judge checked against hand marks, and fixed round by round from its traces: datasets, experiments, evaluators, feedback, traces read back | — | ✅ |
+| `08_langfuse` | Langfuse | **The cookbook assistant in production**: the same assistant, showing only what `07_langsmith` did not: every LlamaIndex step traced through OpenTelemetry, a cost on every model call, the agent's prompt as versions linked to each call, and monitoring through the metrics API | — | ✅ |
 
 The split the chapter follows: LangChain is **building blocks** for LLM applications, LangGraph is
 **stateful orchestration**, CrewAI is **role and task** multi-agent systems, AutoGen is **agents in
@@ -92,7 +92,7 @@ evidence is a field the code runner owns.
 
 - **The one-shot engine.** It answered all 15 README-reader questions with a right word and an answer file cited (48,093 tokens). It turned away all 3 off-topic questions before calling a model. The floor that does this has a thin margin: 0.702 for the lowest question the cookbook answers against 0.624 for the highest it does not. The floor has to be applied to raw vector scores, because after fusion a score is rank arithmetic.
 - **The agent, and the from-scratch build.** Only the agent was built twice. LlamaIndex's agent sends everything it has found on every call, so on a two-sided question its 8th request reached 8,172 tokens and Groq refused it. Its memory limit does not trim within a run. The scratch agent (chapter 2's loop, with chapter 5 choosing each call's context) kept every call near 4,300 tokens of context and answered both questions. That cost more tokens overall, not fewer.
-- **Checked line by line,** that answer had every hazard right and real citations, but put four facts on the wrong side. That is what `07_langsmith` and `08_langfuse` evaluate claim by claim.
+- **Checked line by line,** that answer had every hazard right and real citations, but put three facts on the wrong side. That is what `07_langsmith` and `08_langfuse` evaluate claim by claim.
 - **What it took to build.** The agent's tools needed four fixes, each found by watching it fail:
   - results sized to fit the request limit;
   - passages that say which lines of their file they are;
@@ -104,6 +104,33 @@ evidence is a field the code runner owns.
   - `refresh_ref_docs` never removes a deleted file;
   - a first build resumes only if it was saved along the way;
   - `citation_chunk_size=512` splits passages into extra sources.
+
+**`07_langsmith`**:
+
+- **The loop worked.** Three rounds on the same 10 questions. The baseline answered 9; the LangGraph comparison failed twice, first on a reply Groq refused, then on a request over Groq's size limit. Four fixes in 05, each from a trace:
+  - `open_file` names its file;
+  - an unparseable reply is asked again;
+  - every request is cut to 6,000 tokens;
+  - the answer at the step limit is given what the run found. As LlamaIndex ships, that request carries none of it, so the answer is written blind.
+
+  Round 3 answered the question correctly: no claim wrong by hand, and 5 of 7 points, the judge agreeing (71%). Each round ran once.
+- **A small test set, because of the free tiers.** Ten questions, each run once a round. One round takes most of a day's Groq tokens, and judging it takes a day's judge requests. A real evaluation needs many more questions first, and, since an agent's runs vary, a few runs of each agent question to measure how consistently it succeeds. Every result here is one sample.
+- **The judge, checked first.** Two calls to Gemini Flash: the answer's claims listed without the answer key, then each checked against the key and the quoted lines. Asked in one call, it rewrote the answer's claims into the key's shape and missed a wrong one. Measured on 10 hand-marked answers held out from tuning:
+  - points made matched the hand marks;
+  - it caught 2 of 5 wrong claims and raised 7 false alarms.
+
+  So it scores coverage, and its error lists are leads for a person.
+- **Free tiers decided more than the tools did.** Gemini Flash allows about 20 requests a day per model, and stopped offering the checked judge to new keys. The newest Flash was unreachable, qwen allows about one claim list a minute, and gpt-oss-20b caught none of the errors.
+- **LangSmith and LlamaIndex.** LangSmith has no LlamaIndex integration of its own. Through OpenTelemetry, every LlamaIndex step is lost inside an experiment, because client and server derive span ids differently. So 07 traces at 05's seams: `wrap_openai`, and a wrapped `traceable`. A bare `traceable` adds a `config` argument to a tool's schema.
+
+**`08_langfuse`**:
+
+- **No code of ours on the spans.** Langfuse is an OpenTelemetry tracer, so LlamaIndex's own instrumentation shows all 165 steps of one answer, nested where they ran. One entry in the price table (Groq's $0.15 and $0.60 per million tokens) puts dollars on every call. `propagate_attributes(prompt=...)` links each call to its prompt version, and one metrics query answers cost, tokens and time by version. All of 08 came to about $0.055.
+- **Two things to know when reading the numbers.** One model call is recorded as four "generations", so counts are four times the calls while sums are right. New organizations must read traces through the v2 observations API.
+- **Prompt v2 against v1,** on the three agent questions, one run each: a size set by Groq's free tier (three questions twice is about a day's tokens), so each result is one sample. Points made were the same on two questions; on the LangGraph comparison, the question v2 was written from, it went from 71% to 86%. v2 cost $0.034 against $0.021.
+- **Running for real found two more limits, both fixed in 05:**
+  - Under Groq's 8,000-tokens-a-minute limit, calls come about 45 seconds apart, so 300 seconds was too short for a long question. It is 900 now.
+  - At the step-limit answer, gpt-oss kept calling tools when the run's results came as tool messages, even when told plainly that none were left. As plain text, it answered.
 
 ## Versions, and what it took to install them
 
@@ -130,6 +157,11 @@ costs to adopt — here, either an old version or a second environment.
 The rest installed together with small moves: `protobuf` 7 → 5.29 (AutoGen pins it), `onnxruntime`
 1.29 → 1.22, `websockets` 17 → 16. Chapters 4 and 7 were re-checked afterwards: every module imports,
 Chroma works, and an MCP round trip succeeds.
+
+**Added for `07_langsmith` and `08_langfuse`:** `openinference-instrumentation-llama-index` 4.5.4, LlamaIndex's
+OpenTelemetry instrumentation, with `openinference-instrumentation`, `openinference-semantic-conventions` and
+`opentelemetry-instrumentation` 0.66b0. They are pinned to the OpenTelemetry versions already installed, so nothing
+else moved.
 
 ## What this chapter needs
 
