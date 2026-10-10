@@ -1,0 +1,647 @@
+{
+ "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit compare in chapter 8's LangGraph project?": {
+  "claims": [
+   {
+    "claim": "The runtime that ships with the Chapter 2 agent watches the recent decision history and looks for patterns that indicate a “doom‑loop”.",
+    "quote": "The runtime that ships with the Chapter 2 agent watches the recent decision history and looks for patterns that indicate a “doom‑loop”.",
+    "verdict": "supported",
+    "source": "runtime.py 181-186",
+    "why": ""
+   },
+   {
+    "claim": "In `runtime.py` it checks the last two tool calls.",
+    "quote": "In `runtime.py` it checks the last two tool calls:",
+    "verdict": "supported",
+    "source": "runtime.py 185",
+    "why": ""
+   },
+   {
+    "claim": "The Chapter 2 runtime checks if the last two tool calls have identical tool and content.",
+    "quote": "if len(recent) >= 2 and len({(d[\"tool\"], d[\"content\"]) for d in recent[-2:]}) == 1:",
+    "verdict": "supported",
+    "source": "runtime.py 185",
+    "why": ""
+   },
+   {
+    "claim": "If the same tool is called twice in a row with exactly the same arguments, the Chapter 2 runtime stops the agent.",
+    "quote": "If the same tool is called **twice in a row with exactly the same arguments**, the runtime stops the agent",
+    "verdict": "supported",
+    "source": "runtime.py 186, point 1",
+    "why": ""
+   },
+   {
+    "claim": "If the same tool is called twice in a row with exactly the same arguments, the Chapter 2 runtime returns the message “the same tool call with identical arguments repeated”.",
+    "quote": "and returns the message *“the same tool call with identical arguments repeated”*.",
+    "verdict": "supported",
+    "source": "runtime.py 186",
+    "why": ""
+   },
+   {
+    "claim": "There are additional guards in Chapter 2 for repeated errors.",
+    "quote": "There are additional guards for repeated errors",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "There are additional guards in Chapter 2 for oscillating between two calls.",
+    "quote": "and for oscillating between two calls",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The core loop-stop in Chapter 2 is the identical-arguments check.",
+    "quote": "but the core loop‑stop is the identical‑arguments check.",
+    "verdict": "supported",
+    "source": "runtime.py 181-186",
+    "why": ""
+   },
+   {
+    "claim": "The code for the Chapter 2 runtime guard is located in `02_agent_runtime/runtime.py`, lines 183-201.",
+    "quote": "[02_agent_runtime/runtime.py, lines 183‑201]",
+    "verdict": "supported",
+    "source": "runtime.py 183-186",
+    "why": ""
+   },
+   {
+    "claim": "In the LangGraph example (Chapter 8, “02_langgraph”), the framework does not look for identical calls.",
+    "quote": "In the LangGraph example (Chapter 8, “02_langgraph”) the framework does **not** look for identical calls.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 499-501, point 5",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph framework in Chapter 8 imposes a hard step counter.",
+    "quote": "Instead it imposes a hard step counter:",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 499, point 3",
+    "why": ""
+   },
+   {
+    "claim": "The default step limit in LangGraph is 10,007.",
+    "quote": "**The default step limit is 10,007.**",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 499, point 3",
+    "why": ""
+   },
+   {
+    "claim": "With the default limit, the same agent ran 5,004 model calls before LangGraph stopped it.",
+    "quote": "the same agent ran **5,004 model calls** ... before LangGraph stopped it.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 501, point 4",
+    "why": ""
+   },
+   {
+    "claim": "With the default limit, the same agent ran for 92 seconds before LangGraph stopped it.",
+    "quote": "(92 seconds) before LangGraph stopped it.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "The code for the Chapter 8 LangGraph example is located in `08_frameworks/02_langgraph/ap_desk.ipynb`, lines 496-506.",
+    "quote": "[08_frameworks/02_langgraph/ap_desk.ipynb, lines 496‑506]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 499-503",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph stops only after the overall number of steps reaches its limit.",
+    "quote": "So LangGraph stops only after the overall number of steps reaches its limit",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 499, 501, point 3, point 4",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph's limit is 10,007 by default.",
+    "quote": "(10 007 by default).",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 499, point 3",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph's limit is a simple count.",
+    "quote": "The limit is a simple count;",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 501, point 5",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph's limit cannot distinguish a productive, hard-working agent from one that is looping.",
+    "quote": "it cannot distinguish a productive, hard‑working agent from one that is looping.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 501, point 5",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 Runtime triggers a stop on two consecutive identical tool calls.",
+    "quote": "Two consecutive identical tool calls (or other loop patterns).",
+    "verdict": "supported",
+    "source": "runtime.py 185, point 1",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 Runtime triggers a stop on other loop patterns.",
+    "quote": "(or other loop patterns).",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8 LangGraph triggers a stop on exceeding a global step counter.",
+    "quote": "Exceeding a global step counter (default 10 007).",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 499, 501, point 3, point 4",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8 LangGraph's default global step counter limit is 10,007.",
+    "quote": "(default 10 007).",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 499, point 3",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 Runtime stops after the second identical call.",
+    "quote": "After the **second** identical call – essentially immediately once a loop is detected.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 Runtime stops essentially immediately once a loop is detected.",
+    "quote": "essentially immediately once a loop is detected.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8 LangGraph stops after thousands of calls.",
+    "quote": "After **thousands** of calls (e.g., 5 004 model calls in the notebook) – a much later stop.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 501, point 4",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8 LangGraph stopped after 5,004 model calls in the notebook.",
+    "quote": "e.g., 5 004 model calls in the notebook",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 501, point 4",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8 LangGraph's stop is much later.",
+    "quote": "– a much later stop.",
+    "verdict": "supported",
+    "source": "point 1, point 4",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 Runtime's detection method is pattern-based.",
+    "quote": "Pattern‑based (identical arguments, repeated errors, oscillation).",
+    "verdict": "supported",
+    "source": "runtime.py 185",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 Runtime's detection method includes identical arguments.",
+    "quote": "(identical arguments, repeated errors, oscillation).",
+    "verdict": "supported",
+    "source": "runtime.py 185",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 Runtime's detection method includes repeated errors.",
+    "quote": "repeated errors",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 Runtime's detection method includes oscillation.",
+    "quote": "oscillation",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8 LangGraph's detection method is pure count-based.",
+    "quote": "Pure count‑based;",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 501, point 5",
+    "why": ""
+   },
+   {
+    "claim": "Loops through `interrupt()` are not caught by the recursion limit in Chapter 8 LangGraph.",
+    "quote": "loops through `interrupt()` are not caught by the recursion limit.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 503, point 6",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   3,
+   4,
+   5,
+   6
+  ],
+  "check calls": 1,
+  "unanchored": 1,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 20490
+ },
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "no answer": "APIStatusError: Error code: 413 - {'error': {'message': 'Request too large for model `openai/gpt-oss-120b` in organization `org_01m4beagpdeant5g7fpzp3ryz0` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Requested 8301, please reduce your message size and try again. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}"
+ },
+ "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "claims": [
+   {
+    "claim": "The shared board is a tiny “case‑level” data‑structure that several agents can read and a few can write.",
+    "quote": "A tiny “case‑level” data‑structure that several agents can read and a few can write.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1,5,11-13; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The shared board lives as an ordinary Python object that is passed into each agent’s prompt (in‑memory only).",
+    "quote": "An ordinary Python object that is passed into each agent’s prompt (in‑memory only).",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 6-7; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The shared board's lifetime is only while the current case is being handled – minutes, not days.",
+    "quote": "Only while the current case is being handled – minutes, not days.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 3-5; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The person wiring the agents together decides the fields, owners and readers of the shared board.",
+    "quote": "The person wiring the agents together decides the fields, owners and readers",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 9-13",
+    "why": ""
+   },
+   {
+    "claim": "The `Shared` object in `06_orchestration/state.py` is an example of how the shared board's shape is decided.",
+    "quote": "see `Shared` in `06_orchestration/state.py`",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are four persistent stores that hold long‑term memory for the whole system.",
+    "quote": "Four persistent stores (`KeyValue`, `Records`, `Journal`, `Graph`) that hold long‑term memory for the whole system.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 1,49; point 4",
+    "why": ""
+   },
+   {
+    "claim": "The four persistent memory stores are `KeyValue`, `Records`, `Journal`, and `Graph`.",
+    "quote": "`KeyValue`, `Records`, `Journal`, `Graph`",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6-11; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores live in SQLite files, a Chroma vector DB, a Neo4j server, etc. (disk‑based).",
+    "quote": "SQLite files, a Chroma vector DB, a Neo4j server, etc. (disk‑based).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50; point 4",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores outlast a single run; they survive process restarts and are used across many cases.",
+    "quote": "Outlast a single run; they survive process restarts and are used across many cases.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50; point 4,6",
+    "why": ""
+   },
+   {
+    "claim": "The type of question that will later be asked decides which store a piece of information goes into.",
+    "quote": "The *type of question* that will later be asked decides which store a piece of information goes into",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3-4; point 5",
+    "why": ""
+   },
+   {
+    "claim": "The `04_memory/stores.py` file is where the decision logic for memory stores is located.",
+    "quote": "see `04_memory/stores.py`",
+    "verdict": "supported",
+    "source": "04_memory/stores.py",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is coordination state for a single ongoing case.",
+    "quote": "*Shared board* is **coordination state** for a single ongoing case.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1,5; point 1,6",
+    "why": ""
+   },
+   {
+    "claim": "The shared board tells agents what the team has already agreed on, who may change each field, and what each agent is allowed to see.",
+    "quote": "It tells agents what the team has already agreed on, who may change each field, and what each agent is allowed to see.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 11-13,70-72; point 2,3",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is not a memory mechanism.",
+    "quote": "It is *not* a memory mechanism.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 3; point 1",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are for long‑term recall.",
+    "quote": "*Memory stores* are **long‑term recall**.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49; point 4,6",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores keep facts, logs, embeddings, graphs, etc., so that any future run can retrieve them.",
+    "quote": "They keep facts, logs, embeddings, graphs, etc., so that any future run can retrieve them.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6-11,49; point 4,6",
+    "why": ""
+   },
+   {
+    "claim": "The board lives only in RAM.",
+    "quote": "The board lives only in RAM",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 6; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The board disappears when the case ends.",
+    "quote": "disappears when the case ends",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 3-5; point 6",
+    "why": ""
+   },
+   {
+    "claim": "`state.py` notes that the board is not memory.",
+    "quote": "`state.py` notes “This is not memory…",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 3; point 1",
+    "why": ""
+   },
+   {
+    "claim": "`state.py` notes that the board lives in an ordinary object in memory.",
+    "quote": "lives in an ordinary object in memory”",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 6; point 1",
+    "why": ""
+   },
+   {
+    "claim": "Stores write to disk.",
+    "quote": "Stores write to disk",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50; point 4",
+    "why": ""
+   },
+   {
+    "claim": "Everything in stores persists, including SQLite and Chroma to files.",
+    "quote": "Everything here persists — SQLite and Chroma to files…",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49; point 4",
+    "why": ""
+   },
+   {
+    "claim": "Stores are meant to outlive the process.",
+    "quote": "are meant to outlive the process.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 50; point 4,6",
+    "why": ""
+   },
+   {
+    "claim": "The board’s shape is defined by the orchestrator (fields, owners, readers).",
+    "quote": "The board’s shape is defined **by the orchestrator** (fields, owners, readers)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 9-13",
+    "why": ""
+   },
+   {
+    "claim": "The board's shape is static for the duration of the case.",
+    "quote": "is static for the duration of the case",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Stores are chosen by the query pattern (“what will be asked of it later”).",
+    "quote": "Stores are chosen **by the query pattern** (“what will be asked of it later”)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3-4; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Exact name look‑ups go to `KeyValue` store.",
+    "quote": "e.g., exact name look‑ups go to `KeyValue`",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Filtered counts go to `Records` store.",
+    "quote": "filtered counts to `Records`",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 7; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Similarity search goes to `Journal` store.",
+    "quote": "similarity search to `Journal`",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 8-9; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Relationship traversal goes to `Graph` store.",
+    "quote": "relationship traversal to `Graph`",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 10; point 5",
+    "why": ""
+   },
+   {
+    "claim": "The board enforces ownership and visibility at write‑time.",
+    "quote": "The board enforces *ownership* and *visibility* at write‑time",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 18-19,67-73; point 2,3",
+    "why": ""
+   },
+   {
+    "claim": "The board enforces ownership and visibility at read‑time.",
+    "quote": "and read‑time",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 17; point 3",
+    "why": ""
+   },
+   {
+    "claim": "The board uses an `owner` check.",
+    "quote": "(`owner` check",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 68-69; point 2,3",
+    "why": ""
+   },
+   {
+    "claim": "The board uses a `Denied` exception.",
+    "quote": "`Denied` exception)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 73; point 2",
+    "why": ""
+   },
+   {
+    "claim": "The board uses `visible_to` for visibility.",
+    "quote": "(`visible_to`",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The board uses `view` for visibility.",
+    "quote": "`view`).",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 17; point 3",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores have no built‑in ownership semantics.",
+    "quote": "Memory stores have no built‑in ownership semantics",
+    "verdict": "supported",
+    "source": "04_memory/stores.py",
+    "why": "The evidence for memory stores does not mention ownership semantics, unlike the explicit rules for the board."
+   },
+   {
+    "claim": "Memory stores are simply queried (SQL, FTS, vector similarity, graph traversal).",
+    "quote": "they are simply queried (SQL, FTS, vector similarity, graph traversal).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6-10; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Use a shared board when you need a short‑lived, mutable state that multiple agents must see and possibly update during a single interaction.",
+    "quote": "You need a **short‑lived, mutable state** that multiple agents must see and possibly update during a single interaction",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1,5,11-12; point 1,6",
+    "why": ""
+   },
+   {
+    "claim": "Examples of shared board fields include “risk”, “batch”, “customer reply” in a support case.",
+    "quote": "(e.g., “risk”, “batch”, “customer reply” fields in a support case).",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Use a shared board when you want explicit ownership so that only the designated agent can set a field and others can trust its value.",
+    "quote": "You want **explicit ownership** so that only the designated agent can set a field and others can trust its value.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 12-14,70-72; point 2",
+    "why": ""
+   },
+   {
+    "claim": "Use a shared board when the information does not need to survive after the reply is sent.",
+    "quote": "The information does **not need to survive** after the reply is sent.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 3-5; point 6",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores when you need to remember something across runs.",
+    "quote": "You need to **remember something across runs**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50; point 4,6",
+    "why": ""
+   },
+   {
+    "claim": "Examples of data to remember across runs include time‑zones, project roots, deployment histories, past incident notes, ownership graphs.",
+    "quote": "– time‑zones, project roots, deployment histories, past incident notes, ownership graphs, etc.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6-11; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores when the data will be queried later by name, filter, similarity, count, or relationship traversal.",
+    "quote": "The data will be **queried later** by name, filter, similarity, count, or relationship traversal",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6-10; point 5",
+    "why": ""
+   },
+   {
+    "claim": "When using memory stores, you choose the store that matches the query pattern (KeyValue, Records, Journal, Graph).",
+    "quote": "you choose the store that matches that query pattern (KeyValue, Records, Journal, Graph).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3-5; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores when you want the data to be persisted to disk.",
+    "quote": "You want the data to be **persisted to disk**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50; point 4",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores when the data is possibly shared among many different cases or agents.",
+    "quote": "possibly shared among many different cases or agents.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-51; point 4,6",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is a transient, orchestrated coordination surface for a single case.",
+    "quote": "the shared board is a transient, orchestrated coordination surface for a single case",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1,5,9; point 1,6",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are durable, query‑driven repositories that give agents long‑term knowledge.",
+    "quote": "the memory stores are the durable, query‑driven repositories that give agents long‑term knowledge.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49,3-10; point 4,5,6",
+    "why": ""
+   },
+   {
+    "claim": "If you need a “what’s happening right now in this case?” answer, use the board.",
+    "quote": "If you need a “what’s happening right now in this case?” answer, use the board",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 5; point 1,6",
+    "why": ""
+   },
+   {
+    "claim": "If you need “what have we seen before?” use the appropriate memory store.",
+    "quote": "if you need “what have we seen before?” or “what is the user’s timezone?” use the appropriate memory store.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49,8-9; point 4,6",
+    "why": ""
+   },
+   {
+    "claim": "If you need “what is the user’s timezone?” use the appropriate memory store.",
+    "quote": "if you need “what have we seen before?” or “what is the user’s timezone?” use the appropriate memory store.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6; point 5",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 31820
+ }
+}

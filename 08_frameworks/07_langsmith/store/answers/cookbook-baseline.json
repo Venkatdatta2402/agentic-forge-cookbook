@@ -1,0 +1,363 @@
+{
+ "What is the difference between a tool that refuses and one that is broken, and which does the model get to see?": {
+  "answer": "A **refused** result means the tool was able to run, but it deliberately answered “no” or gave a legitimate reason why it can’t fulfil the request (e.g., “no weather station for Narnia”). The failure is therefore information the model can act on.  \n\nA **broken** result means the tool hit an internal error or bug (e.g., a `RuntimeError` or other exception). The model did nothing wrong and cannot repair the problem, so the failure is not something the model should try to reason about.\n\nBecause of that distinction, only the **refused** outcome is passed back into the model’s conversation. Broken results are kept out of the model’s view – the conversation receives a generic placeholder like “\\<tool\\> could not be completed,” while the detailed error is stored in `Result.value` for a human reader [2][3][1].",
+  "stopped": null,
+  "calls": [],
+  "cited": [
+   "03_tools/README.md",
+   "03_tools/notebooks/03_invocation.ipynb",
+   "03_tools/notebooks/05_built_in_tools.ipynb",
+   "07_mcp/notebooks/02_mcp_client.ipynb",
+   "07_mcp/remote.py"
+  ],
+  "kind": "one-shot",
+  "usage": {
+   "calls": 1,
+   "prompt": 2398,
+   "completion": 451,
+   "total": 2849,
+   "largest request": 2398,
+   "largest call (in + out)": 2849,
+   "per call": [
+    2849
+   ]
+  },
+  "seconds": 4.7,
+  "run": "01a11b2d-7053-73c0-8e4a-886067a8291b",
+  "trace": "01a11b2d-7053-73c0-8e4a-886067a8291b"
+ },
+ "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit compare in chapter 8's LangGraph project?": {
+  "answer": "**Chapter 2 – the “Runtime” stop‑logic**\n\nThe runtime that powers the agents in chapter 2 watches the recent *decision* messages (the tool calls the model decided to make).  \nIn `_doom_loop()` it looks at the last few calls (a window of 4) and stops the run as soon as it sees a repeat pattern:\n\n* **Identical‑argument repeat** – if the last two tool calls are the *same tool* with the *exact same arguments*, the runtime returns the stop reason  \n\n  `“the same tool call with identical arguments repeated”`  \n\n  (see `runtime.py` lines 185‑187).  \n\n* It also stops on other loops (same error twice, oscillation between two calls, or the same tool returning the same result twice), but the key guard against a runaway “keep calling the same tool” is the *second identical call* detection.  \nWhen this happens the runtime gives the agent **one more “think” turn without any tool calls** so it can summarise what it has learned and answer gracefully (see `_end_gracefully`).\n\n**Chapter 8 – LangGraph’s step‑limit**\n\nIn the LangGraph example (chapter 8) the protection is a **hard step counter** rather than a repeat‑detection.  \nThe notebook notes:\n\n> “**The default step limit is 10,007.** An investigator that calls the same tool forever … stopped after 5,004 model calls (≈ 92 s) …”  \n\n(see `02_langgraph/ap_desk.ipynb` lines 496‑506).\n\nLangGraph therefore lets the agent keep invoking the same tool over and over until the **global step limit** is reached. It does **not** detect a repeated identical call; it only stops when the count exceeds the configured limit (10 007 steps by default, which in the test case was hit after ~5 000 calls).\n\n**Comparison**\n\n| Aspect | Chapter 2 Runtime | LangGraph (chapter 8) |\n|--------|-------------------|----------------------|\n| **What triggers a stop?** | Detection of a *second* identical tool call (or other loop patterns). | Reaching a global step limit (default 10 007 steps). |\n| **How quickly does it stop a looping agent?** | After the *second* repeat – essentially immediately. | After thousands of calls; the agent can loop many times before the limit is hit. |\n| **What happens after the stop?** | The agent gets one final “think” turn with no tools to produce a graceful answer. | The run is aborted; no special “graceful” turn is added – the graph simply ends when the limit is exceeded. |\n\nSo, chapter 2’s runtime stops a runaway tool‑calling agent by spotting the *same tool call with identical arguments* on the second occurrence, while LangGraph’s safeguard is a much larger numeric step limit that only halts after many repetitions.  \n\n**Sources**\n\n* Chapter 2 runtime code showing the identical‑argument check – `02_agent_runtime/runtime.py` lines 185‑187 and the surrounding logic【...】.  \n* LangGraph step‑limit description – `08_frameworks/02_langgraph/ap_desk.ipynb` lines 496‑506【...】.",
+  "stopped": null,
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 2 runtime stop agent keeps calling same tool"
+    },
+    "returned chars": 3744
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph limit chapter 8"
+    },
+    "returned chars": 3883
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 230,
+     "line_start": 150,
+     "path": "02_agent_runtime/runtime.py"
+    },
+    "returned chars": 5826
+   }
+  ],
+  "cited": [
+   "02_agent_runtime/runtime.py",
+   "02_langgraph/ap_desk.ipynb",
+   "08_frameworks/02_langgraph/ap_desk.ipynb"
+  ],
+  "kind": "agent",
+  "usage": {
+   "calls": 4,
+   "prompt": 7974,
+   "completion": 1413,
+   "total": 9387,
+   "largest request": 3800,
+   "largest call (in + out)": 4744,
+   "per call": [
+    558,
+    1493,
+    2592,
+    4744
+   ]
+  },
+  "seconds": 29.9,
+  "run": "01a11b2d-8b7b-7233-adba-e114523287f9",
+  "trace": "01a11b2d-8b7b-7233-adba-e114523287f9"
+ },
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "answer": null,
+  "stopped": "BadRequestError: Error code: 400 - {'error': {'message': \"Parsing failed. The model generated output that could not be parsed. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'output_parse_failed', 'failed_generation': \"We need to compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.\\n\\nWe have description of waiting in LangGraph: node returns Wait, then on resume node runs again from start, can cause double actions, answers matched by order, hazards like double_send, reordered_answers, wrong_person, etc.\\n\\nFrom-scratch case file: asking ends step, answer writes to field, no re-run, answers matched by field, prevents double send, wrong person prevented.\\n\\nWe need citations: sections describing LangGraph waiting hazards (ap_checks double_send, reordered_answers, wrong_person). Also description of case file waiting behavior (ap_desk lines 366-384, and explanation lines 366-382). Also the table of hazards lines 531-536.\\n\\nLet's capture the table lines.\"}}",
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 8 LangGraph desk wait for a person"
+    },
+    "returned chars": 2509
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph desk waiting person case file wait for a person"
+    },
+    "returned chars": 3639
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph desk waiting"
+    },
+    "returned chars": 2886
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 460,
+     "line_start": 340,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 6187
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph hazards"
+    },
+    "returned chars": 3766
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 120,
+     "line_start": 1,
+     "path": "08_frameworks/02_langgraph/ap_checks.py"
+    },
+    "returned chars": 4614
+   }
+  ],
+  "cited": [],
+  "kind": "agent",
+  "usage": {
+   "calls": 6,
+   "prompt": 16383,
+   "completion": 767,
+   "total": 17150,
+   "largest request": 5388,
+   "largest call (in + out)": 5505,
+   "per call": [
+    529,
+    1226,
+    2192,
+    3046,
+    4652,
+    5505
+   ]
+  },
+  "seconds": 188.2,
+  "run": "01a11b2e-0063-7451-99c2-e0777c7904ac",
+  "trace": "01a11b2e-0063-7451-99c2-e0777c7904ac"
+ },
+ "Does running an MCP server as a separate process sandbox it? Could it read my API keys?": {
+  "answer": "Running an MCP server in its own process does **not** give you a security sandbox. The server is started as a child of the notebook (or whatever process launches it), so it inherits the parent’s environment and all of the credentials that are present there. As a result the server can read things like `FORGE_FAKE_API_KEY` (or any real API key you have in the environment), open any files you can, and reach the network with your authority. The separation only isolates **failures**, not **authority** — the server runs with the same privileges as the process that started it【1†L1-L9】【3†L1-L5】.",
+  "stopped": null,
+  "calls": [],
+  "cited": [
+   "07_mcp/README.md",
+   "07_mcp/notebooks/01_mcp_concepts.ipynb",
+   "07_mcp/notebooks/05_mcp_transport.ipynb",
+   "07_mcp/server.py"
+  ],
+  "kind": "one-shot",
+  "usage": {
+   "calls": 1,
+   "prompt": 2693,
+   "completion": 317,
+   "total": 3010,
+   "largest request": 2693,
+   "largest call (in + out)": 3010,
+   "per call": [
+    3010
+   ]
+  },
+  "seconds": 21.6,
+  "run": "01a11b30-dfa8-7cc3-b146-d17886348905",
+  "trace": "01a11b30-dfa8-7cc3-b146-d17886348905"
+ },
+ "The README says extract() asks the API to enforce the schema first. If the API enforces it, why validate as well?": {
+  "answer": "`extract()` first asks the model to return JSON that matches the **shape** defined by a JSON‑schema (the `json_schema` response format). This guarantees that the field names and basic types are correct and that the model does not omit required fields — the API can reject a response that does not conform to the schema 【1†L1-L9】.  \n\nHowever, a schema cannot express many of the constraints that are actually needed for the data to be meaningful. It cannot require “one score per candidate”, “an index that exists in the list”, or “values that lie within a specified range”. Those are **semantic** constraints (“sense”), and a model can easily produce schema‑valid but nonsensical output (e.g., an index = 20 for a list of length 3, a score = 869 when the maximum is 10) 【1†L13-L20】【2†L9-L15】.  \n\nTherefore `extract()` still runs Pydantic validation on the returned JSON after the API call. The validation step catches these logical errors and, when they occur, feeds the exact error message back to the model so it can retry and correct the output 【2†L1-L8】【3†L4-L11】.  \n\nIn addition, if the chosen model does not support the `json_schema` mode, `extract()` falls back to plain JSON and relies entirely on this validation loop 【2†L5-L7】.  \n\nSo even when the API enforces the schema, validation is necessary to enforce **sense**, to handle models that lack schema enforcement, and to provide concrete feedback for retries.",
+  "stopped": null,
+  "calls": [],
+  "cited": [
+   "01_foundations/README.md",
+   "01_foundations/llm.py",
+   "01_foundations/notebooks/05_structured_outputs.ipynb",
+   "01_foundations/notebooks/06_function_calling.ipynb"
+  ],
+  "kind": "one-shot",
+  "usage": {
+   "calls": 1,
+   "prompt": 2178,
+   "completion": 443,
+   "total": 2621,
+   "largest request": 2178,
+   "largest call (in + out)": 2621,
+   "per call": [
+    2621
+   ]
+  },
+  "seconds": 12.7,
+  "run": "01a11b31-3452-7d02-bbeb-4a2e49049e78",
+  "trace": "01a11b31-3452-7d02-bbeb-4a2e49049e78"
+ },
+ "What is the difference between handing off a conversation and delegating to another agent?": {
+  "answer": "Handing a conversation off (a **handoff**) actually transfers ownership of the chat to another agent.  \nWhen the current agent calls its `transfer_to_<name>` tool, it stops its own loop (via the `cancel` hook) and the target agent becomes the active participant for the rest of that turn and all subsequent turns. The new agent sees the entire transcript and replies directly to the user in its own voice — the original agent steps out of the conversation entirely 【2†L1-L9】【2†L10-L15】.  \n\nDelegating, on the other hand, keeps the original “supervisor” in charge. The supervisor asks a specialist for information, receives the specialist’s answer, and then rewrites or forwards that answer back to the user while remaining the interlocutor. Every turn passes through the supervisor, so the specialist only sees the summarized request the supervisor sends, not the full dialogue 【2†L1-L4】【2†L19-L24】.  \n\nConsequences:  \n* **Handoff** – fewer token‑costs (the example shows ~4.9 K tokens vs 12.2 K for delegation), no extra rewriting drift, and the specialist speaks directly.  \n* **Delegation** – more token usage, potential for the supervisor to introduce errors or “drift” when it rewrites, but it allows the supervisor to keep control and route the conversation to different specialists as the context changes.  \n\nSo the key difference is that a handoff moves the conversation to the new agent permanently (or until that agent hands it off again), whereas delegation keeps the original agent as a middle‑man that forwards requests and answers on behalf of the specialist.",
+  "stopped": null,
+  "calls": [],
+  "cited": [
+   "02_agent_runtime/notebooks/05_sub_agents.ipynb",
+   "06_orchestration/notebooks/02_delegation_and_supervision.ipynb",
+   "06_orchestration/supervisor.py"
+  ],
+  "kind": "one-shot",
+  "usage": {
+   "calls": 1,
+   "prompt": 3050,
+   "completion": 560,
+   "total": 3610,
+   "largest request": 3050,
+   "largest call (in + out)": 3610,
+   "per call": [
+    3610
+   ]
+  },
+  "seconds": 27.4,
+  "run": "01a11b31-65f9-7c52-a9a1-4e4c1fd71532",
+  "trace": "01a11b31-65f9-7c52-a9a1-4e4c1fd71532"
+ },
+ "Why is recall injected into the loop while remembering is a tool the agent calls?": {
+  "answer": "Recall (reading) is baked into the agent’s prompt — it is **injected** before the model “thinks” on every turn, so the model always sees the relevant memories up‑front.  This design lets the runtime stay unchanged: a component that implements `Retrieve.run(conversation)` simply adds a note (or “no relevant memories”) to the prompt, and the model never has to ask for it as a tool 【4†L1-L5】【5†L9-L16】.  \n\nBy contrast, writing to memory is left to the model as a **tool**.  The agent must decide when something is worth persisting, so `remember` is wrapped as a tool (via `memory_tools`) that the model can call with the text to store.  Because the runtime holds no reference to the journal, the tool closes over the store, providing the only place the model can interact with the memory write path 【5†L23-L33】【5†L34-L41】.  \n\nThus, recall is injected to give the model immediate context without extra calls, while remembering is a tool so the model can explicitly choose when to create new memories.",
+  "stopped": null,
+  "calls": [],
+  "cited": [
+   "04_memory/README.md",
+   "04_memory/memory_tools.py",
+   "04_memory/notebooks/05_memory_in_the_loop.ipynb"
+  ],
+  "kind": "one-shot",
+  "usage": {
+   "calls": 1,
+   "prompt": 3288,
+   "completion": 430,
+   "total": 3718,
+   "largest request": 3288,
+   "largest call (in + out)": 3718,
+   "per call": [
+    3718
+   ]
+  },
+  "seconds": 31.1,
+  "run": "01a11b31-d119-76d0-94b5-c295ecf74823",
+  "trace": "01a11b31-d119-76d0-94b5-c295ecf74823"
+ },
+ "What counts as a doom loop, and what does the runtime do when it detects one?": {
+  "answer": "A **doom‑loop** is any pattern of repeated, unproductive activity that the runtime can spot by looking only at the messages that have already been recorded.  \nThe `_doom_loop` helper in the runtime checks for four concrete shapes [4 & 5]:\n\n1. **Identical tool call** – the same tool is invoked twice in a row with exactly the same arguments.  \n2. **Repeated error** – the tool returns an error message twice in a row.  \n3. **Oscillation** – the conversation alternates between two different tool calls in an A‑B‑A‑B pattern.  \n4. **Same result with near‑identical arguments** – the same tool is called again with arguments that are only slightly different, and it returns the same result (e.g., a search query phrased differently but yielding the same listing).\n\nWhen any of these conditions is met, `_doom_loop` returns a descriptive string (e.g., “the same tool call with identical arguments repeated”). The outer `Runtime` treats that as an abnormal stop: it halts the loop, skips further component execution, and reports the reason as the termination event rather than letting the agent continue indefinitely. In other words, the runtime **detects the doom‑loop, aborts the current run, and surfaces the detection message as the stop reason** [4 & 5].\n\nNote that the inner `Loop` component itself does **not** have doom‑loop protection; that safety lives in the outer `Runtime` [1].",
+  "stopped": null,
+  "calls": [],
+  "cited": [
+   "02_agent_runtime/notebooks/02_the_agent_loop.ipynb",
+   "02_agent_runtime/notebooks/03_retries_and_reflection.ipynb",
+   "02_agent_runtime/runtime.py"
+  ],
+  "kind": "one-shot",
+  "usage": {
+   "calls": 1,
+   "prompt": 3072,
+   "completion": 669,
+   "total": 3741,
+   "largest request": 3072,
+   "largest call (in + out)": 3741,
+   "per call": [
+    3741
+   ]
+  },
+  "seconds": 26.5,
+  "run": "01a11b32-4ac9-7432-bd77-ff5377bf640d",
+  "trace": "01a11b32-4ac9-7432-bd77-ff5377bf640d"
+ },
+ "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "answer": "**What the two things are**\n\n| Chapter | What it is | Where it lives | How it is used |\n|--------|------------|----------------|----------------|\n| **06 – Orchestration** | **Shared board** (`Shared` class) | An ordinary Python object that lives only while a case is being worked on (minutes, not days). It is injected into each agent’s prompt each turn. | Agents read the board with `view(agent)` and write to it with a tool that checks **ownership** and **read‑access**. The board records a tiny history and can fire callbacks when a field changes. |\n| **04 – Memory** | **Memory stores** (`KeyValue`, `Records`, `Journal`, `Graph`) | Persistent on‑disk stores (SQLite, Chroma, Neo4j, etc.). They survive process restarts and are queried long after a case ends. | The agent writes a memory to the appropriate store based on **what will be asked of it later** (lookup by name, filtering/counting, full‑text search, graph traversal). The stores are used for long‑term recall, analytics, and relationship queries. |\n\n**Key differences**\n\n1. **Lifetime** – The shared board is *ephemeral* (only while a case is active) while the memory stores are *persistent* across runs.  \n   - Shared board: “What several agents are working on at once… this holds the working state of that case, alive for minutes”【open_file†L1-L7】.  \n   - Memory stores: “Everything here persists – SQLite and Chroma to files, Neo4j to a server”【open_file†L49-L52】.\n\n2. **Purpose** – The board is a **coordination surface** for multiple agents on a single case (who can read/write which fields, ownership, history). Memory stores are **long‑term knowledge bases** that answer different kinds of queries (key‑value lookup, SQL‑style filtering, full‑text / vector search, graph walks).  \n   - Board description of fields, owners, readers, and injection into prompts【open_file†L9-L15】【open_file†L31-L38】.  \n   - Stores description of four kinds and the question‑driven mapping【open_file†L1-L14】【open_file†L20-L40】.\n\n3. **Access model** – The board’s read/write is **tool‑driven** and checked at runtime (e.g., a write is refused if the author is not the owner)【open_file†L66-L73】. Memory stores are accessed via normal CRUD APIs; ownership is not enforced by the store itself but by the agent’s code.\n\n4. **Structure** – The board holds a flat set of named fields with optional meaning strings; stores hold structured rows, documents, vectors, or graph edges.\n\n**When to use each**\n\n- **Shared board** – Use when you have a *single, short‑lived case* that several agents must collaborate on in real time. It is ideal for:\n  * Passing the current state of a ticket, batch, risk, etc., between agents.\n  * Enforcing ownership so that only the designated agent can set a field (e.g., only engineering can set `risk`).\n  * Keeping a tiny audit trail (`history`) for the duration of the case.\n\n- **Memory stores** – Use when you need information that outlives any individual case and will be queried later, such as:\n  * Persistent configuration values (`KeyValue`), e.g., “project root” or “default timezone”.\n  * Logs of deployments, tickets, metrics that you want to filter, order, or count (`Records`).\n  * Free‑form notes, incident post‑mortems, or any prose that you’ll search by keyword or similarity (`Journal`).\n  * Relationship data like “who owns which service” that you’ll traverse (`Graph`).\n\nIn short, the **shared board** is a transient, ownership‑aware coordination surface for agents working on the same case, while the **memory stores** are durable databases chosen by the shape of the future query. Use the board for short‑term, multi‑agent state sharing; use the stores for any knowledge you need to recall across runs or analyse later.",
+  "stopped": null,
+  "calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 6 shared board"
+    },
+    "returned chars": 3698
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 4 memory stores"
+    },
+    "returned chars": 2627
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 200,
+     "line_start": 1,
+     "path": "06_orchestration/state.py"
+    },
+    "returned chars": 5690
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 200,
+     "line_start": 1,
+     "path": "04_memory/stores.py"
+    },
+    "returned chars": 5740
+   }
+  ],
+  "cited": [],
+  "kind": "agent",
+  "usage": {
+   "calls": 5,
+   "prompt": 12084,
+   "completion": 1381,
+   "total": 13465,
+   "largest request": 4935,
+   "largest call (in + out)": 6036,
+   "per call": [
+    483,
+    1353,
+    2071,
+    3522,
+    6036
+   ]
+  },
+  "seconds": 95.5,
+  "run": "01a11b32-b25a-7be0-b73f-9875c9800fd1",
+  "trace": "01a11b32-b25a-7be0-b73f-9875c9800fd1"
+ },
+ "What does compaction leave untouched, and why?": {
+  "answer": "**What compaction leaves untouched**\n\n- **Pinned items** – rules, instructions, requests that have been explicitly “pinned.”  \n  *Why:* A summarizer would paraphrase them, and a paraphrased rule is a different rule, so they must stay exactly as‑is. [Source 1; Source 2; Source 5]\n\n- **Task‑state items** – the current plan and the scratchpad (the run’s own summary of where things stand).  \n  *Why:* They are already a compressed representation written by the agent; summarising them would lose step numbers or other essential details. [Source 1; Source 2; Source 5]\n\n- **The most recent turns** (the last `keep_recent` turns, default 6).  \n  *Why:* The next step of the run will most likely build on these verbatim, so they must be kept unchanged. [Source 1; Source 2]\n\n- **Anything that did not originate from the run** – e.g., a pasted profile, an always‑present catalogue, or a retrieved memory.  \n  *Why:* These are already summaries or reference data; compressing them would remove information the run needs to see unchanged. [Source 2]\n\nIn short, `compact()` only compresses older conversational content; it never alters pinned rules, task‑state artifacts, the latest few turns, or external reference items because changing any of those could alter meaning, break the run’s internal bookkeeping, or discard already‑summarised information.",
+  "stopped": null,
+  "calls": [],
+  "cited": [
+   "05_context/compression.py",
+   "05_context/notebooks/03_context_compression.ipynb"
+  ],
+  "kind": "one-shot",
+  "usage": {
+   "calls": 1,
+   "prompt": 3119,
+   "completion": 511,
+   "total": 3630,
+   "largest request": 3119,
+   "largest call (in + out)": 3630,
+   "per call": [
+    3630
+   ]
+  },
+  "seconds": 30.1,
+  "run": "01a11b34-2795-7022-887b-4f96c4b46c03",
+  "trace": "01a11b34-2795-7022-887b-4f96c4b46c03"
+ }
+}

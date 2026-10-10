@@ -50,6 +50,7 @@ class Budget:
         self.calls = self.prompt = self.completion = 0
         self.largest = 0        # the biggest single request sent, in prompt tokens: Groq's free tier refuses >8,000
         self.per_call = []      # each call's tokens, in + out
+        self.retried = 0        # requests sent again after Groq could not parse the model's output
 
     @property
     def spent(self):
@@ -70,10 +71,14 @@ class Budget:
             self.completion += usage.completion_tokens
             self._log()
 
+    def retry(self, error):
+        self.retried += 1
+        self._log(f"RETRY: Groq could not parse the model's output ({getattr(error, 'code', '?')})")
+
     def summary(self):
         return {"calls": self.calls, "prompt": self.prompt, "completion": self.completion, "total": self.spent,
                 "largest request": self.largest, "largest call (in + out)": max(self.per_call, default=0),
-                "per call": list(self.per_call)}
+                "per call": list(self.per_call), "retried": self.retried}
 
     def _log(self, note=""):
         STORE.mkdir(exist_ok=True)
@@ -81,31 +86,61 @@ class Budget:
             log.write(f"{time.strftime('%H:%M:%S')} {self.label} total={self.spent} {note}\n")
 
 
-def chat_model(model=MODEL, budget=None, max_tokens=4096):
+# Groq refuses a reply it cannot parse as a tool call or an answer: 400 `output_parse_failed`, when gpt-oss writes
+# its reasoning where the call should be, and `tool_use_failed` (02_langgraph met it). It is the model's slip, not
+# the request's fault, and the same request usually succeeds -- but LlamaIndex's agent has no way to recover from
+# it, and lost a whole answer to it after six good calls (07_langsmith's baseline, on the LangGraph question). So
+# such a request is sent again, up to twice, and counted. Any other 400 is a real error, and raises.
+PARSE_RETRIES = 2
+_PARSE_FAILURES = ("output_parse_failed", "tool_use_failed")
+
+
+def _unparsed(error):
+    return getattr(error, "code", None) in _PARSE_FAILURES or any(c in str(error) for c in _PARSE_FAILURES)
+
+
+def chat_model(model=MODEL, budget=None, max_tokens=4096, wrap=None):
     """gpt-oss on Groq, through LlamaIndex's `OpenAILike`, with clients that count and cap what is spent.
 
     `OpenAILike` reuses the OpenAI clients it is handed, so the clients are where the budget lives:
-    every call LlamaIndex makes -- an answer, an agent's turn -- goes through them.
+    every call LlamaIndex makes -- an answer, an agent's turn -- goes through them. For the same reason
+    they are where a tracer goes: `wrap`, if given, is applied to each raw client first (07_langsmith
+    passes LangSmith's `wrap_openai`), and the budget sits outside it.
     """
     import openai
-    from llama_index.llms.openai_like import OpenAILike
     budget = budget or Budget()
     key = os.environ["GROQ_API_KEY"]
     sync = openai.OpenAI(api_key=key, base_url=GROQ, max_retries=8)
     aio = openai.AsyncOpenAI(api_key=key, base_url=GROQ, max_retries=8)
+    if wrap is not None:
+        sync, aio = wrap(sync), wrap(aio)
     real_sync, real_aio = sync.chat.completions.create, aio.chat.completions.create
 
     def create(*args, **kwargs):
-        budget.check()
-        response = real_sync(*args, **kwargs)
-        budget.charge(response)
-        return response
+        for attempt in range(PARSE_RETRIES + 1):
+            budget.check()
+            try:
+                response = real_sync(*args, **kwargs)
+            except openai.BadRequestError as error:
+                if attempt == PARSE_RETRIES or not _unparsed(error):
+                    raise
+                budget.retry(error)
+                continue
+            budget.charge(response)
+            return response
 
     async def acreate(*args, **kwargs):
-        budget.check()
-        response = await real_aio(*args, **kwargs)
-        budget.charge(response)
-        return response
+        for attempt in range(PARSE_RETRIES + 1):
+            budget.check()
+            try:
+                response = await real_aio(*args, **kwargs)
+            except openai.BadRequestError as error:
+                if attempt == PARSE_RETRIES or not _unparsed(error):
+                    raise
+                budget.retry(error)
+                continue
+            budget.charge(response)
+            return response
 
     sync.chat.completions.create, aio.chat.completions.create = create, acreate
     llm = _metered()(model=model, api_base=GROQ, api_key=key, openai_client=sync, async_openai_client=aio,
@@ -128,10 +163,19 @@ def _metered():
 
         class MeteredOpenAILike(OpenAILike):
             _budget: object = PrivateAttr(default=None)
+            _context_tokens: object = PrivateAttr(default=None)     # set by agent(): see fit()
 
             @property
             def budget(self):
                 return self._budget
+
+            # every request goes through these two -- an agent's tool steps (achat_with_tools calls achat) and
+            # the answer it is made to give at its step limit -- so the cut is made here, once for all of them
+            def chat(self, messages, **kwargs):
+                return super().chat(fit(messages, self._context_tokens), **kwargs)
+
+            async def achat(self, messages, **kwargs):
+                return await super().achat(fit(messages, self._context_tokens), **kwargs)
 
         _METERED = MeteredOpenAILike
     return _METERED
@@ -389,8 +433,9 @@ def excerpt(text, query, size=PASSAGE_CHARS):
     return i, j - 1, "\n".join(lines[i:j])[:size]
 
 
-def tool_functions(index, llm, k=SEARCH_K, floor=None):
+def tool_functions(index, llm, k=SEARCH_K, floor=None, wrap=None):
     """The agent's two tools as plain functions: LlamaIndex's agent and the scratch agent both get these.
+    `wrap`, if given, is applied to each (07_langsmith passes LangSmith's `traceable`).
 
     No floor by default. The floor is for the one-shot engine, which must turn away a question nothing is near;
     an agent searching step by step judges relevance itself, and a floor on meaning alone turns away an exact
@@ -407,8 +452,9 @@ def tool_functions(index, llm, k=SEARCH_K, floor=None):
     def again(*call):
         key = tuple(" ".join(str(part).lower().split()) for part in call)
         if key in made:
-            return ("You already made exactly this call, and what it returned is above. Answer from what you have "
-                    "found, or try something different.")
+            return ("You already made exactly this call; what it returned is above, or was cut to its labels to keep "
+                    "requests small. Answer from what you have found, or try something different -- such as "
+                    "open_file on a narrower range of lines.")
         made.add(key)
         return None
 
@@ -447,30 +493,160 @@ def tool_functions(index, llm, k=SEARCH_K, floor=None):
         lines = text.splitlines()
         start = max(1, line_start)
         end = min(len(lines), line_end, start + MAX_FILE_LINES - 1)
-        return "\n".join(f"{i:>4}  {lines[i - 1]}" for i in range(start, end + 1)) + \
+        # labelled as a search result is: without it, the agent cited what it read as "【open_file†L1-L7】" -- the
+        # tool's name, never the file (07_langsmith's baseline, on the board question)
+        return f"[{path}, lines {start}-{end}]\n" + \
+            "\n".join(f"{i:>4}  {lines[i - 1]}" for i in range(start, end + 1)) + \
             (f"\n... ({len(lines)} lines in all)" if end < len(lines) else "")
 
-    return [search_cookbook, open_file]
+    return [wrap(f) if wrap else f for f in (search_cookbook, open_file)]
 
 
-def tools(index, llm, k=SEARCH_K, floor=None):
+def tools(index, llm, k=SEARCH_K, floor=None, wrap=None):
     """The two tools as LlamaIndex `FunctionTool`s, which read the schemas off the functions' signatures."""
     from llama_index.core.tools import FunctionTool
-    return [FunctionTool.from_defaults(f) for f in tool_functions(index, llm, k=k, floor=floor)]
+    return [FunctionTool.from_defaults(f) for f in tool_functions(index, llm, k=k, floor=floor, wrap=wrap)]
 
 
 # Both agents get eight tool calls and then must answer from what they found: chapter 2's `max_tool_calls` with
-# its graceful finish, and LlamaIndex's `max_iterations` with `early_stopping_method="generate"` -- the same
-# thing in each, a last call with no tools offered. Without it, both kept exploring a two-sided question
-# until something else stopped them.
+# its graceful finish, and LlamaIndex's `max_iterations` with `early_stopping_method="generate"` -- a last call with
+# no tools offered, in each. Without it, both kept exploring a two-sided question until something else stopped
+# them. LlamaIndex's version needed a fix to be the same thing: as it ships, its last call does not include what
+# the tool calls found (`_finishing`).
 MAX_TOOL_CALLS = 8
 
 
-def agent(index, llm, k=SEARCH_K, floor=None):
-    from llama_index.core.agent.workflow import FunctionAgent
+# What one agent request may carry, in tokens of messages. LlamaIndex's agent sends everything it has found on every
+# call, and its Memory limit does not trim within a run (ask_checks.agent_memory_limit), so a long search outgrows
+# Groq's 8,000-token request limit: 07_langsmith's round 2 lost the LangGraph question to a 413 on the answer it was
+# made to give after eight tool calls. 6,000 leaves room for the tool schemas, and for the counts differing a little.
+AGENT_CONTEXT_TOKENS = 6000
+KEEP_WHOLE = 2                  # the latest results are never cut: they are what the next step is built on
+_ENCODING = None
+
+
+def _tokens(message):
+    global _ENCODING
+    if _ENCODING is None:
+        import tiktoken
+        _ENCODING = tiktoken.get_encoding("o200k_base")       # gpt-oss's tokenizer
+    return len(_ENCODING.encode(message.content or "")) + 4
+
+
+def _labels(text):
+    """A tool result cut to its labels: which file, section and lines each passage was, so it can be opened again."""
+    kept = [line for line in (text or "").splitlines() if line.startswith("[")]
+    return ("\n".join(kept) or (text or "")[:200]) + \
+        "\n(cut to its labels to keep this request small; open_file reads any of it again)"
+
+
+def fit(messages, limit):
+    """What one request is sent: every message, or -- when that is over `limit` tokens -- every message with the oldest
+    tool results cut to their labels, oldest first, until it fits. The question, the system prompt, every tool call
+    and the latest KEEP_WHOLE results are never cut; each cut result keeps its tool_call_id, so the request stays
+    one the API accepts. The conversation itself is not changed: only what this request carries.
+
+    Chapter 5's lesson in LlamaIndex terms: the run keeps everything; each call gets a part of it chosen to fit.
+    """
+    from llama_index.core.base.llms.types import ChatMessage, MessageRole
+    if limit is None:
+        return messages
+    sizes = [_tokens(m) for m in messages]
+    total = sum(sizes)
+    if total <= limit:
+        return messages
+    sent = list(messages)
+    older = [i for i, m in enumerate(messages) if m.role == MessageRole.TOOL][:-KEEP_WHOLE]
+    for i in older:
+        if total <= limit:
+            break
+        cut = ChatMessage(role=MessageRole.TOOL, content=_labels(messages[i].content),
+                          additional_kwargs=dict(messages[i].additional_kwargs))
+        total -= sizes[i] - _tokens(cut)
+        sent[i] = cut
+    return sent
+
+
+_FINISHING = None
+NO_TOOLS_NOW = ("No tools are available now. Answer the question in plain text from what you have found, and cite "
+                "the files it came from.")
+
+
+def _finishing():
+    """LlamaIndex's `FunctionAgent`, with its step-limit answer given what the run found.
+
+    `early_stopping_method="generate"` makes one last request when `max_iterations` is reached, with no tools, for an
+    answer. LlamaIndex builds it from the agent's memory -- and during a run, the tool calls and results are not in
+    memory but in the step "scratchpad", moved into memory only when the run finishes normally (`finalize`). So the
+    last request carried the system prompt, the question and the stop notice, and nothing the eight tool calls had
+    found: an answer written blind (test_ask.test_no_agent_request_outgrows_its_limit, which first showed it).
+
+    So what the run found goes into memory first -- as one message of plain text (`_found`), not as the run's tool
+    calls and results. The first version of this fix moved the tool messages in as they were, and on 08_langfuse's
+    LangGraph question (prompt v2) gpt-oss answered the no-tools request with yet another tool call, which Groq
+    refuses, on every try -- including two after NO_TOOLS_NOW was added: a request that is all tool calls invites
+    one more. With the results as text there is no call in the request to continue. If the model calls a tool
+    anyway, it is asked once more with NO_TOOLS_NOW said plainly.
+    """
+    global _FINISHING
+    if _FINISHING is None:
+        from llama_index.core.agent.workflow import FunctionAgent
+
+        class FinishingAgent(FunctionAgent):
+            async def _generate_early_stopping_response(self, ctx, max_iterations):
+                import openai
+                from llama_index.core.base.llms.types import ChatMessage
+                scratchpad = await ctx.store.get(self.scratchpad_key, default=[])
+                memory = await ctx.store.get("memory")
+                await memory.aput(ChatMessage(role="user", content=_found(scratchpad)))
+                await ctx.store.set(self.scratchpad_key, [])
+                try:
+                    return await super()._generate_early_stopping_response(ctx, max_iterations)
+                except openai.BadRequestError as error:
+                    if not _unparsed(error) and "Tool choice is none" not in str(error):
+                        raise
+                    await memory.aput(ChatMessage(role="user", content=NO_TOOLS_NOW))
+                    return await super()._generate_early_stopping_response(ctx, max_iterations)
+
+        _FINISHING = FinishingAgent
+    return _FINISHING
+
+
+FOUND_TOKENS = AGENT_CONTEXT_TOKENS - 1000      # the rest of the request: system prompt, question, stop notice
+
+
+def _found(scratchpad, limit=FOUND_TOKENS):
+    """The run's tool results as one plain-text message for the step-limit answer: the newest whole, older ones cut
+    to their labels (file, section, lines) once the whole would pass `limit` tokens -- fit()'s rule, in text."""
+    from llama_index.core.base.llms.types import ChatMessage
+    results = [m.content or "" for m in scratchpad if m.role.value == "tool"]
+    kept, used = [], 0
+    for text in reversed(results):
+        size = _tokens(ChatMessage(role="user", content=text))
+        if used + size > limit:
+            text = _labels(text)
+            size = _tokens(ChatMessage(role="user", content=text))
+        kept.append(text)
+        used += size
+    return ("You can make no more tool calls. What your tool calls found, newest last (older results cut to "
+            "their labels):\n\n" + "\n\n---\n\n".join(reversed(kept)))
+
+
+
+# How long LlamaIndex lets one agent run take (its workflow `timeout`). It was 300 seconds. Once fit() keeps every
+# request near 6,000 tokens, Groq's free-tier limit of 8,000 tokens a minute spaces the calls about 45 seconds
+# apart -- the client waits out each 429 -- so a nine- or ten-call question takes six to seven minutes, nearly all of
+# it waiting. 08_langfuse's runs lost the LangGraph question to the 300-second limit with both prompt versions.
+AGENT_TIMEOUT = 900
+
+
+def agent(index, llm, k=SEARCH_K, floor=None, wrap=None, context_tokens=AGENT_CONTEXT_TOKENS, system_prompt=AGENT_PROMPT):
+    """`system_prompt` is the agent's instructions: 08_langfuse passes versions of it kept in Langfuse."""
+    if hasattr(llm, "_context_tokens"):
+        llm._context_tokens = context_tokens        # the metered model cuts each request to fit (fit())
     # streaming off: a streamed reply carries no `usage`, and the budget is counted from `usage`
-    return FunctionAgent(tools=tools(index, llm, k=k, floor=floor), llm=llm, system_prompt=AGENT_PROMPT,
-                         streaming=False, timeout=300, early_stopping_method="generate")
+    return _finishing()(tools=tools(index, llm, k=k, floor=floor, wrap=wrap), llm=llm, system_prompt=system_prompt,
+                        streaming=False, timeout=AGENT_TIMEOUT, early_stopping_method="generate")
 
 
 async def run_agent(the_agent, question, max_iterations=MAX_TOOL_CALLS + 1, memory=None):

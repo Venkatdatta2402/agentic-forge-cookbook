@@ -10,7 +10,8 @@ What goes in, and what stays out:
            where the explained things are implemented
     out    notebook code cells and outputs -- the code is mostly calls into the modules, which are indexed
            themselves, and the outputs are logs and tables; tests and stand-ins; stored runs; and this
-           folder, so the assistant cannot find its own answer key
+           folder and the two that evaluate it (07_langsmith, 08_langfuse), so the assistant cannot find its
+           own answer key
 """
 
 import json
@@ -20,11 +21,14 @@ REPO = Path(__file__).resolve().parents[2]
 SELF = Path(__file__).resolve().parent
 
 _SKIP_DIRS = {"__pycache__", ".ipynb_checkpoints", "store", ".git"}
+# the projects that evaluate this assistant: 07_langsmith holds its answer key (eval_set.py, hand_labels.py), and an
+# assistant that can retrieve its own answer key is not being tested
+_EVALUATORS = {"07_langsmith", "08_langfuse"}
 
 
 def _skipped(path):
     parts = set(path.relative_to(REPO).parts)
-    return (bool(parts & _SKIP_DIRS) or SELF in path.parents
+    return (bool(parts & _SKIP_DIRS) or SELF in path.parents or bool(parts & _EVALUATORS)
             or path.name.startswith("test_") or path.name.endswith("_stubs.py"))
 
 

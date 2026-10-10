@@ -1,0 +1,430 @@
+{
+ "engine :: The README says extract() asks the API to enforce the schema first. If the API enforces it, why validate as well?": {
+  "claims": [
+   {
+    "claim": "extract() asks the model to return JSON matching the schema's shape (field names and types).",
+    "quote": "extract() first asks the model to return JSON that matches the shape described by the schema (right field names and types).",
+    "verdict": "supported",
+    "source": "evidence lines 92-93",
+    "why": ""
+   },
+   {
+    "claim": "Asking for schema-matched JSON eliminates a class of failures when the model supports json_schema mode.",
+    "quote": "This is useful – it eliminates a whole class of failures when the model supports the json_schema mode",
+    "verdict": "supported",
+    "source": "evidence lines 93-94",
+    "why": ""
+   },
+   {
+    "claim": "Schema enforcement does not guarantee that the values make sense.",
+    "quote": "but it does not guarantee that the values make sense.",
+    "verdict": "supported",
+    "source": "evidence lines 97, 100-101",
+    "why": ""
+   },
+   {
+    "claim": "JSON schema cannot express constraints like 'one score per candidate'.",
+    "quote": "A JSON schema cannot express constraints such as “one score per candidate”",
+    "verdict": "supported",
+    "source": "evidence lines 100-101",
+    "why": ""
+   },
+   {
+    "claim": "JSON schema cannot express constraints like 'indices must be within the list length'.",
+    "quote": "“indices must be within the list length”",
+    "verdict": "supported",
+    "source": "evidence lines 100-101",
+    "why": ""
+   },
+   {
+    "claim": "JSON schema cannot express constraints like 'scores must be between 0 and 10'.",
+    "quote": "or “scores must be between 0 and 10”.",
+    "verdict": "supported",
+    "source": "evidence lines 98-99",
+    "why": ""
+   },
+   {
+    "claim": "Errors regarding value sense are possible even if the output is schema-valid.",
+    "quote": "Those kinds of errors are still possible even though the output is schema‑valid",
+    "verdict": "supported",
+    "source": "evidence lines 100-101",
+    "why": ""
+   },
+   {
+    "claim": "The function runs a Pydantic validation step to catch sense errors.",
+    "quote": "so the function must still run a Pydantic validation step to catch them",
+    "verdict": "supported",
+    "source": "evidence lines 117, 103",
+    "why": ""
+   },
+   {
+    "claim": "The Pydantic validation step provides concrete feedback for a retry.",
+    "quote": "and give the model concrete feedback for a retry",
+    "verdict": "supported",
+    "source": "evidence lines 104, 119-121",
+    "why": ""
+   },
+   {
+    "claim": "Not every model can enforce a JSON schema.",
+    "quote": "not every model can enforce a JSON schema",
+    "verdict": "supported",
+    "source": "evidence lines 94, 111-113",
+    "why": ""
+   },
+   {
+    "claim": "The older llama-3.3-70b model cannot enforce a JSON schema.",
+    "quote": "(e.g., the older llama‑3.3‑70b model)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "When the API rejects the json_schema request, extract() falls back to plain JSON.",
+    "quote": "When the API rejects the json_schema request, extract() falls back to plain JSON",
+    "verdict": "supported",
+    "source": "evidence lines 94, 111-113",
+    "why": ""
+   },
+   {
+    "claim": "In fallback mode, the function relies entirely on the validation loop to detect problems.",
+    "quote": "and relies entirely on the validation loop to detect problems",
+    "verdict": "supported",
+    "source": "evidence lines 112-113",
+    "why": ""
+   },
+   {
+    "claim": "Validating returned JSON against the Pydantic model is necessary to catch sense errors.",
+    "quote": "validating the returned JSON against the Pydantic model – is necessary both to catch “sense” errors",
+    "verdict": "supported",
+    "source": "evidence lines 97-101, 103",
+    "why": ""
+   },
+   {
+    "claim": "Validating returned JSON against the Pydantic model is necessary to handle models that cannot enforce the schema.",
+    "quote": "and to handle models that cannot enforce the schema in the first place.",
+    "verdict": "supported",
+    "source": "evidence lines 94-95, 112-113",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "qwen/qwen3.8-27b",
+  "judge tokens": 4432
+ },
+ "engine :: What counts as a doom loop, and what does the runtime do when it detects one?": {
+  "claims": [
+   {
+    "claim": "A doom loop is defined as any pattern of repeated, unproductive activity flagged by the runtime's loop-detector as 'stuck'.",
+    "quote": "A **doom loop** is any pattern of repeated, unproductive activity that the runtime’s loop‑detector flags as “stuck”.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The `_doom_loop` routine looks for four concrete shapes of doom loops.",
+    "quote": "The `_doom_loop` routine looks for four concrete shapes:",
+    "verdict": "supported",
+    "source": "runtime.py 181-218",
+    "why": ""
+   },
+   {
+    "claim": "One shape of a doom loop is identical tool calls, where the same tool is invoked twice in a row with exactly the same arguments.",
+    "quote": "**Identical tool calls** – the same tool is invoked twice in a row with exactly the same arguments",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "The logic for detecting identical tool calls is located in lines 1-5 of file 4.",
+    "quote": "【4†L1-L5】",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "One shape of a doom loop is repeated errors, where the tool returns the same error message on two consecutive attempts.",
+    "quote": "**Repeated errors** – the tool returns the same error message on two consecutive attempts",
+    "verdict": "supported",
+    "source": "runtime.py 188-190",
+    "why": ""
+   },
+   {
+    "claim": "The logic for detecting repeated errors is located in lines 7-9 of file 4.",
+    "quote": "【4†L7-L9】",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "One shape of a doom loop is oscillation, where the conversation alternates between two different tool calls in an A-B-A-B pattern.",
+    "quote": "**Oscillation** – the conversation alternates between two different tool calls in an A‑B‑A‑B pattern",
+    "verdict": "supported",
+    "source": "runtime.py 192-195",
+    "why": ""
+   },
+   {
+    "claim": "In the oscillation pattern, four recent decisions form two identical pairs.",
+    "quote": "(four recent decisions form two identical pairs)",
+    "verdict": "supported",
+    "source": "runtime.py 192-195",
+    "why": ""
+   },
+   {
+    "claim": "The logic for detecting oscillation is located in lines 11-15 of file 4.",
+    "quote": "【4†L11-L15】",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "One shape of a doom loop is a tool being asked essentially the same question again and returning the same result.",
+    "quote": "**Same result with near‑identical arguments** – a tool is asked essentially the same question again and returns the same result",
+    "verdict": "supported",
+    "source": "runtime.py 211-216",
+    "why": ""
+   },
+   {
+    "claim": "In the 'same result' pattern, the arguments are judged to be 'similar'.",
+    "quote": "(the arguments are judged “similar”)",
+    "verdict": "supported",
+    "source": "runtime.py 215",
+    "why": ""
+   },
+   {
+    "claim": "The logic for detecting same results with near-identical arguments is located in lines 17-23 of file 4.",
+    "quote": "【4†L17-L23】",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "When a doom loop condition is met, the method returns a descriptive string.",
+    "quote": "When any of these conditions is met, the method returns a descriptive string",
+    "verdict": "supported",
+    "source": "runtime.py 186, 190, 195, 216",
+    "why": ""
+   },
+   {
+    "claim": "An example of the returned descriptive string is 'the same tool call with identical arguments repeated'.",
+    "quote": "(e.g., “the same tool call with identical arguments repeated”)",
+    "verdict": "supported",
+    "source": "runtime.py 186",
+    "why": ""
+   },
+   {
+    "claim": "The `Runtime` monitors the output of the `_doom_loop` method.",
+    "quote": "The `Runtime` monitors the output of `_doom_loop`.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "If a non-None reason is returned, the runtime treats the situation as a doom-loop stop.",
+    "quote": "If a non‑`None` reason is returned, it treats the situation as a doom‑loop stop",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Upon detecting a doom loop, the outer runtime halts the agent's execution.",
+    "quote": "the outer runtime halts the agent’s execution",
+    "verdict": "supported",
+    "source": "runtime.py 220-221",
+    "why": ""
+   },
+   {
+    "claim": "The runtime performs a graceful stop that reports what actually happened rather than continuing indefinitely.",
+    "quote": "performs a *graceful stop* that reports what actually happened rather than continuing indefinitely",
+    "verdict": "supported",
+    "source": "runtime.py 220-226",
+    "why": ""
+   },
+   {
+    "claim": "The logic for the runtime's response to a doom loop is located in lines 9-12 of file 3.",
+    "quote": "【3†L9-L12】",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The runtime aborts the loop.",
+    "quote": "the runtime aborts the loop",
+    "verdict": "supported",
+    "source": "runtime.py 220-221",
+    "why": ""
+   },
+   {
+    "claim": "The runtime emits a stop-event that includes the detected reason.",
+    "quote": "emits a stop‑event that includes the detected reason",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The runtime prevents further budget consumption or endless cycling.",
+    "quote": "prevents further budget consumption or endless cycling",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The inner `Loop` component does not receive doom-loop protection.",
+    "quote": "the inner `Loop` component itself does **not** receive doom‑loop protection",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Doom-loop protection lives in the outer `Runtime`.",
+    "quote": "that protection lives in the outer `Runtime`",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The distinction between the inner Loop and outer Runtime regarding protection is located in lines 13-15 of file 1.",
+    "quote": "【1†L13-L15】",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "qwen/qwen3.8-27b",
+  "judge tokens": 6609
+ },
+ "engine :: What is the difference between a tool that refuses and one that is broken, and which does the model get to see?": {
+  "claims": [
+   {
+    "claim": "A refused result indicates the tool ran successfully but deliberately declined the request.",
+    "quote": "A **refused** result means the tool was able to run but deliberately answered “no”",
+    "verdict": "supported",
+    "source": "point 1, invoke.py 135-136",
+    "why": ""
+   },
+   {
+    "claim": "A refused result may include a reason why the request cannot be fulfilled.",
+    "quote": "or gave a reason why it can’t fulfil the request",
+    "verdict": "supported",
+    "source": "invoke.py 136",
+    "why": ""
+   },
+   {
+    "claim": "Refused results are treated as normal, recoverable outcomes.",
+    "quote": "It is treated as a normal, recoverable outcome",
+    "verdict": "supported",
+    "source": "invoke.py 71",
+    "why": ""
+   },
+   {
+    "claim": "The model can act on refused results.",
+    "quote": "that the model can act on",
+    "verdict": "supported",
+    "source": "point 1, invoke.py 54-55",
+    "why": ""
+   },
+   {
+    "claim": "A broken result indicates the tool failed due to an internal error or bug.",
+    "quote": "A **broken** result means the tool failed because of an internal error or bug",
+    "verdict": "supported",
+    "source": "point 2, invoke.py 143",
+    "why": ""
+   },
+   {
+    "claim": "A broken result is characterized by an exception other than ToolError.",
+    "quote": "(e.g., an exception other than `ToolError`)",
+    "verdict": "supported",
+    "source": "invoke.py 135-142",
+    "why": ""
+   },
+   {
+    "claim": "The model cannot fix a broken tool failure.",
+    "quote": "The model cannot fix such a failure",
+    "verdict": "supported",
+    "source": "point 2, invoke.py 56",
+    "why": ""
+   },
+   {
+    "claim": "Broken results are considered problems that should be hidden from the model's reasoning.",
+    "quote": "so it is considered a problem that should be hidden from the model’s reasoning",
+    "verdict": "supported",
+    "source": "point 4, invoke.py 144-145",
+    "why": ""
+   },
+   {
+    "claim": "Only refused results are passed back to the model in the conversation.",
+    "quote": "Only the **refused** kind is passed back to the model in the conversation",
+    "verdict": "contradicted",
+    "source": "invoke.py 59, 134-141",
+    "why": "The evidence shows that 'timeout', 'unverified', and 'bad_arguments' results also have for_the_model=True (kind != OURS_TO_FIX), so they are also passed to the model. The claim 'Only the refused kind' is false."
+   },
+   {
+    "claim": "When a tool returns a broken result, the for_the_model flag is set to False.",
+    "quote": "When a tool returns a **broken** result, the `for_the_model` flag is set to `False`",
+    "verdict": "supported",
+    "source": "invoke.py 59, 146",
+    "why": ""
+   },
+   {
+    "claim": "The conversation receives a generic message when a tool is broken.",
+    "quote": "the conversation receives a generic message like “\\<tool\\> could not be completed,”",
+    "verdict": "supported",
+    "source": "point 3, invoke.py 178",
+    "why": ""
+   },
+   {
+    "claim": "The detailed error for a broken result is stored in Result.value.",
+    "quote": "while the detailed error stays in `Result.value`",
+    "verdict": "supported",
+    "source": "point 3, invoke.py 179",
+    "why": ""
+   },
+   {
+    "claim": "The detailed error in Result.value is intended for a human reader.",
+    "quote": "for a human reader",
+    "verdict": "supported",
+    "source": "point 3, invoke.py 145",
+    "why": ""
+   },
+   {
+    "claim": "The model sees refusals.",
+    "quote": "Thus, the model sees refusals",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "Broken-tool failures are kept out of the model's view.",
+    "quote": "but broken‑tool failures are kept out of the model’s view",
+    "verdict": "supported",
+    "source": "point 3, invoke.py 172-179",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "qwen/qwen3.8-27b",
+  "judge tokens": 5312
+ }
+}

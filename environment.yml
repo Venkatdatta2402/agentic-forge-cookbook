@@ -172,6 +172,9 @@ dependencies:
     - oauthlib==3.3.1
     - onnxruntime==1.22.0
     - openai==2.46.0
+    - openinference-instrumentation==0.1.71
+    - openinference-instrumentation-llama-index==4.5.4
+    - openinference-semantic-conventions==0.1.41
     - openpyxl==3.1.5
     - opentelemetry-api==1.45.0
     - opentelemetry-exporter-http-transport==0.66b0
@@ -180,6 +183,7 @@ dependencies:
     - opentelemetry-exporter-otlp-proto-grpc==1.45.0
     - opentelemetry-exporter-otlp-proto-http==1.45.0
     - opentelemetry-proto==1.45.0
+    - opentelemetry-instrumentation==0.66b0
     - opentelemetry-sdk==1.45.0
     - opentelemetry-semantic-conventions==0.66b0
     - orjson==3.12.0

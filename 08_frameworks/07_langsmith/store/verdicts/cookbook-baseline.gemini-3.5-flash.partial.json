@@ -1,0 +1,749 @@
+{
+ "What is the difference between a tool that refuses and one that is broken, and which does the model get to see?": {
+  "claims": [
+   {
+    "claim": "A refused result means the tool ran but deliberately answered no or gave a legitimate reason why it cannot fulfill the request.",
+    "quote": "A **refused** result means the tool was able to run, but it deliberately answered “no” or gave a legitimate reason why it can’t fulfil the request (e.g., “no weather station for Narnia”).",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "The failure of a refused result is information the model can act on.",
+    "quote": "The failure is therefore information the model can act on.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "A broken result means the tool hit an internal error or bug.",
+    "quote": "A **broken** result means the tool hit an internal error or bug (e.g., a `RuntimeError` or other exception).",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "For a broken result, the model did nothing wrong and cannot repair the problem.",
+    "quote": "The model did nothing wrong and cannot repair the problem",
+    "verdict": "supported",
+    "source": "invoke.py 56-57",
+    "why": ""
+   },
+   {
+    "claim": "The failure of a broken result is not something the model should try to reason about.",
+    "quote": "the failure is not something the model should try to reason about.",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   },
+   {
+    "claim": "Only the refused outcome is passed back into the model's conversation.",
+    "quote": "only the **refused** outcome is passed back into the model’s conversation.",
+    "verdict": "contradicted",
+    "source": "invoke.py 54-55",
+    "why": "Other outcomes, such as successful results, bad arguments, timeouts, and unverified claims, are also passed back to the model."
+   },
+   {
+    "claim": "Broken results are kept out of the model's view.",
+    "quote": "Broken results are kept out of the model’s view",
+    "verdict": "supported",
+    "source": "point 3",
+    "why": ""
+   },
+   {
+    "claim": "The conversation receives a generic placeholder for broken results.",
+    "quote": "the conversation receives a generic placeholder like “\\<tool\\> could not be completed,”",
+    "verdict": "supported",
+    "source": "point 3",
+    "why": ""
+   },
+   {
+    "claim": "The detailed error of a broken result is stored in Result.value for a human reader.",
+    "quote": "the detailed error is stored in `Result.value` for a human reader",
+    "verdict": "supported",
+    "source": "point 3",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-3.5-flash",
+  "judge tokens": 8127
+ },
+ "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit compare in chapter 8's LangGraph project?": {
+  "claims": [
+   {
+    "claim": "The runtime in chapter 2 monitors recent decision messages (tool calls).",
+    "quote": "The runtime that powers the agents in chapter 2 watches the recent *decision* messages (the tool calls the model decided to make).",
+    "verdict": "supported",
+    "source": "runtime.py 181-182",
+    "why": ""
+   },
+   {
+    "claim": "In _doom_loop(), the runtime checks the last 4 calls and stops on a repeat pattern.",
+    "quote": "In `_doom_loop()` it looks at the last few calls (a window of 4) and stops the run as soon as it sees a repeat pattern",
+    "verdict": "supported",
+    "source": "runtime.py 181-183",
+    "why": ""
+   },
+   {
+    "claim": "If the last two tool calls are identical, the runtime returns a specific stop reason.",
+    "quote": "if the last two tool calls are the *same tool* with the *exact same arguments*, the runtime returns the stop reason  \n\n  `“the same tool call with identical arguments repeated”`",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "The identical-argument repeat check is located in runtime.py lines 185-187.",
+    "quote": "(see `runtime.py` lines 185‑187).",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "The runtime also stops on other loop patterns like same error twice, oscillation, or same tool returning same result twice.",
+    "quote": "It also stops on other loops (same error twice, oscillation between two calls, or the same tool returning the same result twice)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The primary guard against runaway tool calling is detecting the second identical call.",
+    "quote": "the key guard against a runaway “keep calling the same tool” is the *second identical call* detection.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "Upon loop detection, the runtime allows the agent one final think turn without tool calls.",
+    "quote": "When this happens the runtime gives the agent **one more “think” turn without any tool calls** so it can summarise what it has learned and answer gracefully",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "The graceful ending logic is located in _end_gracefully.",
+    "quote": "(see `_end_gracefully`)",
+    "verdict": "supported",
+    "source": "runtime.py 220-232",
+    "why": ""
+   },
+   {
+    "claim": "In chapter 8's LangGraph example, protection is a hard step counter instead of repeat detection.",
+    "quote": "In the LangGraph example (chapter 8) the protection is a **hard step counter** rather than a repeat‑detection.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499-501",
+    "why": ""
+   },
+   {
+    "claim": "The default step limit in LangGraph is 10,007.",
+    "quote": "“**The default step limit is 10,007.**",
+    "verdict": "supported",
+    "source": "point 3",
+    "why": ""
+   },
+   {
+    "claim": "An investigator calling the same tool forever is stopped after 5,004 model calls (approx 92 s).",
+    "quote": "An investigator that calls the same tool forever … stopped after 5,004 model calls (≈ 92 s) …”",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   },
+   {
+    "claim": "The step limit note is in 02_langgraph/ap_desk.ipynb lines 496-506.",
+    "quote": "(see `02_langgraph/ap_desk.ipynb` lines 496‑506).",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499-503",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph allows the agent to invoke the same tool repeatedly until the global step limit is reached.",
+    "quote": "LangGraph therefore lets the agent keep invoking the same tool over and over until the **global step limit** is reached.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499-501",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph does not detect repeated identical calls.",
+    "quote": "It does **not** detect a repeated identical call",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499-501",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph only stops when the count exceeds the configured limit.",
+    "quote": "it only stops when the count exceeds the configured limit (10 007 steps by default, which in the test case was hit after ~5 000 calls).",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2's runtime triggers a stop upon detecting a second identical tool call or other loop patterns.",
+    "quote": "Detection of a *second* identical tool call (or other loop patterns).",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph triggers a stop upon reaching a global step limit of 10,007 steps by default.",
+    "quote": "Reaching a global step limit (default 10 007 steps).",
+    "verdict": "supported",
+    "source": "point 3",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2's runtime stops a looping agent immediately after the second repeat.",
+    "quote": "After the *second* repeat – essentially immediately.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph stops a looping agent after thousands of calls, allowing many loops before hitting the limit.",
+    "quote": "After thousands of calls; the agent can loop many times before the limit is hit.",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   },
+   {
+    "claim": "After stopping, Chapter 2's agent gets one final think turn with no tools to answer gracefully.",
+    "quote": "The agent gets one final “think” turn with no tools to produce a graceful answer.",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "After stopping in LangGraph, the run is aborted without a graceful turn.",
+    "quote": "The run is aborted; no special “graceful” turn is added – the graph simply ends when the limit is exceeded.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499-501",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2's runtime stops a runaway tool-calling agent by spotting the same tool call with identical arguments on the second occurrence.",
+    "quote": "chapter 2’s runtime stops a runaway tool‑calling agent by spotting the *same tool call with identical arguments* on the second occurrence",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph's safeguard is a much larger numeric step limit that only halts after many repetitions.",
+    "quote": "LangGraph’s safeguard is a much larger numeric step limit that only halts after many repetitions.",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 runtime code showing the identical-argument check is in 02_agent_runtime/runtime.py lines 185-187.",
+    "quote": "Chapter 2 runtime code showing the identical‑argument check – `02_agent_runtime/runtime.py` lines 185‑187 and the surrounding logic",
+    "verdict": "supported",
+    "source": "runtime.py 181-186",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph step-limit description is in 08_frameworks/02_langgraph/ap_desk.ipynb lines 496-506.",
+    "quote": "LangGraph step‑limit description – `08_frameworks/02_langgraph/ap_desk.ipynb` lines 496‑506",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499-503",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-3.5-flash",
+  "judge tokens": 15576
+ },
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "no answer": "BadRequestError: Error code: 400 - {'error': {'message': \"Parsing failed. The model generated output that could not be parsed. Please adjust your prompt. See 'failed_generation' for more details.\", 'type': 'invalid_request_error', 'code': 'output_parse_failed', 'failed_generation': \"We need to compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.\\n\\nWe have description of waiting in LangGraph: node returns Wait, then on resume node runs again from start, can cause double actions, answers matched by order, hazards like double_send, reordered_answers, wrong_person, etc.\\n\\nFrom-scratch case file: asking ends step, answer writes to field, no re-run, answers matched by field, prevents double send, wrong person prevented.\\n\\nWe need citations: sections describing LangGraph waiting hazards (ap_checks double_send, reordered_answers, wrong_person). Also description of case file waiting behavior (ap_desk lines 366-384, and explanation lines 366-382). Also the table of hazards lines 531-536.\\n\\nLet's capture the table lines.\"}}"
+ },
+ "Does running an MCP server as a separate process sandbox it? Could it read my API keys?": {
+  "claims": [
+   {
+    "claim": "Running an MCP server in its own process does not provide a security sandbox",
+    "quote": "Running an MCP server in its own process does **not** give you a security sandbox.",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 110",
+    "why": ""
+   },
+   {
+    "claim": "The server is started as a child of the notebook or launching process",
+    "quote": "The server is started as a child of the notebook (or whatever process launches it)",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 110",
+    "why": ""
+   },
+   {
+    "claim": "The server inherits the parent's environment and credentials",
+    "quote": "it inherits the parent’s environment and all of the credentials that are present there.",
+    "verdict": "contradicted",
+    "source": "07_mcp/README.md 112-115",
+    "why": "The SDK actually uses an allowlist of environment variables by default (which contains no secrets), and only inherits the full environment if overridden by the client (e.g., using env={**os.environ})."
+   },
+   {
+    "claim": "The server can read environment variables like FORGE_FAKE_API_KEY or real API keys",
+    "quote": "the server can read things like `FORGE_FAKE_API_KEY` (or any real API key you have in the environment)",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 111",
+    "why": ""
+   },
+   {
+    "claim": "The server can open any files the user can",
+    "quote": "open any files you can",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 356",
+    "why": ""
+   },
+   {
+    "claim": "The server can reach the network with the user's authority",
+    "quote": "reach the network with your authority.",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 357",
+    "why": ""
+   },
+   {
+    "claim": "The separation only isolates failures, not authority",
+    "quote": "The separation only isolates **failures**, not **authority**",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 358",
+    "why": ""
+   },
+   {
+    "claim": "The server runs with the same privileges as the process that started it",
+    "quote": "the server runs with the same privileges as the process that started it",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 355",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-3.5-flash",
+  "judge tokens": 7065
+ },
+ "The README says extract() asks the API to enforce the schema first. If the API enforces it, why validate as well?": {
+  "claims": [
+   {
+    "claim": "extract() asks the model to return JSON matching the shape defined by a JSON-schema.",
+    "quote": "`extract()` first asks the model to return JSON that matches the **shape** defined by a JSON‑schema (the `json_schema` response format).",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 92",
+    "why": ""
+   },
+   {
+    "claim": "The API can reject a response that does not conform to the schema.",
+    "quote": "the API can reject a response that does not conform to the schema",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 92",
+    "why": ""
+   },
+   {
+    "claim": "A schema cannot express many constraints needed for data to be meaningful.",
+    "quote": "a schema cannot express many of the constraints that are actually needed for the data to be meaningful.",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 97",
+    "why": ""
+   },
+   {
+    "claim": "A schema cannot require constraints like one score per candidate, an index that exists in the list, or values within a specified range.",
+    "quote": "It cannot require ‐one score per candidate‐, ‐an index that exists in the list‐, or ‐values that lie within a specified range‐.",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 97",
+    "why": ""
+   },
+   {
+    "claim": "A model can easily produce schema-valid but nonsensical output.",
+    "quote": "a model can easily produce schema‑valid but nonsensical output (e.g., an index = 20 for a list of length 3, a score = 869 when the maximum is 10)",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 97",
+    "why": ""
+   },
+   {
+    "claim": "extract() runs Pydantic validation on the returned JSON after the API call.",
+    "quote": "Therefore `extract()` still runs Pydantic validation on the returned JSON after the API call.",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 117",
+    "why": ""
+   },
+   {
+    "claim": "The validation step catches logical errors.",
+    "quote": "The validation step catches these logical errors",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 103",
+    "why": ""
+   },
+   {
+    "claim": "The validation step feeds the exact error message back to the model so it can retry and correct the output.",
+    "quote": "feeds the exact error message back to the model so it can retry and correct the output",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 118",
+    "why": ""
+   },
+   {
+    "claim": "If the chosen model does not support the json_schema mode, extract() falls back to plain JSON.",
+    "quote": "if the chosen model does not support the `json_schema` mode, `extract()` falls back to plain JSON",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 94",
+    "why": ""
+   },
+   {
+    "claim": "If the chosen model does not support the json_schema mode, extract() relies entirely on the validation loop.",
+    "quote": "relies entirely on this validation loop",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "unanchored": 1,
+  "unmarked": 0,
+  "judge": "gemini-3.5-flash",
+  "judge tokens": 10531
+ },
+ "What is the difference between handing off a conversation and delegating to another agent?": {
+  "claims": [
+   {
+    "claim": "Handing off a conversation transfers ownership of the chat to another agent.",
+    "quote": "Handing a conversation off (a **handoff**) actually transfers ownership of the chat to another agent.",
+    "verdict": "supported",
+    "source": "supervisor.py 8-9",
+    "why": ""
+   },
+   {
+    "claim": "When the current agent calls its transfer tool, it stops its own loop via the cancel hook.",
+    "quote": "When the current agent calls its `transfer_to_<name>` tool, it stops its own loop (via the `cancel` hook)",
+    "verdict": "supported",
+    "source": "supervisor.py 118-121",
+    "why": ""
+   },
+   {
+    "claim": "The target agent becomes the active participant for the rest of that turn and all subsequent turns.",
+    "quote": "the target agent becomes the active participant for the rest of that turn and all subsequent turns.",
+    "verdict": "supported",
+    "source": "supervisor.py 121",
+    "why": ""
+   },
+   {
+    "claim": "The new agent sees the entire transcript and replies directly to the user in its own voice.",
+    "quote": "The new agent sees the entire transcript and replies directly to the user in its own voice — the original agent steps out of the conversation entirely",
+    "verdict": "supported",
+    "source": "supervisor.py 115-116",
+    "why": ""
+   },
+   {
+    "claim": "Delegating keeps the original supervisor in charge.",
+    "quote": "Delegating, on the other hand, keeps the original “supervisor” in charge.",
+    "verdict": "supported",
+    "source": "supervisor.py 113",
+    "why": ""
+   },
+   {
+    "claim": "The supervisor asks a specialist for information, receives the answer, and rewrites or forwards it back to the user.",
+    "quote": "The supervisor asks a specialist for information, receives the specialist’s answer, and then rewrites or forwards that answer back to the user while remaining the interlocutor.",
+    "verdict": "supported",
+    "source": "supervisor.py 113-114",
+    "why": ""
+   },
+   {
+    "claim": "Every turn passes through the supervisor.",
+    "quote": "Every turn passes through the supervisor",
+    "verdict": "supported",
+    "source": "supervisor.py 113-114",
+    "why": ""
+   },
+   {
+    "claim": "The specialist only sees the summarized request the supervisor sends, not the full dialogue.",
+    "quote": "the specialist only sees the summarized request the supervisor sends, not the full dialogue",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Handoff results in fewer token costs.",
+    "quote": "Handoff – fewer token‑costs",
+    "verdict": "supported",
+    "source": "README.md 67",
+    "why": ""
+   },
+   {
+    "claim": "The example shows ~4.9 K tokens for handoff vs 12.2 K for delegation.",
+    "quote": "the example shows ~4.9 K tokens vs 12.2 K for delegation",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Handoff has no extra rewriting drift.",
+    "quote": "no extra rewriting drift",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "In handoff, the specialist speaks directly.",
+    "quote": "the specialist speaks directly.",
+    "verdict": "supported",
+    "source": "README.md 67",
+    "why": ""
+   },
+   {
+    "claim": "Delegation results in more token usage.",
+    "quote": "Delegation – more token usage",
+    "verdict": "supported",
+    "source": "README.md 67",
+    "why": ""
+   },
+   {
+    "claim": "Delegation has potential for the supervisor to introduce errors or drift when it rewrites.",
+    "quote": "potential for the supervisor to introduce errors or “drift” when it rewrites",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Delegation allows the supervisor to keep control and route the conversation to different specialists as context changes.",
+    "quote": "it allows the supervisor to keep control and route the conversation to different specialists as the context changes.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "A handoff moves the conversation to the new agent permanently (or until that agent hands it off again).",
+    "quote": "a handoff moves the conversation to the new agent permanently (or until that agent hands it off again)",
+    "verdict": "supported",
+    "source": "supervisor.py 114-116",
+    "why": ""
+   },
+   {
+    "claim": "Delegation keeps the original agent as a middle-man that forwards requests and answers on behalf of the specialist.",
+    "quote": "delegation keeps the original agent as a middle‑man that forwards requests and answers on behalf of the specialist.",
+    "verdict": "supported",
+    "source": "supervisor.py 113-114",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-3.5-flash",
+  "judge tokens": 10497
+ },
+ "Why is recall injected into the loop while remembering is a tool the agent calls?": {
+  "claims": [
+   {
+    "claim": "Recall is baked into the agent's prompt.",
+    "quote": "Recall (reading) is baked into the agent’s prompt",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Recall is injected before the model thinks on every turn.",
+    "quote": "it is **injected** before the model “thinks” on every turn",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7",
+    "why": ""
+   },
+   {
+    "claim": "The model always sees relevant memories up-front.",
+    "quote": "the model always sees the relevant memories up‑front",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7",
+    "why": ""
+   },
+   {
+    "claim": "The design allows the runtime to remain unchanged.",
+    "quote": "This design lets the runtime stay unchanged",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 3",
+    "why": ""
+   },
+   {
+    "claim": "A component implementing Retrieve.run(conversation) adds a note or \"no relevant memories\" to the prompt.",
+    "quote": "a component that implements `Retrieve.run(conversation)` simply adds a note (or “no relevant memories”) to the prompt",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The model does not need to request recall as a tool.",
+    "quote": "the model never has to ask for it as a tool",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7",
+    "why": ""
+   },
+   {
+    "claim": "Writing to memory is handled as a tool.",
+    "quote": "writing to memory is left to the model as a **tool**",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 8",
+    "why": ""
+   },
+   {
+    "claim": "The agent decides when information should be persisted.",
+    "quote": "The agent must decide when something is worth persisting",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 8",
+    "why": ""
+   },
+   {
+    "claim": "The remember function is wrapped as a tool via memory_tools.",
+    "quote": "`remember` is wrapped as a tool (via `memory_tools`) that the model can call with the text to store",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 4",
+    "why": ""
+   },
+   {
+    "claim": "The runtime does not hold a reference to the journal.",
+    "quote": "the runtime holds no reference to the journal",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The tool closes over the store.",
+    "quote": "the tool closes over the store",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The tool is the sole interface for the model to interact with the memory write path.",
+    "quote": "providing the only place the model can interact with the memory write path",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Recall is injected to provide immediate context without additional calls.",
+    "quote": "recall is injected to give the model immediate context without extra calls",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7",
+    "why": ""
+   },
+   {
+    "claim": "Remembering is a tool to allow the model to explicitly choose when to create new memories.",
+    "quote": "remembering is a tool so the model can explicitly choose when to create new memories",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 8",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-3.5-flash",
+  "judge tokens": 9972
+ },
+ "What counts as a doom loop, and what does the runtime do when it detects one?": {
+  "claims": [
+   {
+    "claim": "A doom-loop is a pattern of repeated, unproductive activity identified from recorded messages.",
+    "quote": "A **doom‑loop** is any pattern of repeated, unproductive activity that the runtime can spot by looking only at the messages that have already been recorded.",
+    "verdict": "supported",
+    "source": "runtime.py 181-183",
+    "why": ""
+   },
+   {
+    "claim": "The _doom_loop helper checks for four concrete shapes.",
+    "quote": "The `_doom_loop` helper in the runtime checks for four concrete shapes [4 & 5]:",
+    "verdict": "supported",
+    "source": "runtime.py 185-218",
+    "why": ""
+   },
+   {
+    "claim": "An identical tool call doom-loop occurs when the same tool is invoked twice consecutively with identical arguments.",
+    "quote": "1. **Identical tool call** – the same tool is invoked twice in a row with exactly the same arguments.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "A repeated error doom-loop occurs when a tool returns an error message twice consecutively.",
+    "quote": "2. **Repeated error** – the tool returns an error message twice in a row.",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "An oscillation doom-loop occurs when the conversation alternates between two different tool calls in an A-B-A-B pattern.",
+    "quote": "3. **Oscillation** – the conversation alternates between two different tool calls in an A‑B‑A‑B pattern.",
+    "verdict": "supported",
+    "source": "point 3",
+    "why": ""
+   },
+   {
+    "claim": "A same result with near-identical arguments doom-loop occurs when a tool is called with slightly different arguments but returns the same result.",
+    "quote": "4. **Same result with near‑identical arguments** – the same tool is called again with arguments that are only slightly different, and it returns the same result (e.g., a search query phrased differently but yielding the same listing).",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   },
+   {
+    "claim": "The _doom_loop helper returns a descriptive string when any condition is met.",
+    "quote": "When any of these conditions is met, `_doom_loop` returns a descriptive string (e.g., “the same tool call with identical arguments repeated”).",
+    "verdict": "supported",
+    "source": "runtime.py 185-218",
+    "why": ""
+   },
+   {
+    "claim": "The outer Runtime treats the doom-loop detection as an abnormal stop, halting the loop and reporting the reason.",
+    "quote": "The outer `Runtime` treats that as an abnormal stop: it halts the loop, skips further component execution, and reports the reason as the termination event rather than letting the agent continue indefinitely.",
+    "verdict": "supported",
+    "source": "runtime.py 220-221",
+    "why": ""
+   },
+   {
+    "claim": "The runtime aborts the run and surfaces the detection message as the stop reason.",
+    "quote": "In other words, the runtime **detects the doom‑loop, aborts the current run, and surfaces the detection message as the stop reason** [4 & 5].",
+    "verdict": "supported",
+    "source": "runtime.py 220-221",
+    "why": ""
+   },
+   {
+    "claim": "The inner Loop component lacks doom-loop protection, which is handled by the outer Runtime.",
+    "quote": "Note that the inner `Loop` component itself does **not** have doom‑loop protection; that safety lives in the outer `Runtime` [1].",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-3.5-flash",
+  "judge tokens": 9703
+ }
+}

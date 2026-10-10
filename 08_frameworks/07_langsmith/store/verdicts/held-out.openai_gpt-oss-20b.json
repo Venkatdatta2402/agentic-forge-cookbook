@@ -1,0 +1,1093 @@
+{
+ "engine :: The README says extract() asks the API to enforce the schema first. If the API enforces it, why validate as well?": {
+  "claims": [
+   {
+    "claim": "extract() asks model to return JSON matching schema shape",
+    "quote": "`extract()` first asks the model to return JSON that matches the **shape** described by the schema (right field names and types).",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "JSON schema mode eliminates failures",
+    "quote": "This is useful – it eliminates a whole class of failures when the model supports the `json_schema` mode",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "values may still be nonsensical",
+    "quote": "but it does **not** guarantee that the values make sense.",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "JSON schema cannot express one score per candidate constraint",
+    "quote": "A JSON schema cannot express constraints such as “one score per candidate”",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "JSON schema cannot express indices within list length constraint",
+    "quote": "A JSON schema cannot express constraints such as “indices must be within the list length”",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "JSON schema cannot express scores between 0 and 10 constraint",
+    "quote": "A JSON schema cannot express constraints such as “scores must be between 0 and 10”",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "schema-valid output can still have sense errors",
+    "quote": "Those kinds of errors are still possible even though the output is schema‑valid",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "function runs Pydantic validation to catch errors",
+    "quote": "so the function must still run a Pydantic validation step to catch them and give the model concrete feedback for a retry",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "not all models enforce JSON schema",
+    "quote": "not every model can enforce a JSON schema (e.g., the older llama‑3.3‑70b model).",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "extract() falls back to plain JSON when json_schema rejected",
+    "quote": "When the API rejects the `json_schema` request, `extract()` falls back to plain JSON and relies entirely on the validation loop to detect problems",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   },
+   {
+    "claim": "validation against Pydantic model is second defence",
+    "quote": "Thus the second line of defence – validating the returned JSON against the Pydantic model – is necessary both to catch “sense” errors and to handle models that cannot enforce the schema in the first place.",
+    "verdict": "supported",
+    "source": "lines 86-122",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "check calls": 1,
+  "unanchored": 2,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 6220
+ },
+ "engine :: What counts as a doom loop, and what does the runtime do when it detects one?": {
+  "claims": [
+   {
+    "claim": "A doom loop is any pattern of repeated, unproductive activity that the runtime’s loop‑detector flags as “stuck”.",
+    "quote": "A **doom loop** is any pattern of repeated, unproductive activity that the runtime’s loop‑detector flags as “stuck”.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The code does not explicitly state the definition of a doom loop as repeated unproductive activity flagged as \"stuck\"."
+   },
+   {
+    "claim": "The `_doom_loop` routine looks for four concrete shapes.",
+    "quote": "The `_doom_loop` routine looks for four concrete shapes:",
+    "verdict": "supported",
+    "source": "runtime.py 185-216",
+    "why": ""
+   },
+   {
+    "claim": "Identical tool calls – the same tool is invoked twice in a row with exactly the same arguments.",
+    "quote": "**Identical tool calls** – the same tool is invoked twice in a row with exactly the same arguments【4†L1-L5】.",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "Repeated errors – the tool returns the same error message on two consecutive attempts.",
+    "quote": "**Repeated errors** – the tool returns the same error message on two consecutive attempts【4†L7-L9】.",
+    "verdict": "supported",
+    "source": "runtime.py 189-190",
+    "why": ""
+   },
+   {
+    "claim": "Oscillation – the conversation alternates between two different tool calls in an A‑B‑A‑B pattern (four recent decisions form two identical pairs).",
+    "quote": "**Oscillation** – the conversation alternates between two different tool calls in an A‑B‑A‑B pattern (four recent decisions form two identical pairs)【4†L11-L15】.",
+    "verdict": "supported",
+    "source": "runtime.py 192-195",
+    "why": ""
+   },
+   {
+    "claim": "Same result with near‑identical arguments – a tool is asked essentially the same question again and returns the same result (the arguments are judged “similar”).",
+    "quote": "**Same result with near‑identical arguments** – a tool is asked essentially the same question again and returns the same result (the arguments are judged “similar”)【4†L17-L23】.",
+    "verdict": "supported",
+    "source": "runtime.py 211-216",
+    "why": ""
+   },
+   {
+    "claim": "When any of these conditions is met, the method returns a descriptive string.",
+    "quote": "When any of these conditions is met, the method returns a descriptive string (e.g., “the same tool call with identical arguments repeated”).",
+    "verdict": "supported",
+    "source": "runtime.py 185-216",
+    "why": ""
+   },
+   {
+    "claim": "The `Runtime` monitors the output of `_doom_loop`.",
+    "quote": "The `Runtime` monitors the output of `_doom_loop`.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided code does not show the Runtime monitoring _doom_loop directly."
+   },
+   {
+    "claim": "If a non‑`None` reason is returned, it treats the situation as a doom‑loop stop: the outer runtime halts the agent’s execution and performs a graceful stop that reports what actually happened rather than continuing indefinitely.",
+    "quote": "If a non‑`None` reason is returned, it treats the situation as a doom‑loop stop: the outer runtime halts the agent’s execution and performs a *graceful stop* that reports what actually happened rather than continuing indefinitely【3†L9-L12】.",
+    "verdict": "supported",
+    "source": "runtime.py 220-240, 242-249",
+    "why": ""
+   },
+   {
+    "claim": "The runtime aborts the loop, emits a stop‑event that includes the detected reason, and prevents further budget consumption or endless cycling.",
+    "quote": "In other words, the runtime aborts the loop, emits a stop‑event that includes the detected reason, and prevents further budget consumption or endless cycling.",
+    "verdict": "supported",
+    "source": "runtime.py 220-240, 242-249",
+    "why": ""
+   },
+   {
+    "claim": "The inner `Loop` component itself does not receive doom‑loop protection; that protection lives in the outer `Runtime`.",
+    "quote": "(Notice that the inner `Loop` component itself does **not** receive doom‑loop protection; that protection lives in the outer `Runtime`【1†L13-L15】.)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "No evidence in the provided code about Loop component lacking doom-loop protection."
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 8784
+ },
+ "engine :: What is the difference between a tool that refuses and one that is broken, and which does the model get to see?": {
+  "claims": [
+   {
+    "claim": "Refused result indicates tool ran but answered no",
+    "quote": "A **refused** result means the tool was able to run but deliberately answered “no” (or gave a reason why it can’t fulfil the request).",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "Refused result is treated as recoverable outcome",
+    "quote": "It is treated as a normal, recoverable outcome that the model can act on – for example, “no weather station for Narnia, try a larger nearby city.”",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "Broken result indicates tool failed due to internal error or bug",
+    "quote": "A **broken** result means the tool failed because of an internal error or bug (e.g., an exception other than `ToolError`).",
+    "verdict": "supported",
+    "source": "reference point 2",
+    "why": ""
+   },
+   {
+    "claim": "Model cannot fix broken failures; they are hidden",
+    "quote": "The model cannot fix such a failure, so it is considered a problem that should be hidden from the model’s reasoning.",
+    "verdict": "supported",
+    "source": "reference point 3",
+    "why": ""
+   },
+   {
+    "claim": "Only refused results are passed back to model",
+    "quote": "Only the **refused** kind is passed back to the model in the conversation.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "For broken results, for_the_model flag is False",
+    "quote": "When a tool returns a **broken** result, the `for_the_model` flag is set to `False`;",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "Conversation receives generic message for broken results; detailed error stays in Result.value",
+    "quote": "the conversation receives a generic message like “<tool> could not be completed,” while the detailed error stays in `Result.value` for a human reader [Source 2][Source 3].",
+    "verdict": "supported",
+    "source": "reference point 3",
+    "why": ""
+   },
+   {
+    "claim": "Model sees refusals but not broken failures",
+    "quote": "Thus, the model sees refusals, but broken‑tool failures are kept out of the model’s view.",
+    "verdict": "supported",
+    "source": "reference point 1, reference point 3",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "check calls": 1,
+  "unanchored": 1,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 8490
+ },
+ "engine :: Why is recall injected into the loop while remembering is a tool the agent calls?": {
+  "claims": [
+   {
+    "claim": "Recall is built into the loop as an injected component",
+    "quote": "Recall (reading) is built into the loop as an **injected component**, while remembering (writing) is exposed only as a **tool** that the model must call explicitly.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "Remembering is exposed only as a tool that the model must call explicitly",
+    "quote": "Recall (reading) is built into the loop as an **injected component**, while remembering (writing) is exposed only as a **tool** that the model must call explicitly.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "The loop treats any object with a .run(conversation) method as a component",
+    "quote": "The loop treats any object with a `.run(conversation)` method as a component, so the `Retrieve` component is placed before the `Think` step and automatically injects any relevant memories into the prompt on every turn.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "The Retrieve component is placed before the Think step",
+    "quote": "The loop treats any object with a `.run(conversation)` method as a component, so the `Retrieve` component is placed before the `Think` step and automatically injects any relevant memories into the prompt on every turn.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "It automatically injects any relevant memories into the prompt on every turn",
+    "quote": "The loop treats any object with a `.run(conversation)` method as a component, so the `Retrieve` component is placed before the `Think` step and automatically injects any relevant memories into the prompt on every turn.",
+    "verdict": "supported",
+    "source": "reference point 4",
+    "why": ""
+   },
+   {
+    "claim": "The “reading is injected” design means the model sees the memory context before it decides how to answer",
+    "quote": "This “reading is injected” design means the model sees the memory context before it decides how to answer, regardless of whether it asked for it 【Source 4】.",
+    "verdict": "supported",
+    "source": "reference point 4",
+    "why": ""
+   },
+   {
+    "claim": "The model sees the memory context regardless of whether it asked for it",
+    "quote": "This “reading is injected” design means the model sees the memory context before it decides how to answer, regardless of whether it asked for it 【Source 4】.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "Writing to memory is implemented as a tool (`remember`)",
+    "quote": "Writing to memory is implemented as a tool (`remember`) that the model can invoke when it decides something is worth keeping.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "The model can invoke it when it decides something is worth keeping",
+    "quote": "Writing to memory is implemented as a tool (`remember`) that the model can invoke when it decides something is worth keeping.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "The runtime has no place to hold a memory handle",
+    "quote": "Because the runtime has no place to hold a memory handle, the tool’s closure captures the journal and returns a line like “remembered as #26” 【Source 5】.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The tool’s closure captures the journal",
+    "quote": "Because the runtime has no place to hold a memory handle, the tool’s closure captures the journal and returns a line like “remembered as #26” 【Source 5】.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "It returns a line like “remembered as #26”",
+    "quote": "Because the runtime has no place to hold a memory handle, the tool’s closure captures the journal and returns a line like “remembered as #26” 【Source 5】.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The notebook notes that this separation was intentional",
+    "quote": "The notebook notes that this separation was intentional: **recall by injection, write by tool** 【Source 2】, and that reading is injected rather than offered so the model gets the information up‑front, while writing must be a deliberate action by the agent.",
+    "verdict": "supported",
+    "source": "reference point 4",
+    "why": ""
+   },
+   {
+    "claim": "Recall by injection, write by tool",
+    "quote": "The notebook notes that this separation was intentional: **recall by injection, write by tool** 【Source 2】, and that reading is injected rather than offered so the model gets the information up‑front, while writing must be a deliberate action by the agent.",
+    "verdict": "supported",
+    "source": "reference point 4",
+    "why": ""
+   },
+   {
+    "claim": "Reading is injected rather than offered so the model gets the information up‑front",
+    "quote": "The notebook notes that this separation was intentional: **recall by injection, write by tool** 【Source 2】, and that reading is injected rather than offered so the model gets the information up‑front, while writing must be a deliberate action by the agent.",
+    "verdict": "supported",
+    "source": "reference point 4",
+    "why": ""
+   },
+   {
+    "claim": "Writing must be a deliberate action by the agent",
+    "quote": "The notebook notes that this separation was intentional: **recall by injection, write by tool** 【Source 2】, and that reading is injected rather than offered so the model gets the information up‑front, while writing must be a deliberate action by the agent.",
+    "verdict": "supported",
+    "source": "reference point 4",
+    "why": ""
+   },
+   {
+    "claim": "Recall is injected to give the model immediate context each turn",
+    "quote": "Thus, recall is injected to give the model immediate context each turn, whereas remembering is a tool so the model only writes to memory when it explicitly chooses to do so.",
+    "verdict": "supported",
+    "source": "reference point 4",
+    "why": ""
+   },
+   {
+    "claim": "Remembering is a tool so the model only writes to memory when it explicitly chooses to do so",
+    "quote": "Thus, recall is injected to give the model immediate context each turn, whereas remembering is a tool so the model only writes to memory when it explicitly chooses to do so.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 9334
+ },
+ "engine :: What does compaction leave untouched, and why?": {
+  "claims": [],
+  "points made": [],
+  "check calls": 0,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 1009
+ },
+ "engine :: What is the difference between handing off a conversation and delegating to another agent?": {
+  "claims": [
+   {
+    "claim": "Hand‑off transfers ownership of the whole chat to a new agent",
+    "quote": "The current agent *steps out* of the dialogue and transfers ownership of the whole chat to a new agent.",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "The new agent sees the entire transcript and answers directly using its own voice",
+    "quote": "The new agent sees the entire transcript (including the user’s original messages) and answers the user directly, using its own voice.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The transfer is performed by a transfer_to_<name> tool and cancels the current agent’s loop",
+    "quote": "The transfer is performed by a `transfer_to_<name>` tool; when it is called the current agent’s loop is cancelled and the next turn is answered by the new owner [Source 2].",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "The supervising agent stays in charge of the conversation",
+    "quote": "The supervising agent stays in charge of the conversation.",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "The supervisor asks another agent for an answer, receives it, and forwards or rewrites it to the user",
+    "quote": "When it needs expertise it *asks* another agent for an answer, receives the response, and then rewrites or forwards that answer back to the user.",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "The supervisor never leaves the loop and can continue to route subsequent turns",
+    "quote": "The supervisor never leaves the loop; it merely forwards the specialist’s output and can continue to route subsequent turns [Source 2].",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "In the code, the specialist’s tools are added to the supervisor’s runtime while the supervisor’s persona remains the reply voice",
+    "quote": "In the code, this is implemented by adding the specialist’s tools to the supervisor’s runtime, but the supervisor’s persona remains the one that replies to the user [Source 1].",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "A hand‑off moves the whole dialogue to the specialist, while delegation keeps the original agent as intermediary",
+    "quote": "Thus, a hand‑off moves the whole dialogue to the specialist, while delegation keeps the original agent as the intermediary that mediates between the user and the specialist.",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 8214
+ },
+ "engine :: Does running an MCP server as a separate process sandbox it? Could it read my API keys?": {
+  "claims": [
+   {
+    "claim": "MCP server does not provide a security sandbox",
+    "quote": "Running an MCP server in its own process does **not** give you a security sandbox.",
+    "verdict": "supported",
+    "source": "reference point 1",
+    "why": ""
+   },
+   {
+    "claim": "Server is started as a child of the notebook",
+    "quote": "The server is started as a child of the notebook (or whatever process launches it)",
+    "verdict": "contradicted",
+    "source": "reference point 1 lines 355-357",
+    "why": "The server is not merely a child; it is a separate process not just in the process tree."
+   },
+   {
+    "claim": "Server inherits the parent’s environment",
+    "quote": "so it inherits the parent’s environment",
+    "verdict": "supported",
+    "source": "reference point 1 lines 109-117",
+    "why": ""
+   },
+   {
+    "claim": "Server inherits any credentials present in the environment",
+    "quote": "and therefore any credentials that are present there",
+    "verdict": "supported",
+    "source": "reference point 1 lines 109-117",
+    "why": ""
+   },
+   {
+    "claim": "Server can read environment variables such as FORGE_FAKE_API_KEY",
+    "quote": "the server can read those variables (e.g., `FORGE_FAKE_API_KEY`)",
+    "verdict": "supported",
+    "source": "reference point 2",
+    "why": ""
+   },
+   {
+    "claim": "Server can open files",
+    "quote": "open files",
+    "verdict": "supported",
+    "source": "reference point 1 lines 355-357",
+    "why": ""
+   },
+   {
+    "claim": "Server can reach the network with the same authority as the launching process",
+    "quote": "reach the network with the same authority as the launching process",
+    "verdict": "supported",
+    "source": "reference point 1 lines 355-357",
+    "why": ""
+   },
+   {
+    "claim": "Separation only isolates failures (crashes)",
+    "quote": "The separation only isolates **failures** (crashes)",
+    "verdict": "supported",
+    "source": "reference point 1 lines 355-359",
+    "why": ""
+   },
+   {
+    "claim": "Separation does not allow access to secrets like API keys",
+    "quote": "not the ability to access secrets such as API keys",
+    "verdict": "supported",
+    "source": "reference point 1 lines 355-359",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 6742
+ },
+ "llamaindex agent :: How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "claims": [
+   {
+    "claim": "Shared board implemented in 06_orchestration/state.py as a tiny in‑memory object",
+    "quote": "Implemented in `06_orchestration/state.py` – a tiny in‑memory object that several agents read from and (only on declared fields) write to while they are working on a case.",
+    "verdict": "supported",
+    "source": "state.py lines 1-20",
+    "why": ""
+   },
+   {
+    "claim": "Shared board is not memory; it holds working state of the case",
+    "quote": "\"This is **not memory**. `04_memory` keeps what should outlive a run … What this holds is the **working state of that case**, alive for minutes, read on nearly every turn …\"",
+    "verdict": "supported",
+    "source": "state.py lines 1-7",
+    "why": ""
+   },
+   {
+    "claim": "Shared board defined by three wiring decisions made once when agents are wired together",
+    "quote": "The board is defined by three wiring decisions made **once when the agents are wired together**:",
+    "verdict": "supported",
+    "source": "state.py lines 9-14",
+    "why": ""
+   },
+   {
+    "claim": "Shared board defines who may read a field",
+    "quote": "who may **read** a field (`readers`)",
+    "verdict": "supported",
+    "source": "state.py lines 11-12",
+    "why": ""
+   },
+   {
+    "claim": "Shared board defines who may write a field",
+    "quote": "who may **write** a field (`owner`)",
+    "verdict": "supported",
+    "source": "state.py lines 12-14",
+    "why": ""
+   },
+   {
+    "claim": "Shared board defines what stays private",
+    "quote": "what stays private (nothing is written to the board)",
+    "verdict": "supported",
+    "source": "state.py lines 15-16",
+    "why": ""
+   },
+   {
+    "claim": "Shared board reads injected into agent prompt; writes recorded via tool with ownership check",
+    "quote": "Reads are injected into an agent’s prompt (`view(agent)`), writes are a tool that records the author and checks ownership",
+    "verdict": "supported",
+    "source": "state.py lines 17-20, 66-73",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores implemented in 04_memory/stores.py as four persistent data‑stores",
+    "quote": "Implemented in `04_memory/stores.py` – four persistent data‑stores that survive process restarts and are used to answer **later queries**.",
+    "verdict": "supported",
+    "source": "stores.py lines 1-12",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are chosen based on what will be asked of them later",
+    "quote": "\"Four stores, and how a memory ends up in one rather than another. The shape it takes follows from **what will be asked of it later**.\"",
+    "verdict": "supported",
+    "source": "stores.py lines 3-5",
+    "why": ""
+   },
+   {
+    "claim": "KeyValue store for exact‑name look‑ups",
+    "quote": "**KeyValue** – exact‑name look‑ups (e.g., a timezone)",
+    "verdict": "supported",
+    "source": "stores.py lines 6-7",
+    "why": ""
+   },
+   {
+    "claim": "Records store for filter/order/count queries",
+    "quote": "**Records** – filter / order / count (e.g., deploy logs)",
+    "verdict": "supported",
+    "source": "stores.py lines 7-8",
+    "why": ""
+   },
+   {
+    "claim": "Journal store for full‑text/vector search",
+    "quote": "**Journal** – full‑text / vector search for prose or “resemblance” queries",
+    "verdict": "supported",
+    "source": "stores.py lines 8-9",
+    "why": ""
+   },
+   {
+    "claim": "Graph store for relationship traversal",
+    "quote": "**Graph** – walk relationships (e.g., ownership graphs)",
+    "verdict": "supported",
+    "source": "stores.py lines 9-10",
+    "why": ""
+   },
+   {
+    "claim": "All memory stores persist to disk and are long‑term memory",
+    "quote": "All stores persist to disk (SQLite, Chroma, Neo4j) – they are **long‑term memory**",
+    "verdict": "supported",
+    "source": "stores.py lines 49-52",
+    "why": ""
+   },
+   {
+    "claim": "Shared board lives only for duration of a single case",
+    "quote": "Lives only for the duration of a single case (minutes)",
+    "verdict": "supported",
+    "source": "state.py lines 5-7",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores persist across runs, stored on disk",
+    "quote": "Persists across runs, stored on disk",
+    "verdict": "supported",
+    "source": "stores.py lines 49-52",
+    "why": ""
+   },
+   {
+    "claim": "Shared board is coordination‑state needed right now",
+    "quote": "Coordination‑state that agents need *right now* (who owns what, what the team has agreed on)",
+    "verdict": "supported",
+    "source": "state.py lines 5-7",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores hold long‑term factual or procedural knowledge",
+    "quote": "Long‑term factual or procedural knowledge that agents may retrieve later",
+    "verdict": "supported",
+    "source": "stores.py lines 1-12",
+    "why": ""
+   },
+   {
+    "claim": "Shared board has fixed fields with explicit owners/readers; writes recorded in dict + history",
+    "quote": "Fixed set of fields with explicit owners/readers; writes are recorded in a simple dict + history",
+    "verdict": "supported",
+    "source": "state.py lines 11-14, 66-73",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are separate stores optimized for query patterns",
+    "quote": "Separate stores each optimized for a query pattern (key‑value, SQL‑like, full‑text, graph)",
+    "verdict": "supported",
+    "source": "stores.py lines 6-10",
+    "why": ""
+   },
+   {
+    "claim": "Shared board injected into each turn’s prompt and written via tool that checks ownership",
+    "quote": "Injected into each turn’s prompt (`view(agent)`) and written via a tool that checks ownership",
+    "verdict": "supported",
+    "source": "state.py lines 17-20, 66-73",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores accessed via store‑specific tools that may involve SQL, FTS, embeddings, or graph traversals",
+    "quote": "Accessed via store‑specific tools (`get`, `find`, `query`, etc.) that may involve SQL, FTS, embeddings, or graph traversals",
+    "verdict": "supported",
+    "source": "stores.py lines 1-12",
+    "why": ""
+   },
+   {
+    "claim": "Shared board ownership declared up‑front; fields set by two agents considered untrustworthy",
+    "quote": "Ownership is declared up‑front; a field that two agents can both set is considered **untrustworthy**",
+    "verdict": "supported",
+    "source": "state.py lines 12-14",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores do not enforce trust; authorship may be recorded but any agent can read",
+    "quote": "Trust is not enforced by the store; authorship may be recorded (e.g., Journal vs. Records) but both can be read by any agent that queries the store",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Use shared board for short‑lived mutable view of current case",
+    "quote": "You need a short‑lived, mutable view of the current case that every participating agent can see instantly (e.g., “risk”, “batch”, “customer reply”)",
+    "verdict": "supported",
+    "source": "state.py lines 5-7",
+    "why": ""
+   },
+   {
+    "claim": "Use shared board to enforce ownership so only designated agent can set field",
+    "quote": "You want to enforce ownership so that only the designated agent can set a field and others can rely on its value",
+    "verdict": "supported",
+    "source": "state.py lines 12-14",
+    "why": ""
+   },
+   {
+    "claim": "Use shared board when information is transient and can be discarded after case",
+    "quote": "The information is transient – once the case is closed, the board can be discarded",
+    "verdict": "supported",
+    "source": "state.py lines 5-7",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores for persistent knowledge that survives beyond single interaction",
+    "quote": "You need persistent knowledge that survives beyond a single interaction (e.g., a list of time‑zones, historic deploy records, past incident notes)",
+    "verdict": "supported",
+    "source": "stores.py lines 49-52",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores when query pattern matches one of four store types",
+    "quote": "The query pattern matches one of the four store types (exact name lookup, filtered counting, full‑text / similarity search, or relationship traversal)",
+    "verdict": "supported",
+    "source": "stores.py lines 6-10",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores to recall information later in different run or by different agent",
+    "quote": "You want to recall information later, possibly in a different run or by a different agent, without re‑creating the case context",
+    "verdict": "supported",
+    "source": "stores.py lines 49-52",
+    "why": ""
+   },
+   {
+    "claim": "Shared board is working‑state whiteboard agents collaborate on in real time",
+    "quote": "The shared board is the working‑state “whiteboard” that agents collaborate on in real time",
+    "verdict": "supported",
+    "source": "state.py lines 5-7",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are long‑term databases supplying factual and procedural background",
+    "quote": "The memory stores are the long‑term databases that supply the factual and procedural background that agents draw on across sessions",
+    "verdict": "supported",
+    "source": "stores.py lines 1-12",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "check calls": 1,
+  "unanchored": 2,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 14130
+ },
+ "scratch agent :: How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "claims": [
+   {
+    "claim": "Shared board is a shared state object that agents read from and write to during a case.",
+    "quote": "A **shared state object** that agents read from and write to during a case.",
+    "verdict": "supported",
+    "source": "state.py 1-20",
+    "why": ""
+   },
+   {
+    "claim": "Each board defines fields, an owner for each field, and a set of readers.",
+    "quote": "Each board defines **fields**, an **owner** for each field, and a set of **readers**.",
+    "verdict": "supported",
+    "source": "state.py 11-14",
+    "why": ""
+   },
+   {
+    "claim": "Writing to the board is done through a tool that records the author, enabling enforcement of who may set which field.",
+    "quote": "Writing is done through a tool that records the author, so the board can enforce “who may set which field”.",
+    "verdict": "supported",
+    "source": "state.py 17-19, 67-73",
+    "why": ""
+   },
+   {
+    "claim": "Reading from the board is done by injecting the board’s current values into an agent’s context.",
+    "quote": "Reading is done by **injecting** the board’s current values into an agent’s context.",
+    "verdict": "supported",
+    "source": "state.py 17-18",
+    "why": ""
+   },
+   {
+    "claim": "The board is used to coordinate multiple agents without one agent having to ask the other directly.",
+    "quote": "The board is used to coordinate multiple agents (e.g., engineering and support) without one agent having to ask the other directly.",
+    "verdict": "supported",
+    "source": "state.py 1-7",
+    "why": ""
+   },
+   {
+    "claim": "Ownership decisions for board fields are made up‑front, not at runtime.",
+    "quote": "Ownership decisions are made up‑front, not at runtime.",
+    "verdict": "supported",
+    "source": "state.py 11-14",
+    "why": ""
+   },
+   {
+    "claim": "Reference to board implementation file and lines.",
+    "quote": "[06_orchestration/notebooks/03_communication_state_and_collaboration.ipynb § Communication, Shared State and Collaboration, lines 53‑67; 78‑86]",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores consist of four durable stores chosen by query type.",
+    "quote": "Four durable stores, each chosen **by the type of query** the memory will be asked:",
+    "verdict": "supported",
+    "source": "stores.py 1-12",
+    "why": ""
+   },
+   {
+    "claim": "KeyValue store is used for lookup by name queries.",
+    "quote": "KeyValue | lookup by name | “what is this user’s timezone”",
+    "verdict": "supported",
+    "source": "stores.py 6-7",
+    "why": ""
+   },
+   {
+    "claim": "Records store is used for filter, order, count queries.",
+    "quote": "Records | filter, order, count | “which deployment failed most recently”",
+    "verdict": "supported",
+    "source": "stores.py 7-8",
+    "why": ""
+   },
+   {
+    "claim": "Journal store is used for literal or similarity search queries.",
+    "quote": "Journal | literal or similarity search | “where did `PGRST204` come from”",
+    "verdict": "supported",
+    "source": "stores.py 8-9",
+    "why": ""
+   },
+   {
+    "claim": "Graph store is used for walk relationships queries.",
+    "quote": "Graph | walk relationships | “who else touched this”",
+    "verdict": "supported",
+    "source": "stores.py 9-10",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are persisted (files, SQLite, Neo4j) so an agent can be restarted and still answer the same questions.",
+    "quote": "The stores are **persisted** (files, SQLite, Neo4j) so an agent can be restarted and still answer the same questions.",
+    "verdict": "supported",
+    "source": "stores.py 49-52",
+    "why": ""
+   },
+   {
+    "claim": "Reference to memory stores implementation file and lines.",
+    "quote": "[04_memory/notebooks/02_stores.ipynb § Stores, lines 11‑17; 66‑72]",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Procedural knowledge does not need a store; it lives in the model’s system prompt or a decorator.",
+    "quote": "Procedural knowledge (how to act) does **not** need a store; it lives in the model’s system prompt or a decorator.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Reference to procedural knowledge file and lines.",
+    "quote": "[04_memory/notebooks/04_types_of_memory.ipynb § Types of Memory, lines 80‑94]",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Shared board is used when several agents need to collaborate on a single, evolving case with explicit ownership and read‑access rules.",
+    "quote": "Shared board – when several agents need to **collaborate on a single, evolving case**, sharing specific pieces of data with explicit ownership and read‑access rules. It is the mechanism for real‑time coordination (e.g., engineering writes a risk field, support writes a customer reply) without having to query a long‑term store.",
+    "verdict": "supported",
+    "source": "state.py 1-20",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used when an agent needs to persist information that will be retrieved later based on the nature of the question.",
+    "quote": "Memory stores – when an agent needs to **persist information** that will be retrieved later based on the nature of the question: exact key look‑ups, filtered reports, full‑text or semantic search, or graph traversals. Use the appropriate store according to “what will be asked” of that memory (key‑value for exact facts, records for counting/filtering, journal for prose search, graph for relationship walks).",
+    "verdict": "supported",
+    "source": "stores.py 1-12",
+    "why": ""
+   },
+   {
+    "claim": "Board is a short‑lived, structured collaboration surface with ownership rules; stores are long‑term, query‑driven databases for recalling facts, logs, and relationships.",
+    "quote": "In short, the **board** is a *short‑lived, structured collaboration surface* with ownership rules, while the **stores** are *long‑term, query‑driven databases* for recalling facts, logs, and relationships.",
+    "verdict": "supported",
+    "source": "state.py 1-20, stores.py 49-52",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   3,
+   4
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 13372
+ },
+ "scratch agent :: In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "claims": [
+   {
+    "claim": "The graph node calls `interrupt()`. The run is paused and the checkpoint is stored. When a reply arrives the node is re‑invoked from its first line. The node returns a `Wait` object that tells the system which field to wait on.",
+    "quote": "The graph node calls `interrupt()`. The run is paused and the checkpoint is stored. When a reply arrives the node is **re‑invoked** from its first line. The node returns a `Wait` object that tells the system which field to wait on.",
+    "verdict": "supported",
+    "source": "lines 493-497",
+    "why": ""
+   },
+   {
+    "claim": "The case file stores a `waiting` entry in the shared board. The step returns a `Wait` object, the desk sets `desk.waiting` and clears `desk.next`. When a person writes the expected field, `answer()` writes the value, clears the waiting flag and advances `next` to the next step.",
+    "quote": "The case file stores a `waiting` entry in the shared board. The step returns a `Wait` object, the desk sets `desk.waiting` and clears `desk.next`. When a person writes the expected field, `answer()` writes the value, clears the waiting flag and advances `next` to the next step.",
+    "verdict": "supported",
+    "source": "lines 366-390",
+    "why": ""
+   },
+   {
+    "claim": "Duplicate actions – because a resumed node starts at the top, any side‑effect (e.g., sending an email) is performed again when the run is resumed.",
+    "quote": "Duplicate actions – because a resumed node starts at the top, any side‑effect (e.g., sending an email) is performed **again** when the run is resumed.",
+    "verdict": "supported",
+    "source": "lines 493-497",
+    "why": ""
+   },
+   {
+    "claim": "Answer‑to‑question mismatch – answers are matched by *position* in the interrupt list; a deployment that changes the order of `interrupt()` calls can cause an answer to be applied to the wrong question.",
+    "quote": "Answer‑to‑question mismatch – answers are matched by *position* in the interrupt list; a deployment that changes the order of `interrupt()` calls can cause an answer to be applied to the wrong question.",
+    "verdict": "supported",
+    "source": "lines 493-497",
+    "why": ""
+   },
+   {
+    "claim": "Anyone can answer – `Command(resume=…)` can carry any payload; the graph does not enforce that the responder is the designated owner, so an unauthorized party can supply a reply.",
+    "quote": "Anyone can answer – `Command(resume=…)` can carry any payload; the graph does not enforce that the responder is the designated owner, so an unauthorized party can supply a reply.",
+    "verdict": "supported",
+    "source": "lines 493-497",
+    "why": ""
+   },
+   {
+    "claim": "Durability limits – the check‑pointer only makes the *workflow* durable. External state (e.g., the in‑memory `P.PAYMENTS` list) is not persisted, so a run that crosses processes can cause actions (payment) to be missed or run twice.",
+    "quote": "Durability limits – the check‑pointer only makes the *workflow* durable. External state (e.g., the in‑memory `P.PAYMENTS` list) is not persisted, so a run that crosses processes can cause actions (payment) to be missed or run twice.",
+    "verdict": "supported",
+    "source": "lines 519-541",
+    "why": ""
+   },
+   {
+    "claim": "Step‑limit & recursion quirks – the default step limit (10 007) stops a runaway loop, but a loop that repeatedly calls `interrupt()` is not limited because each resume is a new `invoke`.",
+    "quote": "Step‑limit & recursion quirks – the default step limit (10 007) stops a runaway loop, but a loop that repeatedly calls `interrupt()` is not limited because each resume is a new `invoke`.",
+    "verdict": "supported",
+    "source": "lines 519-541",
+    "why": ""
+   },
+   {
+    "claim": "Complex behaviours missing – parallelism, streaming, rewinding/forking, timeout, or API serving are not provided out‑of‑the‑box.",
+    "quote": "Complex behaviours missing – parallelism, streaming, rewinding/forking, timeout, or API serving are not provided out‑of‑the‑box.",
+    "verdict": "supported",
+    "source": "lines 519-541",
+    "why": ""
+   },
+   {
+    "claim": "No duplicate side‑effects – because the step that asked the question is *finished* before waiting, the same action (e.g., sending an email) is never run a second time.",
+    "quote": "No duplicate side‑effects – because the step that asked the question is *finished* before waiting, the same action (e.g., sending an email) is never run a second time.",
+    "verdict": "supported",
+    "source": "lines 366-390",
+    "why": ""
+   },
+   {
+    "claim": "Answer matched by field name – each answer is written to a named field (`approval:tomasz`, `approval:ines`, …). The case file stores the answer in that field, so reordering of questions does not mis‑route answers.",
+    "quote": "Answer matched by field name – each answer is written to a named field (`approval:tomasz`, `approval:ines`, …). The case file stores the answer in that field, so reordering of questions does not mis‑route answers.",
+    "verdict": "supported",
+    "source": "lines 366-390;493-497",
+    "why": ""
+   },
+   {
+    "claim": "Ownership enforcement – only the owner of a field may write it; attempts by anyone else raise `Denied`. This prevents unauthorized answers.",
+    "quote": "Ownership enforcement – only the owner of a field may write it; attempts by anyone else raise `Denied`. This prevents unauthorized answers.",
+    "verdict": "supported",
+    "source": "lines 366-390",
+    "why": ""
+   },
+   {
+    "claim": "Audit trail – every write is also a row in the `Records` SQLite table, so any process can pick up the case later and the history is durable.",
+    "quote": "Audit trail – every write is also a row in the `Records` SQLite table, so any process can pick up the case later and the history is durable.",
+    "verdict": "supported",
+    "source": "lines 519-541",
+    "why": ""
+   },
+   {
+    "claim": "Limited capabilities – the case‑file design does **not** support parallel execution, streaming, rewinding/forking, step‑level time‑outs, or serving the workflow over an API; those behaviours have to be built manually.",
+    "quote": "Limited capabilities – the case‑file design does **not** support parallel execution, streaming, rewinding/forking, step‑level time‑outs, or serving the workflow over an API; those behaviours have to be built manually.",
+    "verdict": "supported",
+    "source": "lines 519-541",
+    "why": ""
+   },
+   {
+    "claim": "Resumed nodes run again from the first line → duplicate sends.",
+    "quote": "Resumed nodes run again from the first line → duplicate sends.",
+    "verdict": "supported",
+    "source": "lines 493-497",
+    "why": ""
+   },
+   {
+    "claim": "Answers are matched to the explicit field and the step proceeds only once.",
+    "quote": "Answers are matched to the explicit field and the step proceeds only once.",
+    "verdict": "supported",
+    "source": "lines 366-390",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph’s checkpoint‑based waiting is powerful (parallelism, streaming, rewinding, etc.) but comes with pitfalls: duplicate side‑effects on resume, positional answer matching, and no built‑in ownership checks.",
+    "quote": "LangGraph’s checkpoint‑based waiting is powerful (parallelism, streaming, rewinding, etc.) but comes with pitfalls: duplicate side‑effects on resume, positional answer matching, and no built‑in ownership checks.",
+    "verdict": "supported",
+    "source": "lines 519-541",
+    "why": ""
+   },
+   {
+    "claim": "The from‑scratch case‑file waiting is simpler and safer for human‑driven steps: each question is a named field, ownership is enforced, and actions are not re‑executed. It lacks the richer orchestration features that LangGraph provides.",
+    "quote": "The from‑scratch case‑file waiting is simpler and safer for human‑driven steps: each question is a named field, ownership is enforced, and actions are not re‑executed. It lacks the richer orchestration features that LangGraph provides.",
+    "verdict": "supported",
+    "source": "lines 519-541",
+    "why": ""
+   },
+   {
+    "claim": "waiting implementation and pitfalls for LangGraph are discussed in the “Run and show” section (duplicate sends, positional matching, anyone can answer, step‑limit, durability)【08_frameworks/02_langgraph/ap_desk.ipynb § Part 2 · Run and show, lines 493‑502].",
+    "quote": "waiting implementation and pitfalls for LangGraph are discussed in the “Run and show” section (duplicate sends, positional matching, anyone can answer, step‑limit, durability)【08_frameworks/02_langgraph/ap_desk.ipynb § Part 2 · Run and show, lines 493‑502].",
+    "verdict": "supported",
+    "source": "lines 493-497",
+    "why": ""
+   },
+   {
+    "claim": "The case‑file waiting logic and ownership checks are shown in the `answer` and `_go` methods of `case.py`【08_frameworks/02_langgraph/ap_desk.ipynb § Part 1 · Build, lines 367‑392].",
+    "quote": "The case‑file waiting logic and ownership checks are shown in the `answer` and `_go` methods of `case.py`【08_frameworks/02_langgraph/ap_desk.ipynb § Part 1 · Build, lines 367‑392].",
+    "verdict": "supported",
+    "source": "lines 366-390",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6,
+   7
+  ],
+  "check calls": 2,
+  "unanchored": 2,
+  "unmarked": 0,
+  "judge": "openai/gpt-oss-20b",
+  "judge tokens": 17244
+ }
+}

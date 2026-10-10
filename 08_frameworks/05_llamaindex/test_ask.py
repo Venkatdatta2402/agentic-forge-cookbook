@@ -26,6 +26,7 @@ def test_the_answer_key_is_true():
         assert files <= set(docs), (question, files - set(docs))
         assert any(CB.mentions(docs[f], word) for f in files), question
     assert not any("05_llamaindex" in f for f in docs)            # the assistant never reads its own key
+    assert not any("07_langsmith" in f or "08_langfuse" in f for f in docs)      # nor 07's, which grades it
 
 
 def test_index_build_and_refresh():
@@ -52,6 +53,8 @@ def test_agent_tools():
     assert [c["tool"] for c in out["calls"]] == ["search_cookbook", "open_file"]
     assert "04_memory/recall.py" in out["answer"]
     open_file = next(t for t in A.tools(index, S.answering()) if t.metadata.name == "open_file")
+    assert str(open_file.call(path="04_memory/recall.py", line_start=3, line_end=5)).startswith(
+        "[04_memory/recall.py, lines 3-5]\n   3  ")                                # what it read, named
     assert "Not a cookbook file" in str(open_file.call(path="../.env"))           # nothing outside the index
     assert "Not a cookbook file" in str(open_file.call(path=".env"))
     search = next(t for t in A.tools(index, S.answering(), floor=None) if t.metadata.name == "search_cookbook")
@@ -164,6 +167,140 @@ def test_the_live_model_is_metered():
         pass
 
 
+def test_an_unparsed_reply_is_asked_again():
+    # Groq's 400 for a reply it cannot parse, then a good reply: sent again, and counted. Any other 400 raises at once
+    import httpx
+    import openai
+
+    def through(script):
+        sent = []
+
+        def reply(request):
+            sent.append(1)
+            status, code = script[min(len(sent), len(script)) - 1]
+            if status == 200:
+                return httpx.Response(200, json={
+                    "id": "x", "object": "chat.completion", "created": 0, "model": A.MODEL,
+                    "choices": [{"index": 0, "finish_reason": "stop", "message": {"role": "assistant", "content": "ok"}}],
+                    "usage": {"prompt_tokens": 10, "completion_tokens": 2, "total_tokens": 12}})
+            return httpx.Response(400, json={"error": {"message": "Parsing failed.", "type": "invalid_request_error",
+                                                       "code": code}})
+
+        def wrap(client):
+            kind = httpx.AsyncClient if isinstance(client, openai.AsyncOpenAI) else httpx.Client
+            return client.with_options(http_client=kind(transport=httpx.MockTransport(reply)))
+        return wrap, sent
+
+    wrap, sent = through([(400, "output_parse_failed"), (200, None)])
+    llm = A.chat_model(budget=A.Budget(10 ** 6), wrap=wrap)
+    assert llm.complete("hi").text == "ok" and len(sent) == 2 and llm.budget.retried == 1 and llm.budget.calls == 1
+    wrap, sent = through([(400, "invalid_request"), (200, None)])
+    try:
+        A.chat_model(budget=A.Budget(10 ** 6), wrap=wrap).complete("hi")
+        assert False, "a real 400 was retried"
+    except openai.BadRequestError:
+        assert len(sent) == 1
+    wrap, sent = through([(400, "tool_use_failed")])
+    try:
+        asyncio.run(A.chat_model(budget=A.Budget(10 ** 6), wrap=wrap).acomplete("hi"))
+        assert False, "retried for ever"
+    except openai.BadRequestError:
+        assert len(sent) == 1 + A.PARSE_RETRIES
+
+
+def test_no_agent_request_outgrows_its_limit():
+    # the real metered model and LlamaIndex's agent, against a scripted Groq that searches ten times: without the cut
+    # the requests grow past 8,000 tokens; with it, none carries more than AGENT_CONTEXT_TOKENS of messages, every
+    # tool result keeps its call id, and the answer it is made to give at the step limit is cut too
+    import json as js
+
+    import httpx
+    import openai
+    index = built()
+    topics = ["shared board owner", "memory stores sqlite", "doom loop runtime", "tool registry names",
+              "context compaction pinned", "MCP server environment", "CrewAI pin chromadb", "AutoGen termination",
+              "LangGraph interrupt resume", "reciprocal rank fusion"]
+    sent = []
+
+    def reply(request):
+        body = js.loads(request.content)
+        sent.append(body)
+        done = sum(m["role"] == "tool" for m in body["messages"])
+        message = {"role": "assistant", "content": "the answer"}
+        if body.get("tools") and done < len(topics):
+            message = {"role": "assistant", "content": None, "tool_calls": [{
+                "id": f"call_{done}", "type": "function",
+                "function": {"name": "search_cookbook", "arguments": js.dumps({"query": topics[done]})}}]}
+        return httpx.Response(200, json={"id": "x", "object": "chat.completion", "created": 0, "model": A.MODEL,
+                                         "choices": [{"index": 0, "finish_reason": "stop", "message": message}],
+                                         "usage": {"prompt_tokens": 10, "completion_tokens": 2, "total_tokens": 12}})
+
+    def wrap(client):
+        kind = httpx.AsyncClient if isinstance(client, openai.AsyncOpenAI) else httpx.Client
+        return client.with_options(http_client=kind(transport=httpx.MockTransport(reply)))
+
+    def tokens(body):
+        from llama_index.core.base.llms.types import ChatMessage
+        return sum(A._tokens(ChatMessage(role="user", content=m.get("content") or "")) for m in body["messages"])
+
+    out = asyncio.run(A.run_agent(A.agent(index, A.chat_model(budget=A.Budget(10 ** 9), wrap=wrap)),
+                                  CB.CROSS_CHAPTER[1]))
+    assert out["answer"] == "the answer" and len(out["calls"]) == A.MAX_TOOL_CALLS
+    assert max(tokens(b) for b in sent) <= A.AGENT_CONTEXT_TOKENS
+    # the answer it is made to give at the step limit: no tools offered, and everything the eight calls found in it
+    # (LlamaIndex alone sends only the system prompt, the question and the stop notice -- see ask_index._finishing)
+    # -- as plain text: no tool call or tool result in it for the model to carry on from
+    last = sent[-1]
+    assert not last.get("tools") and not any(m["role"] == "tool" or m.get("tool_calls") for m in last["messages"])
+    found = [m["content"] for m in last["messages"] if "What your tool calls found" in (m.get("content") or "")]
+    assert len(found) == 1 and "cut to their labels" in found[0] and "\n[" in found[0]     # labelled, older ones cut
+    assert tokens(last) <= A.AGENT_CONTEXT_TOKENS
+
+    sent.clear()                                  # the same run, uncut: what the limit is for
+    asyncio.run(A.run_agent(A.agent(index, A.chat_model(budget=A.Budget(10 ** 9), wrap=wrap), context_tokens=None),
+                            CB.CROSS_CHAPTER[1]))
+    assert max(tokens(b) for b in sent) > A.AGENT_CONTEXT_TOKENS
+
+
+def test_a_step_limit_answer_that_calls_a_tool_is_asked_plainly():
+    # the answer at the step limit is asked for with no tools, and the model calls one anyway; Groq refuses it
+    # (tool_use_failed), the same on every try -- until it is told plainly that no tools are left
+    import json as js
+
+    import httpx
+    import openai
+    index = built()
+    sent = []
+
+    def reply(request):
+        body = js.loads(request.content)
+        sent.append(body)
+        done = sum(m["role"] == "tool" for m in body["messages"])
+        if body.get("tools"):
+            message = {"role": "assistant", "content": None, "tool_calls": [{
+                "id": f"call_{done}", "type": "function",
+                "function": {"name": "search_cookbook", "arguments": js.dumps({"query": f"topic {done}"})}}]}
+        elif not any(A.NO_TOOLS_NOW in (m.get("content") or "") for m in body["messages"]):
+            return httpx.Response(400, json={"error": {"message": "Tool choice is none, but model called a tool",
+                                                       "type": "invalid_request_error", "code": "tool_use_failed"}})
+        else:
+            message = {"role": "assistant", "content": "the answer, at last"}
+        return httpx.Response(200, json={"id": "x", "object": "chat.completion", "created": 0, "model": A.MODEL,
+                                         "choices": [{"index": 0, "finish_reason": "stop", "message": message}],
+                                         "usage": {"prompt_tokens": 10, "completion_tokens": 2, "total_tokens": 12}})
+
+    def wrap(client):
+        kind = httpx.AsyncClient if isinstance(client, openai.AsyncOpenAI) else httpx.Client
+        return client.with_options(http_client=kind(transport=httpx.MockTransport(reply)))
+
+    out = asyncio.run(A.run_agent(A.agent(index, A.chat_model(budget=A.Budget(10 ** 9), wrap=wrap)),
+                                  CB.CROSS_CHAPTER[1]))
+    assert out["answer"] == "the answer, at last" and out["stopped"] is None
+    plain = [b for b in sent if not b.get("tools")]
+    assert len(plain) == 1 + A.PARSE_RETRIES + 1                  # refused three times as asked; then answered
+    assert any("What your tool calls found" in (m.get("content") or "") for m in plain[-1]["messages"])
+
+
 def test_checks():
     assert K.default_models()["Settings.llm"].startswith("ValueError")
     splitter = K.code_splitter()
@@ -191,6 +328,8 @@ if __name__ == "__main__":
                  test_a_stopped_agent_keeps_its_record,
                  test_the_scratch_agent_keeps_each_call_in_budget,
                  test_both_agents_stop_at_eight_tool_calls_and_answer, test_search_says_where_each_passage_is,
-                 test_retrieval_scores_run, test_the_live_model_is_metered, test_checks):
+                 test_retrieval_scores_run, test_the_live_model_is_metered, test_an_unparsed_reply_is_asked_again,
+                 test_no_agent_request_outgrows_its_limit, test_a_step_limit_answer_that_calls_a_tool_is_asked_plainly,
+                 test_checks):
         test()
         print("ok ", test.__name__)
