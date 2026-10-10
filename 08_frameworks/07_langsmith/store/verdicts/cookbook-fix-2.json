@@ -1,0 +1,1002 @@
+{
+ "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit compare in chapter 8's LangGraph project?": {
+  "claims": [
+   {
+    "claim": "The `Runtime` watches the recent “decision” messages (the tool calls the model makes).",
+    "quote": "The `Runtime` watches the recent “decision” messages (the tool calls the model makes).",
+    "verdict": "supported",
+    "source": "runtime.py 181-182",
+    "why": ""
+   },
+   {
+    "claim": "When the last two decisions are the same tool with exactly the same arguments, the `Runtime` treats this as a doom-loop and stops the agent.",
+    "quote": "When the last two decisions are **the same tool with exactly the same arguments**, it treats this as a *doom‑loop* and stops the agent:",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "The condition for detecting a repeated tool call with identical arguments is `len(recent) >= 2 and len({(d[\"tool\"], d[\"content\"]) for d in recent[-2:]}) == 1`.",
+    "quote": "if len(recent) >= 2 and len({(d[\"tool\"], d[\"content\"]) for d in recent[-2:]}) == 1: return \"the same tool call with identical arguments repeated\"",
+    "verdict": "supported",
+    "source": "runtime.py 185",
+    "why": ""
+   },
+   {
+    "claim": "As soon as the agent repeats a tool call with identical arguments a second time, the runtime aborts the run and gives the agent one final turn without tools to report what it has learned, as seen in `02_agent_runtime/runtime.py` lines 185-186.",
+    "quote": "So as soon as the agent repeats a tool call with identical arguments a second time, the runtime aborts the run and gives the agent one final turn without tools to report what it has learned\t[02_agent_runtime/runtime.py\tlines\t185‑186].",
+    "verdict": "supported",
+    "source": "runtime.py 185-186, runtime.py 223-226, point 1, point 2",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph does not use doom-loop detection.",
+    "quote": "LangGraph does not use doom‑loop detection.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph imposes a hard step limit on a graph run.",
+    "quote": "Instead it imposes a **hard step limit** on a graph run.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph's default step limit is 10,007 steps.",
+    "quote": "The default limit is **10 007 steps**.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499, point 3",
+    "why": ""
+   },
+   {
+    "claim": "In the LangGraph “AP Desk” example, an agent that kept calling the same tool ran 5,004 model calls (about 92 seconds) before LangGraph stopped it because the step counter was exhausted, as seen in `08_frameworks/02_langgraph/ap_desk.ipynb` lines 499-502.",
+    "quote": "In the LangGraph “AP Desk” example, an agent that kept calling the same tool ran **5 004 model calls** (about 92 seconds) before LangGraph stopped it because the step counter was exhausted\t[08_frameworks/02_langgraph/ap_desk.ipynb\tlines\t499‑502].",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501, point 4",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 2 stops an endless loop after the second identical tool call using doom-loop detection.",
+    "quote": "Chapter 2 stops an endless loop after the *second identical tool call* (doom‑loop detection).",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501, point 1",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 8 stops only after a large count-based limit (10,007 steps), allowing thousands of repeated calls before termination.",
+    "quote": "Chapter 8 stops only after a large *count‑based limit* (10 007 steps), allowing thousands of repeated calls before termination.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 499, 501, point 3, point 4",
+    "why": ""
+   },
+   {
+    "claim": "The Chapter 2 runtime catches the problem much earlier than LangGraph, which relies on a generous step counter that may let a looping agent run for a long time before it is halted.",
+    "quote": "Thus the Chapter 2 runtime catches the problem much earlier, while LangGraph relies on a generous step counter that may let a looping agent run for a long time before it is halted.",
+    "verdict": "supported",
+    "source": "ap_desk.ipynb 501, point 7",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "check calls": 1,
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 12290
+ },
+ "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "claims": [
+   {
+    "claim": "The LangGraph implementation uses a node that calls `interrupt()` to pause for a human.",
+    "quote": "A node calls `interrupt()`",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 526",
+    "why": ""
+   },
+   {
+    "claim": "Calling `interrupt()` stops the run.",
+    "quote": "this stops the run",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 526",
+    "why": ""
+   },
+   {
+    "claim": "Calling `interrupt()` stores the current state.",
+    "quote": "stores the current state",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 519",
+    "why": ""
+   },
+   {
+    "claim": "Calling `interrupt()` returns a question to the driver.",
+    "quote": "returns a *question* to the driver",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 539",
+    "why": ""
+   },
+   {
+    "claim": "When an answer arrives via `Command(resume=…)` in LangGraph, the same node is re-executed from its first line.",
+    "quote": "When the answer arrives via `Command(resume=…)` the same node is **re‑executed from its first line**",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 526",
+    "why": ""
+   },
+   {
+    "claim": "After resumption, `interrupt()` returns the answer.",
+    "quote": "`interrupt()` now returns the answer",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 539",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case-file implementation returns a `Wait` object when a step needs a person.",
+    "quote": "The step that needs a person returns a `Wait` object (`field`, `owner`, `then`)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "Returning a `Wait` object ends the step.",
+    "quote": "The `Wait` **ends the step**",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "The case file records that it is waiting when a `Wait` object is returned.",
+    "quote": "the case file records that it is waiting",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 384-385",
+    "why": ""
+   },
+   {
+    "claim": "When a `Wait` object is returned, the next step is `None`.",
+    "quote": "the next step is `None`",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 386",
+    "why": ""
+   },
+   {
+    "claim": "When the person writes the requested field, the desk immediately runs the next step (`then`).",
+    "quote": "When the person writes the requested field, the desk immediately runs the *next* step (`then`)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 376-379, 526",
+    "why": ""
+   },
+   {
+    "claim": "The code excerpt for a node that waits for a signer in LangGraph is found in `ap_graph.py`.",
+    "quote": "# ap_graph.py – a node that waits for a signer",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph node uses `answer = interrupt({\"ask\": \"approval\", \"approver\": signer, ...})` to wait.",
+    "quote": "answer = interrupt({\"ask\": \"approval\", \"approver\": signer, ...})",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph node will be re-run when resumed.",
+    "quote": "(the node will be re‑run when resumed)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 526",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph code excerpt is located in `08_frameworks/02_langgraph/ap_desk.ipynb` from line 88 to line 106.",
+    "quote": "【08_frameworks/02_langgraph/ap_desk.ipynb†L88-L106】",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The code excerpt for handling a `Wait` in the from-scratch case-file is found in `case.py`.",
+    "quote": "# case.py – handling a Wait",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 369",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case-file checks if `after` is an instance of `Wait`.",
+    "quote": "if isinstance(after, Wait):",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 384",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case-file sets the desk's waiting state using `case.set(\"desk\", \"waiting\", after.ask())`.",
+    "quote": "case.set(\"desk\", \"waiting\", after.ask())",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 385",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case-file sets the desk's next state to `None` using `case.set(\"desk\", \"next\", None)`.",
+    "quote": "case.set(\"desk\", \"next\", None)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 386",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case-file returns `case.values[\"waiting\"]`.",
+    "quote": "return case.values[\"waiting\"]",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 387",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, the step ends when a `Wait` is handled.",
+    "quote": "(the step ends",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, the answer starts the next step.",
+    "quote": "the answer starts the next step)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case-file code excerpt is located in `08_frameworks/02_langgraph/ap_desk.ipynb` from line 366 to line 386.",
+    "quote": "【08_frameworks/02_langgraph/ap_desk.ipynb†L366-L386】",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366-386",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, resuming re-executes the whole node.",
+    "quote": "Resuming re‑executes the whole node",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 526",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, any side-effect that happened before `interrupt()` will happen again when the node is resumed.",
+    "quote": "any side‑effect that happened **before** the `interrupt()` (e.g., sending an email) will happen **again** when the node is resumed",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, answers are matched only by position.",
+    "quote": "Answers are matched only by position",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, if the order of `interrupt()` calls changes, answers can get attached to the wrong question.",
+    "quote": "if the order of `interrupt()` calls changes (e.g., a new deploy swaps two questions) the answers get attached to the wrong question",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, anyone can answer because `Command(resume=…)` accepts whatever payload is given.",
+    "quote": "Anyone can answer – `Command(resume=…)` accepts whatever payload is given",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, the graph itself does not enforce that the right person answered.",
+    "quote": "the graph itself does not enforce that the right person answered",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497, 529",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, `Wait` ends the step.",
+    "quote": "Wait ends the step",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, a side-effect (e.g., sending an email) occurs once, before the `Wait`, so it cannot be duplicated.",
+    "quote": "the side‑effect (e.g., sending an email) occurs **once**, before the `Wait`, so it cannot be duplicated",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, each answer is written to a field owned by that person.",
+    "quote": "Each answer is written to a field owned by that person",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, the case file refuses a write from the wrong owner.",
+    "quote": "the case file refuses a write from the wrong owner",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 376, 529",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, a wrong-person answer raises `Denied` and the case stays waiting.",
+    "quote": "a wrong‑person answer raises `Denied` and the case stays waiting",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence states 'refused; the case still waits' but does not mention a 'Denied' exception."
+   },
+   {
+    "claim": "In the from-scratch case-file, there is no ordering ambiguity because each person has a dedicated field.",
+    "quote": "No ordering ambiguity – because each person has a dedicated field",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, re-ordering of steps does not mis-file answers.",
+    "quote": "re‑ordering of steps (e.g., a deploy) does not mis‑file answers",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 528",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, email can be sent twice if the send and the wait share a node.",
+    "quote": "Email sent twice if the send and the wait share a node",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, answers can be mis-matched when `interrupt()` calls are reordered.",
+    "quote": "Answers can be mis‑matched when `interrupt()` calls are reordered",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "In LangGraph, wrong-person answers are accepted unless the application checks them.",
+    "quote": "Wrong‑person answers are accepted unless the application checks them",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 497, 529",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case-file prevents duplicate sends and mis-matched answers by design.",
+    "quote": "The case file prevents duplicate sends and mis‑matched answers by design (each field has a single owner)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366, 537",
+    "why": ""
+   },
+   {
+    "claim": "In the from-scratch case-file, the only failure mode is a `Denied` exception when the wrong person tries to write.",
+    "quote": "The only failure mode is a `Denied` exception when the wrong person tries to write",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence does not state this is the 'only' failure mode, nor does it explicitly mention a 'Denied' exception."
+   },
+   {
+    "claim": "When the wrong person tries to write in the from-scratch case-file, it simply leaves the case waiting.",
+    "quote": "which simply leaves the case waiting",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 529",
+    "why": ""
+   },
+   {
+    "claim": "These points are collected from the side-by-side comparison table in the notebook.",
+    "quote": "These points are collected from the side‑by‑side comparison table in the notebook (lines 521‑530)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 521-530",
+    "why": ""
+   },
+   {
+    "claim": "The comparison table is located in `08_frameworks/02_langgraph/ap_desk.ipynb` from line 521 to line 530.",
+    "quote": "【08_frameworks/02_langgraph/ap_desk.ipynb†L521-L530】",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 521-530",
+    "why": ""
+   },
+   {
+    "claim": "These points are collected from the surrounding explanations of `interrupt()` and `Wait`.",
+    "quote": "and the surrounding explanations of `interrupt()` and `Wait` (lines 88‑106 and 366‑386)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not include lines 88-106, which are claimed as a source for points."
+   },
+   {
+    "claim": "Explanations of `interrupt()` are located in `08_frameworks/02_langgraph/ap_desk.ipynb` from line 88 to line 106.",
+    "quote": "lines 88‑106",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not include lines 88-106."
+   },
+   {
+    "claim": "Explanations of `Wait` are located in `08_frameworks/02_langgraph/ap_desk.ipynb` from line 366 to line 386.",
+    "quote": "lines 366‑386",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366-386",
+    "why": ""
+   },
+   {
+    "claim": "The explanations of `interrupt()` and `Wait` are located in `08_frameworks/02_langgraph/ap_desk.ipynb` from line 366 to line 386.",
+    "quote": "【08_frameworks/02_langgraph/ap_desk.ipynb†L366-L386】",
+    "verdict": "contradicted",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb 366-386",
+    "why": "Lines 366-386 explain 'Wait', not 'interrupt()'."
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "check calls": 1,
+  "unanchored": 5,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 33052
+ },
+ "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "claims": [
+   {
+    "claim": "The shared board is a tiny, in-memory board.",
+    "quote": "A tiny, in‑memory “board”",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 5-6",
+    "why": ""
+   },
+   {
+    "claim": "Several agents read from the shared board.",
+    "quote": "several agents read from",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1, 5",
+    "why": ""
+   },
+   {
+    "claim": "A few agents are allowed to write to the shared board.",
+    "quote": "a few agents are allowed to write to",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 12-14, 90-91",
+    "why": ""
+   },
+   {
+    "claim": "The shared board lives only for the duration of a single case.",
+    "quote": "It lives only for the duration of a single case (minutes, not days)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 3-5; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is injected into each agent’s prompt on every turn.",
+    "quote": "is injected into each agent’s prompt on every turn",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 6-7, 17",
+    "why": ""
+   },
+   {
+    "claim": "The board is defined by three wiring decisions.",
+    "quote": "The board is defined by three wiring decisions",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 9-10",
+    "why": ""
+   },
+   {
+    "claim": "These wiring decisions are made once when the agents are wired together.",
+    "quote": "made once when the agents are wired together",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 9-10",
+    "why": ""
+   },
+   {
+    "claim": "`fields` are the names and meanings of the data that can appear on the board.",
+    "quote": "`fields` – the names and meanings of the data that can appear on the board.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "`owner` specifies which agent is allowed to set each field.",
+    "quote": "`owner` – which agent is allowed to set each field",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 12-13",
+    "why": ""
+   },
+   {
+    "claim": "Writes by anyone else are refused by the `owner` mechanism.",
+    "quote": "(writes by anyone else are refused)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 69-73",
+    "why": ""
+   },
+   {
+    "claim": "`readers` specifies which agents may see each field.",
+    "quote": "`readers` – which agents may see each field.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 11",
+    "why": ""
+   },
+   {
+    "claim": "Reading from the board is done by `view(agent)`.",
+    "quote": "Reading is done by `view(agent)`",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 17",
+    "why": ""
+   },
+   {
+    "claim": "`view(agent)` renders only the fields the agent is allowed to see.",
+    "quote": "which renders only the fields the agent is allowed to see",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 17",
+    "why": ""
+   },
+   {
+    "claim": "Writing to the board is provided as a tool.",
+    "quote": "writing is provided as a tool",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 18, 89-108",
+    "why": ""
+   },
+   {
+    "claim": "The writing tool records the author.",
+    "quote": "records the author",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 18, 67",
+    "why": ""
+   },
+   {
+    "claim": "The writing tool checks ownership.",
+    "quote": "checks ownership",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 19, 68-70",
+    "why": ""
+   },
+   {
+    "claim": "The board keeps a history of every write.",
+    "quote": "The board also keeps a history of every write.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Details about the shared board are described in the orchestration code and notebook.",
+    "quote": "These details are described in the orchestration code and notebook",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence provided does not include information about a 'notebook'."
+   },
+   {
+    "claim": "The shared board is what several agents are working on at once.",
+    "quote": "“What several agents are working on at once…",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is not memory.",
+    "quote": "… not memory…",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 3; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The shared board lives in an ordinary object in memory.",
+    "quote": "… lives in an ordinary object in memory",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 6; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is put into each agent's context as it is needed.",
+    "quote": "and is put into each agent's context as it is needed”",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 7",
+    "why": ""
+   },
+   {
+    "claim": "This information is found in `06_orchestration/state.py` from line 1 to line 7.",
+    "quote": "【06_orchestration/state.py†L1-L7】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1-7",
+    "why": ""
+   },
+   {
+    "claim": "The board’s design (fields, owners, readers) is spelled out in the `Shared` class documentation.",
+    "quote": "The board’s design (fields, owners, readers) [...] are spelled out in the `Shared` class documentation",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 9-15",
+    "why": ""
+   },
+   {
+    "claim": "The ownership-check on writes is spelled out in the `Shared` class documentation.",
+    "quote": "the ownership‑check on writes are spelled out in the `Shared` class documentation",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 12-14",
+    "why": ""
+   },
+   {
+    "claim": "The board’s design (fields, owners, readers) is spelled out in the `set` method.",
+    "quote": "The board’s design (fields, owners, readers) [...] are spelled out in the [...] `set` method",
+    "verdict": "contradicted",
+    "source": "06_orchestration/state.py 67-73",
+    "why": "The `set` method implements the ownership check, but does not spell out the overall design of fields, owners, and readers; that is in the module docstring."
+   },
+   {
+    "claim": "The ownership-check on writes is spelled out in the `set` method.",
+    "quote": "the ownership‑check on writes are spelled out in the [...] `set` method",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 67-73",
+    "why": ""
+   },
+   {
+    "claim": "This information is found in `06_orchestration/state.py` from line 9 to line 15.",
+    "quote": "【06_orchestration/state.py†L9-L15】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 9-15",
+    "why": ""
+   },
+   {
+    "claim": "This information is found in `06_orchestration/state.py` from line 66 to line 73.",
+    "quote": "【06_orchestration/state.py†L66-L73】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 66-73",
+    "why": ""
+   },
+   {
+    "claim": "There are four persistent memory stores.",
+    "quote": "Four persistent stores",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 1, 49",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores survive process restarts.",
+    "quote": "survive process restarts",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are written to disk.",
+    "quote": "are written to disk",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49",
+    "why": ""
+   },
+   {
+    "claim": "KeyValue stores are for exact-name look-ups.",
+    "quote": "KeyValue – exact‑name look‑ups (e.g., a user’s timezone).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Records stores are for tabular data that will be filtered, ordered, counted.",
+    "quote": "Records – tabular data that will be filtered, ordered, counted (e.g., deploy logs).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 7; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Journal stores are for free-form prose that will be searched by literal text or vector similarity.",
+    "quote": "Journal – free‑form prose that will be searched by literal text or vector similarity (e.g., “why did this break”).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 8-9; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Graph stores are for relationships that will be traversed.",
+    "quote": "Graph – relationships that will be traversed (e.g., “who owns what”).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 10; point 5",
+    "why": ""
+   },
+   {
+    "claim": "The choice of memory store is made when a memory is written.",
+    "quote": "The choice of store is made when a memory is written",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3",
+    "why": ""
+   },
+   {
+    "claim": "The choice of memory store is based on what will be asked of it later (the query pattern).",
+    "quote": "based on what will be asked of it later (the query pattern).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3-4; point 5",
+    "why": ""
+   },
+   {
+    "claim": "The explanation for choosing a store is in the stores module.",
+    "quote": "This is explained in the stores module",
+    "verdict": "supported",
+    "source": "04_memory/stores.py",
+    "why": ""
+   },
+   {
+    "claim": "One thing decides the store choice, and it is decided when a memory is written: what will be asked of it later.",
+    "quote": "“One thing decides it, and it is decided when a memory is *written*: **what will be asked of it later**”",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3-4",
+    "why": ""
+   },
+   {
+    "claim": "This information is found in `04_memory/stores.py` from line 1 to line 5.",
+    "quote": "【04_memory/stores.py†L1-L5】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 1-5",
+    "why": ""
+   },
+   {
+    "claim": "The table of question-to-store mapping shows the intended use cases.",
+    "quote": "the table of question‑to‑store mapping shows the intended use cases",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6-11",
+    "why": ""
+   },
+   {
+    "claim": "This table is found in `04_memory/stores.py` from line 20 to line 39.",
+    "quote": "【04_memory/stores.py†L20-L39】",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence for `04_memory/stores.py` does not include lines 20-39."
+   },
+   {
+    "claim": "All memory stores persist to SQLite.",
+    "quote": "All stores persist to SQLite",
+    "verdict": "contradicted",
+    "source": "04_memory/stores.py 49",
+    "why": "The source states 'SQLite and Chroma to files, Neo4j to a server', indicating different persistence mechanisms for different stores, not that all stores persist to SQLite."
+   },
+   {
+    "claim": "All memory stores persist to Chroma.",
+    "quote": "Chroma",
+    "verdict": "contradicted",
+    "source": "04_memory/stores.py 49",
+    "why": "The source states 'SQLite and Chroma to files, Neo4j to a server', indicating different persistence mechanisms for different stores, not that all stores persist to Chroma."
+   },
+   {
+    "claim": "All memory stores persist to Neo4j.",
+    "quote": "Neo4j",
+    "verdict": "contradicted",
+    "source": "04_memory/stores.py 49",
+    "why": "The source states 'SQLite and Chroma to files, Neo4j to a server', indicating different persistence mechanisms for different stores, not that all stores persist to Neo4j."
+   },
+   {
+    "claim": "The data in memory stores is available across runs.",
+    "quote": "the data is available across runs",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50; point 4",
+    "why": ""
+   },
+   {
+    "claim": "The data in memory stores can be queried long after the original agent finished.",
+    "quote": "can be queried long after the original agent finished.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50; point 4",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is short-lived, living only while a case is active (minutes).",
+    "quote": "Short‑lived, lives only while a case is active (minutes)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 4-5; point 1",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are persistent, surviving process restarts (disk-backed).",
+    "quote": "Persistent, survives process restarts (disk‑backed)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49-50; point 4",
+    "why": ""
+   },
+   {
+    "claim": "The shared board's purpose is coordination / shared state among multiple agents working on the same task.",
+    "quote": "Coordination / shared state among multiple agents working on the same task",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1; point 6",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores' purpose is long-term recall of facts, logs, notes, relationships for future queries.",
+    "quote": "Long‑term recall of facts, logs, notes, relationships for future queries",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3-4, 6-11; point 4",
+    "why": ""
+   },
+   {
+    "claim": "The shared board has a fixed set of fields with explicit ownership and visibility rules.",
+    "quote": "Fixed set of fields with explicit ownership and visibility rules",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 11-15, 90-91",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores have four distinct data models (key-value, tabular, text-search, graph) chosen by query pattern.",
+    "quote": "Four distinct data models (key‑value, tabular, text‑search, graph) chosen by query pattern",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6-11; point 5",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is injected into each agent’s prompt.",
+    "quote": "Injected into each agent’s prompt",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 17",
+    "why": ""
+   },
+   {
+    "claim": "Shared board writes go through a tool that checks ownership.",
+    "quote": "writes go through a tool that checks ownership",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 18, 67-73, 101-102",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are queried later via look-ups.",
+    "quote": "Queried later via look‑ups",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are queried later via SQL filters.",
+    "quote": "SQL filters",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 7, 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are queried later via full-text or vector search.",
+    "quote": "full‑text or vector search",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 8-9; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are queried later via graph traversals.",
+    "quote": "graph traversals",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 10; point 5",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is implemented as a simple Python object (`Shared`) with `values`, `history`, `watchers`.",
+    "quote": "Simple Python object (`Shared`) with `values`, `history`, `watchers`",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence does not mention `values`, `history`, or `watchers` as specific attributes of the Shared object."
+   },
+   {
+    "claim": "Memory stores are implemented using SQLite tables.",
+    "quote": "SQLite tables",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are implemented using Chroma vector DB.",
+    "quote": "Chroma vector DB",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are implemented using Neo4j graph DB.",
+    "quote": "Neo4j graph DB",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores have indexing and persistence.",
+    "quote": "etc., with indexing and persistence",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence mentions persistence but not 'indexing'."
+   },
+   {
+    "claim": "A shared board should be used when a group of agents must collaborate on a single, ongoing case.",
+    "quote": "Use a shared board when a group of agents must collaborate on a single, ongoing case",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1; point 6",
+    "why": ""
+   },
+   {
+    "claim": "A shared board should be used when agents need a controlled, mutable view of the current state.",
+    "quote": "need a controlled, mutable view of the current state",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 11-15, 105-106",
+    "why": ""
+   },
+   {
+    "claim": "Ownership in a shared board prevents conflicting writes.",
+    "quote": "with ownership preventing conflicting writes",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 13-14, 69-73; point 2",
+    "why": ""
+   },
+   {
+    "claim": "A shared board is ideal for short-term coordination where the data does not need to survive after the case is closed.",
+    "quote": "It is ideal for short‑term coordination where the data does not need to survive after the case is closed.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 3-5; point 6",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores should be used when an agent (or later agents) needs to remember information across sessions.",
+    "quote": "Use the memory stores when you need the agent (or later agents) to remember information across sessions",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3, 49; point 4",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores should be used to answer queries that may be exact look-ups.",
+    "quote": "answer queries that may be exact look‑ups",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 6; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores should be used to answer queries that may be filtered counts.",
+    "quote": "filtered counts",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 7; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores should be used to answer queries that may be free-text searches.",
+    "quote": "free‑text searches",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 8-9; point 5",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores should be used to answer queries that may be relationship traversals.",
+    "quote": "relationship traversals.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 10; point 5",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is a transient, structured “scratchpad” for multi-agent teamwork.",
+    "quote": "the shared board is a transient, structured “scratchpad” for multi‑agent teamwork",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py 1-7, 11-15",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are durable, query-optimised databases.",
+    "quote": "the memory stores are the durable, query‑optimised databases",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3-4, 6-11, 49",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores give agents long-term knowledge.",
+    "quote": "give agents long‑term knowledge.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py 3, 49; point 4",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "check calls": 1,
+  "unanchored": 3,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 34996
+ }
+}

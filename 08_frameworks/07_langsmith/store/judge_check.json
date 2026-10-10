@@ -1,0 +1,656 @@
+{
+ "one call (judge shown the key while reading the answer)": {
+  "llamaindex board": {
+   "claims": [
+    {
+     "claim": "The shared board holds the working state of one case, alive for minutes, in an ordinary object in memory, and is not memory.",
+     "verdict": "supported",
+     "source": "point 1",
+     "why": ""
+    },
+    {
+     "claim": "A board field can have one owner, and a value two agents can both set is one neither can trust.",
+     "verdict": "supported",
+     "source": "point 2",
+     "why": ""
+    },
+    {
+     "claim": "An agent gets a write tool only for the fields it owns, and a write to someone else's field is refused.",
+     "verdict": "supported",
+     "source": "point 2",
+     "why": ""
+    },
+    {
+     "claim": "Reading the board is injection into each agent's context, while writing is a tool bound to one agent.",
+     "verdict": "supported",
+     "source": "point 3",
+     "why": ""
+    },
+    {
+     "claim": "Chapter 4's stores keep what should outlive a run, persisting to disk (SQLite and Chroma to files, Neo4j to a server).",
+     "verdict": "supported",
+     "source": "point 4",
+     "why": ""
+    },
+    {
+     "claim": "Which store a memory goes in is decided by what will be asked of it later: KeyValue by name, Records filtered/counted, Journal by words/resemblance, Graph walked.",
+     "verdict": "supported",
+     "source": "point 5",
+     "why": ""
+    },
+    {
+     "claim": "The board is for what agents need while working one case together, while a store is for what must still be there in a later run.",
+     "verdict": "supported",
+     "source": "point 6",
+     "why": ""
+    }
+   ],
+   "points made": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "judge": "gemini-3.5-flash",
+   "judge tokens": 5045
+  },
+  "scratch langgraph": {
+   "claims": [
+    {
+     "claim": "LangGraph waits with interrupt(), and resuming re-runs the node from its first line.",
+     "verdict": "supported",
+     "source": "point 1",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph, the node returns a Wait object that tells the system which field to wait on.",
+     "verdict": "contradicted",
+     "source": "point 1",
+     "why": "LangGraph waits with interrupt(), whereas returning a Wait object is how the case file ends a step and waits."
+    },
+    {
+     "claim": "In the case file, a Wait object names the field, its owner, and the step that continues, and writing that field starts the next step.",
+     "verdict": "supported",
+     "source": "point 5",
+     "why": ""
+    },
+    {
+     "claim": "A side effect before the interrupt in the same node, such as an email, happens twice in LangGraph but only once in the case file.",
+     "verdict": "supported",
+     "source": "point 2",
+     "why": ""
+    },
+    {
+     "claim": "LangGraph matches answers to interrupt() calls by position, so a deploy that reorders them swaps the answers.",
+     "verdict": "supported",
+     "source": "point 3",
+     "why": ""
+    },
+    {
+     "claim": "The case file stores each answer in its approver's own field, preventing mismatch from reordering.",
+     "verdict": "supported",
+     "source": "point 3",
+     "why": ""
+    },
+    {
+     "claim": "Command(resume=...) accepts whoever answers, recording the wrong person's approval as the right person's.",
+     "verdict": "supported",
+     "source": "point 4",
+     "why": ""
+    },
+    {
+     "claim": "The case file refuses unauthorized answers and keeps waiting.",
+     "verdict": "supported",
+     "source": "point 4",
+     "why": ""
+    },
+    {
+     "claim": "In both, durability stops at the workflow, meaning external state like payments in another process's memory is not persisted.",
+     "verdict": "supported",
+     "source": "point 6",
+     "why": ""
+    },
+    {
+     "claim": "The case file does not support rewinding/forking, parallel steps, streaming, or a server out of the box.",
+     "verdict": "supported",
+     "source": "point 7",
+     "why": ""
+    },
+    {
+     "claim": "The code excerpt starting with `after = self.steps[case.values[\"next\"]](case)` is from `ap_graph.py`.",
+     "verdict": "contradicted",
+     "source": "line 369",
+     "why": "This code is from `case.py` (the case file), not `ap_graph.py` (LangGraph)."
+    }
+   ],
+   "points made": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "judge": "gemini-3.5-flash",
+   "judge tokens": 6927
+  }
+ },
+ "two calls (claims first, then the key)": {
+  "llamaindex board": {
+   "claims": [
+    {
+     "claim": "Chapter 6's shared board is implemented in 06_orchestration/state.py",
+     "quote": "Implemented in `06_orchestration/state.py`",
+     "verdict": "supported",
+     "source": "06_orchestration/state.py 1",
+     "why": ""
+    },
+    {
+     "claim": "The shared board is a tiny in-memory object that several agents read from and write to while working on a case",
+     "quote": "a tiny in‑memory object that several agents read from and (only on declared fields) write to while they are working on a case.",
+     "verdict": "supported",
+     "source": "06_orchestration/state.py 6",
+     "why": ""
+    },
+    {
+     "claim": "The shared board is not memory but holds the working state of a case",
+     "quote": "“This is **not memory**. `04_memory` keeps what should outlive a run … What this holds is the **working state of that case**, alive for minutes, read on nearly every turn …”",
+     "verdict": "supported",
+     "source": "point 1",
+     "why": ""
+    },
+    {
+     "claim": "The board is defined by three wiring decisions made once when agents are wired together",
+     "quote": "The board is defined by three wiring decisions made **once when the agents are wired together**:",
+     "verdict": "supported",
+     "source": "06_orchestration/state.py 9",
+     "why": ""
+    },
+    {
+     "claim": "One wiring decision is who may read a field",
+     "quote": "who may **read** a field (`readers`)",
+     "verdict": "supported",
+     "source": "06_orchestration/state.py 11",
+     "why": ""
+    },
+    {
+     "claim": "Another wiring decision is who may write a field",
+     "quote": "who may **write** a field (`owner`)",
+     "verdict": "supported",
+     "source": "06_orchestration/state.py 12",
+     "why": ""
+    },
+    {
+     "claim": "Another wiring decision is what stays private",
+     "quote": "what stays private (nothing is written to the board)",
+     "verdict": "supported",
+     "source": "06_orchestration/state.py 15",
+     "why": ""
+    },
+    {
+     "claim": "Reads are injected into an agent's prompt",
+     "quote": "Reads are injected into an agent’s prompt (`view(agent)`)",
+     "verdict": "supported",
+     "source": "point 3",
+     "why": ""
+    },
+    {
+     "claim": "Writes are a tool that records the author and checks ownership",
+     "quote": "writes are a tool that records the author and checks ownership",
+     "verdict": "supported",
+     "source": "point 3",
+     "why": ""
+    },
+    {
+     "claim": "Chapter 4's memory stores are implemented in 04_memory/stores.py",
+     "quote": "Implemented in `04_memory/stores.py`",
+     "verdict": "supported",
+     "source": "04_memory/stores.py 1",
+     "why": ""
+    },
+    {
+     "claim": "Memory stores are four persistent data-stores that survive process restarts and are used to answer later queries",
+     "quote": "four persistent data‑stores that survive process restarts and are used to answer **later queries**.",
+     "verdict": "supported",
+     "source": "point 4",
+     "why": ""
+    },
+    {
+     "claim": "The shape of a memory follows from what will be asked of it later",
+     "quote": "“Four stores, and how a memory ends up in one rather than another. The shape it takes follows from **what will be asked of it later**.”",
+     "verdict": "supported",
+     "source": "point 5",
+     "why": ""
+    },
+    {
+     "claim": "KeyValue store is for exact-name look-ups",
+     "quote": "**KeyValue** – exact‑name look‑ups (e.g., a timezone)",
+     "verdict": "supported",
+     "source": "point 5",
+     "why": ""
+    },
+    {
+     "claim": "Records store is for filter, order, and count operations",
+     "quote": "**Records** – filter / order / count (e.g., deploy logs)",
+     "verdict": "supported",
+     "source": "point 5",
+     "why": ""
+    },
+    {
+     "claim": "Journal store is for full-text or vector search for prose or resemblance queries",
+     "quote": "**Journal** – full‑text / vector search for prose or “resemblance” queries",
+     "verdict": "supported",
+     "source": "point 5",
+     "why": ""
+    },
+    {
+     "claim": "Graph store is to walk relationships",
+     "quote": "**Graph** – walk relationships (e.g., ownership graphs)",
+     "verdict": "supported",
+     "source": "point 5",
+     "why": ""
+    },
+    {
+     "claim": "All stores persist to disk using SQLite, Chroma, or Neo4j",
+     "quote": "All stores persist to disk (SQLite, Chroma, Neo4j) – they are **long‑term memory**",
+     "verdict": "supported",
+     "source": "point 4",
+     "why": ""
+    },
+    {
+     "claim": "The shared board lives only for the duration of a single case",
+     "quote": "Lives only for the duration of a single case (minutes).",
+     "verdict": "supported",
+     "source": "point 6",
+     "why": ""
+    },
+    {
+     "claim": "Memory stores persist across runs and are stored on disk",
+     "quote": "Persists across runs, stored on disk.",
+     "verdict": "supported",
+     "source": "point 4",
+     "why": ""
+    },
+    {
+     "claim": "The purpose of the shared board is coordination-state that agents need right now",
+     "quote": "Coordination‑state that agents need *right now* (who owns what, what the team has agreed on).",
+     "verdict": "supported",
+     "source": "point 6",
+     "why": ""
+    },
+    {
+     "claim": "The purpose of memory stores is long-term factual or procedural knowledge that agents may retrieve later",
+     "quote": "Long‑term factual or procedural knowledge that agents may retrieve later.",
+     "verdict": "supported",
+     "source": "point 6",
+     "why": ""
+    },
+    {
+     "claim": "The shared board structure consists of a fixed set of fields with explicit owners/readers, with writes recorded in a simple dict and history",
+     "quote": "Fixed set of fields with explicit owners/readers; writes are recorded in a simple dict + history.",
+     "verdict": "not in the sources",
+     "source": "",
+     "why": ""
+    },
+    {
+     "claim": "Memory stores structure consists of separate stores each optimized for a query pattern",
+     "quote": "Separate stores each optimized for a query pattern (key‑value, SQL‑like, full‑text, graph).",
+     "verdict": "supported",
+     "source": "point 5",
+     "why": ""
+    },
+    {
+     "claim": "The shared board access pattern is injected into each turn's prompt and written via a tool that checks ownership",
+     "quote": "Injected into each turn’s prompt (`view(agent)`) and written via a tool that checks ownership.",
+     "verdict": "supported",
+     "source": "point 3",
+     "why": ""
+    },
+    {
+     "claim": "Memory stores access pattern is accessed via store-specific tools that may involve SQL, FTS, embeddings, or graph traversals",
+     "quote": "Accessed via store‑specific tools (`get`, `find`, `query`, etc.) that may involve SQL, FTS, embeddings, or graph traversals.",
+     "verdict": "not in the sources",
+     "source": "",
+     "why": ""
+    },
+    {
+     "claim": "Shared board ownership is declared up-front, and a field that two agents can both set is considered untrustworthy",
+     "quote": "Ownership is declared up‑front; a field that two agents can both set is considered **untrustworthy**",
+     "verdict": "supported",
+     "source": "point 2",
+     "why": ""
+    },
+    {
+     "claim": "Memory stores trust is not enforced by the store, and both can be read by any agent that queries the store",
+     "quote": "Trust is not enforced by the store; authorship may be recorded (e.g., Journal vs. Records) but both can be read by any agent that queries the store.",
+     "verdict": "not in the sources",
+     "source": "",
+     "why": ""
+    }
+   ],
+   "points made": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "unanchored": 0,
+   "unmarked": 0,
+   "judge": "gemini-3.5-flash",
+   "judge tokens": 14845
+  },
+  "scratch langgraph": {
+   "claims": [
+    {
+     "claim": "In LangGraph desk, the graph node calls interrupt()",
+     "quote": "The graph node calls `interrupt()`.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 526",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, the run is paused and the checkpoint is stored",
+     "quote": "The run is paused and the checkpoint is stored.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 525",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, when a reply arrives the node is re-invoked from its first line",
+     "quote": "When a reply arrives the node is **re‑invoked** from its first line.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 526",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, the node returns a Wait object that tells the system which field to wait on",
+     "quote": "The node returns a `Wait` object that tells the system which field to wait on.",
+     "verdict": "contradicted",
+     "source": "ap_desk.ipynb 526",
+     "why": "In LangGraph, waiting is done via interrupt(), whereas returning a Wait object is how the case file waits."
+    },
+    {
+     "claim": "In the from-scratch case file, the case file stores a waiting entry in the shared board",
+     "quote": "The case file stores a `waiting` entry in the shared board.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 385",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, the step returns a Wait object, the desk sets desk.waiting and clears desk.next",
+     "quote": "The step returns a `Wait` object, the desk sets `desk.waiting` and clears `desk.next`.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 384",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, when a person writes the expected field, answer() writes the value, clears the waiting flag and advances next to the next step",
+     "quote": "When a person writes the expected field, `answer()` writes the value, clears the waiting flag and advances `next` to the next step.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 370",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, because a resumed node starts at the top, any side-effect is performed again when the run is resumed",
+     "quote": "because a resumed node starts at the top, any side‑effect (e.g., sending an email) is performed **again** when the run is resumed.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 493",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, answers are matched by position in the interrupt list",
+     "quote": "answers are matched by *position* in the interrupt list",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 495",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, a deployment that changes the order of interrupt() calls can cause an answer to be applied to the wrong question",
+     "quote": "a deployment that changes the order of `interrupt()` calls can cause an answer to be applied to the wrong question.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 495",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, Command(resume=...) can carry any payload",
+     "quote": "`Command(resume=…)` can carry any payload",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 497",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, the graph does not enforce that the responder is the designated owner, so an unauthorized party can supply a reply",
+     "quote": "the graph does not enforce that the responder is the designated owner, so an unauthorized party can supply a reply.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 497",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, the check-pointer only makes the workflow durable",
+     "quote": "the check‑pointer only makes the *workflow* durable.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 541",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, external state like the in-memory P.PAYMENTS list is not persisted",
+     "quote": "External state (e.g., the in‑memory `P.PAYMENTS` list) is not persisted",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 541",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, a run that crosses processes can cause actions to be missed or run twice",
+     "quote": "a run that crosses processes can cause actions (payment) to be missed or run twice.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 541",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, the default step limit of 10,007 stops a runaway loop",
+     "quote": "the default step limit (10 007) stops a runaway loop",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 530",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, a loop that repeatedly calls interrupt() is not limited because each resume is a new invoke",
+     "quote": "a loop that repeatedly calls `interrupt()` is not limited because each resume is a new `invoke`.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 539",
+     "why": ""
+    },
+    {
+     "claim": "In LangGraph desk, parallelism, streaming, rewinding/forking, timeout, or API serving are not provided out-of-the-box",
+     "quote": "parallelism, streaming, rewinding/forking, timeout, or API serving are not provided out‑of‑the‑box.",
+     "verdict": "contradicted",
+     "source": "ap_desk.ipynb 532-533",
+     "why": "LangGraph does support these features out-of-the-box; it is the case file that does not support them."
+    },
+    {
+     "claim": "In the from-scratch case file, because the step that asked the question is finished before waiting, the same action is never run a second time",
+     "quote": "because the step that asked the question is *finished* before waiting, the same action (e.g., sending an email) is never run a second time.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 366",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, each answer is written to a named field",
+     "quote": "each answer is written to a named field (`approval:tomasz`, `approval:ines`, …).",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 366",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, the case file stores the answer in that field, so reordering of questions does not mis-route answers",
+     "quote": "The case file stores the answer in that field, so reordering of questions does not mis‑route answers.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 366",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, only the owner of a field may write it, and attempts by anyone else raise Denied",
+     "quote": "only the owner of a field may write it; attempts by anyone else raise `Denied`.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 524",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, every write is also a row in the Records SQLite table",
+     "quote": "every write is also a row in the `Records` SQLite table",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 525",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, any process can pick up the case later and the history is durable",
+     "quote": "any process can pick up the case later and the history is durable.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 519",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, the design does not support parallel execution, streaming, rewinding/forking, step-level time-outs, or serving the workflow over an API",
+     "quote": "the case‑file design does **not** support parallel execution, streaming, rewinding/forking, step‑level time‑outs, or serving the workflow over an API",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 532-533",
+     "why": ""
+    },
+    {
+     "claim": "In the from-scratch case file, those behaviours have to be built manually",
+     "quote": "those behaviours have to be built manually.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 532-533",
+     "why": ""
+    },
+    {
+     "claim": "In ap_graph.py, the desk sets the waiting field to the asked value",
+     "quote": "case.set(\"desk\", \"waiting\", after.ask())",
+     "verdict": "contradicted",
+     "source": "ap_desk.ipynb 369",
+     "why": "This code is from case.py, not ap_graph.py."
+    },
+    {
+     "claim": "In ap_graph.py, the desk clears the next field",
+     "quote": "case.set(\"desk\", \"next\", None)",
+     "verdict": "contradicted",
+     "source": "ap_desk.ipynb 369",
+     "why": "This code is from case.py, not ap_graph.py."
+    },
+    {
+     "claim": "In ap_graph.py, resumed nodes run again from the first line, leading to duplicate sends",
+     "quote": "Resumed nodes run again from the first line → duplicate sends.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 493",
+     "why": ""
+    },
+    {
+     "claim": "In case.py, only the owner can write to the field",
+     "quote": "case.set(party, field, value)          # only owner can write",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 376",
+     "why": ""
+    },
+    {
+     "claim": "In case.py, the desk clears the waiting field",
+     "quote": "case.set(\"desk\", \"waiting\", None)",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 377",
+     "why": ""
+    },
+    {
+     "claim": "In case.py, the desk sets the next field to the then value",
+     "quote": "case.set(\"desk\", \"next\", waiting[\"then\"])",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 378",
+     "why": ""
+    },
+    {
+     "claim": "In case.py, answers are matched to the explicit field and the step proceeds only once",
+     "quote": "Answers are matched to the explicit field and the step proceeds only once.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 370",
+     "why": ""
+    },
+    {
+     "claim": "LangGraph's checkpoint-based waiting is powerful but has pitfalls like duplicate side-effects, positional answer matching, and no built-in ownership checks",
+     "quote": "LangGraph’s checkpoint‑based waiting is powerful (parallelism, streaming, rewinding, etc.) but comes with pitfalls: duplicate side‑effects on resume, positional answer matching, and no built‑in ownership checks.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 539",
+     "why": ""
+    },
+    {
+     "claim": "The from-scratch case-file waiting is simpler and safer for human-driven steps because each question is a named field, ownership is enforced, and actions are not re-executed",
+     "quote": "The from‑scratch case‑file waiting is simpler and safer for human‑driven steps: each question is a named field, ownership is enforced, and actions are not re‑executed.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 537",
+     "why": ""
+    },
+    {
+     "claim": "The from-scratch case-file waiting lacks the richer orchestration features that LangGraph provides",
+     "quote": "It lacks the richer orchestration features that LangGraph provides.",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 535",
+     "why": ""
+    },
+    {
+     "claim": "Waiting implementation and pitfalls for LangGraph are discussed in the Run and show section of 08_frameworks/02_langgraph/ap_desk.ipynb, lines 493-502",
+     "quote": "waiting implementation and pitfalls for LangGraph are discussed in the “Run and show” section (duplicate sends, positional matching, anyone can answer, step‑limit, durability)【08_frameworks/02_langgraph/ap_desk.ipynb § Part 2 · Run and show, lines 493‑502】",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 493",
+     "why": ""
+    },
+    {
+     "claim": "The case-file waiting logic and ownership checks are shown in the answer and _go methods of case.py in 08_frameworks/02_langgraph/ap_desk.ipynb, lines 367-392",
+     "quote": "The case‑file waiting logic and ownership checks are shown in the `answer` and `_go` methods of `case.py`【08_frameworks/02_langgraph/ap_desk.ipynb § Part 1 · Build, lines 367‑392】",
+     "verdict": "supported",
+     "source": "ap_desk.ipynb 368",
+     "why": ""
+    }
+   ],
+   "points made": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+   ],
+   "unanchored": 4,
+   "unmarked": 0,
+   "judge": "gemini-3.5-flash",
+   "judge tokens": 28113
+  }
+ },
+ "the answers": {
+  "llamaindex board": [
+   "05_llamaindex/store/agent.json",
+   "runs",
+   0
+  ],
+  "scratch langgraph": [
+   "05_llamaindex/store/agent_scratch.json",
+   "runs",
+   1
+  ]
+ },
+ "checked by hand": {
+  "llamaindex board": {
+   "claims wrong": 0
+  },
+  "scratch langgraph": {
+   "claims wrong": 3,
+   "the three": [
+    "a LangGraph node returns a Wait (the case file does)",
+    "LangGraph lacks parallelism, streaming, rewinding (it has them; the case file lacks them)",
+    "case.py code labelled ap_graph.py"
+   ]
+  }
+ }
+}

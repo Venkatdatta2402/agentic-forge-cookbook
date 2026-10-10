@@ -13,6 +13,10 @@ store/
 08_frameworks/*/store/*
 !08_frameworks/*/store/*.json
 !08_frameworks/*/store/index/
+# 07 and 08 keep each run's answers, the judge's verdicts and the traces read back, one file per experiment
+!08_frameworks/*/store/answers/
+!08_frameworks/*/store/verdicts/
+!08_frameworks/*/store/traces/
 
 # stdio servers' stderr (07_mcp)
 server.log

@@ -1,0 +1,363 @@
+[
+ {
+  "question": "What is the difference between a tool that refuses and one that is broken, and which does the model get to see?",
+  "seconds": 6.8,
+  "trace": "01a11b46-bf3f-7ae2-bbf5-ad5ee701af08",
+  "model calls": [
+   {
+    "in": 2398,
+    "out": 451,
+    "seconds": 1.7
+   }
+  ],
+  "tool calls": [],
+  "retrieved": [
+   "07_mcp/notebooks/02_mcp_client.ipynb",
+   "03_tools/notebooks/03_invocation.ipynb",
+   "03_tools/README.md",
+   "07_mcp/remote.py",
+   "03_tools/notebooks/05_built_in_tools.ipynb"
+  ]
+ },
+ {
+  "question": "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit compare in chapter 8's LangGraph project?",
+  "seconds": 5.4,
+  "trace": "01a11b46-d9e9-79b1-bce6-adfbb62c4bef",
+  "model calls": [
+   {
+    "in": 435,
+    "out": 119,
+    "seconds": 0.7
+   },
+   {
+    "in": 1375,
+    "out": 84,
+    "seconds": 0.6
+   },
+   {
+    "in": 2364,
+    "out": 779,
+    "seconds": 2.2
+   }
+  ],
+  "tool calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 2 runtime stop agent keeps calling same tool"
+    },
+    "returned chars": 3744
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 8 LangGraph limit"
+    },
+    "returned chars": 3883
+   }
+  ],
+  "retrieved": []
+ },
+ {
+  "question": "In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.",
+  "seconds": 187.4,
+  "trace": "01a11b46-ef25-7110-96b1-a4b18bc9e181",
+  "model calls": [
+   {
+    "in": 436,
+    "out": 93,
+    "seconds": 0.6
+   },
+   {
+    "in": 1142,
+    "out": 89,
+    "seconds": 0.5
+   },
+   {
+    "in": 1673,
+    "out": 76,
+    "seconds": 11.7
+   },
+   {
+    "in": 2663,
+    "out": 107,
+    "seconds": 19.9
+   },
+   {
+    "in": 3623,
+    "out": 105,
+    "seconds": 22.0
+   },
+   {
+    "in": 4545,
+    "out": 119,
+    "seconds": 34.0
+   },
+   {
+    "in": 5842,
+    "out": 193,
+    "seconds": 42.3
+   },
+   {
+    "in": 6584,
+    "out": 83,
+    "seconds": 51.6
+   },
+   {
+    "in": 0,
+    "out": 0,
+    "seconds": 0.1
+   }
+  ],
+  "tool calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 8 LangGraph desk wait for a person"
+    },
+    "returned chars": 2509
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph desk waiting person"
+    },
+    "returned chars": 1901
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "ap_graph waiting person"
+    },
+    "returned chars": 3886
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "ap_desk waiting"
+    },
+    "returned chars": 3585
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "LangGraph hazards"
+    },
+    "returned chars": 3766
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 420,
+     "line_start": 340,
+     "path": "08_frameworks/02_langgraph/ap_desk.ipynb"
+    },
+    "returned chars": 4937
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 420,
+     "line_start": 340,
+     "path": "08_frameworks/02_langgraph/ap_graph.py"
+    },
+    "returned chars": 2735
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "double_send"
+    },
+    "returned chars": 3838
+   }
+  ],
+  "retrieved": []
+ },
+ {
+  "question": "Does running an MCP server as a separate process sandbox it? Could it read my API keys?",
+  "seconds": 14.4,
+  "trace": "01a11b49-cb1d-7ca0-b3be-690cb2dbf997",
+  "model calls": [
+   {
+    "in": 2693,
+    "out": 397,
+    "seconds": 13.3
+   }
+  ],
+  "tool calls": [],
+  "retrieved": [
+   "07_mcp/notebooks/05_mcp_transport.ipynb",
+   "07_mcp/notebooks/01_mcp_concepts.ipynb",
+   "07_mcp/README.md",
+   "07_mcp/README.md",
+   "07_mcp/server.py"
+  ]
+ },
+ {
+  "question": "The README says extract() asks the API to enforce the schema first. If the API enforces it, why validate as well?",
+  "seconds": 23.1,
+  "trace": "01a11b4a-038b-74d2-a2d1-313921b7d6a4",
+  "model calls": [
+   {
+    "in": 2178,
+    "out": 533,
+    "seconds": 21.9
+   }
+  ],
+  "tool calls": [],
+  "retrieved": [
+   "01_foundations/notebooks/05_structured_outputs.ipynb",
+   "01_foundations/llm.py",
+   "01_foundations/notebooks/05_structured_outputs.ipynb",
+   "01_foundations/README.md",
+   "01_foundations/notebooks/06_function_calling.ipynb"
+  ]
+ },
+ {
+  "question": "What is the difference between handing off a conversation and delegating to another agent?",
+  "seconds": 26.5,
+  "trace": "01a11b4a-5def-7c63-b679-8c1426b1152c",
+  "model calls": [
+   {
+    "in": 3050,
+    "out": 574,
+    "seconds": 24.9
+   }
+  ],
+  "tool calls": [],
+  "retrieved": [
+   "06_orchestration/supervisor.py",
+   "06_orchestration/notebooks/02_delegation_and_supervision.ipynb",
+   "06_orchestration/notebooks/02_delegation_and_supervision.ipynb",
+   "02_agent_runtime/notebooks/05_sub_agents.ipynb",
+   "02_agent_runtime/notebooks/05_sub_agents.ipynb"
+  ]
+ },
+ {
+  "question": "Why is recall injected into the loop while remembering is a tool the agent calls?",
+  "seconds": 29.1,
+  "trace": "01a11b4a-c587-77c3-8e81-b3770f4ea3ae",
+  "model calls": [
+   {
+    "in": 3288,
+    "out": 428,
+    "seconds": 27.6
+   }
+  ],
+  "tool calls": [],
+  "retrieved": [
+   "04_memory/notebooks/05_memory_in_the_loop.ipynb",
+   "04_memory/README.md",
+   "04_memory/notebooks/05_memory_in_the_loop.ipynb",
+   "04_memory/notebooks/05_memory_in_the_loop.ipynb",
+   "04_memory/memory_tools.py"
+  ]
+ },
+ {
+  "question": "What counts as a doom loop, and what does the runtime do when it detects one?",
+  "seconds": 27.5,
+  "trace": "01a11b4b-3767-7240-bcc4-f3a35bdd02ff",
+  "model calls": [
+   {
+    "in": 3072,
+    "out": 598,
+    "seconds": 26.3
+   }
+  ],
+  "tool calls": [],
+  "retrieved": [
+   "02_agent_runtime/notebooks/03_retries_and_reflection.ipynb",
+   "02_agent_runtime/runtime.py",
+   "02_agent_runtime/notebooks/02_the_agent_loop.ipynb",
+   "02_agent_runtime/runtime.py",
+   "02_agent_runtime/notebooks/02_the_agent_loop.ipynb"
+  ]
+ },
+ {
+  "question": "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?",
+  "seconds": 93.2,
+  "trace": "01a11b4b-a2d0-72c0-b563-4167216bcae1",
+  "model calls": [
+   {
+    "in": 424,
+    "out": 59,
+    "seconds": 4.0
+   },
+   {
+    "in": 1313,
+    "out": 40,
+    "seconds": 8.7
+   },
+   {
+    "in": 1958,
+    "out": 109,
+    "seconds": 14.8
+   },
+   {
+    "in": 3452,
+    "out": 72,
+    "seconds": 24.9
+   },
+   {
+    "in": 4962,
+    "out": 1168,
+    "seconds": 38.7
+   }
+  ],
+  "tool calls": [
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 6 shared board"
+    },
+    "returned chars": 3698
+   },
+   {
+    "tool": "search_cookbook",
+    "args": {
+     "query": "chapter 4 memory stores"
+    },
+    "returned chars": 2627
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 200,
+     "line_start": 1,
+     "path": "04_memory/stores.py"
+    },
+    "returned chars": 5775
+   },
+   {
+    "tool": "open_file",
+    "args": {
+     "line_end": 200,
+     "line_start": 1,
+     "path": "06_orchestration/state.py"
+    },
+    "returned chars": 5731
+   }
+  ],
+  "retrieved": []
+ },
+ {
+  "question": "What does compaction leave untouched, and why?",
+  "seconds": 27.9,
+  "trace": "01a11b4d-0ec6-7ca1-b106-c9342560c430",
+  "model calls": [
+   {
+    "in": 3119,
+    "out": 527,
+    "seconds": 26.7
+   }
+  ],
+  "tool calls": [],
+  "retrieved": [
+   "05_context/notebooks/03_context_compression.ipynb",
+   "05_context/compression.py",
+   "05_context/notebooks/03_context_compression.ipynb",
+   "05_context/compression.py",
+   "05_context/notebooks/03_context_compression.ipynb"
+  ]
+ }
+]

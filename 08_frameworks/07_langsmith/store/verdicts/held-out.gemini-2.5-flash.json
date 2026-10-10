@@ -1,0 +1,2650 @@
+{
+ "engine :: The README says extract() asks the API to enforce the schema first. If the API enforces it, why validate as well?": {
+  "claims": [
+   {
+    "claim": "extract() first asks the model to return JSON that matches the shape described by the schema (right field names and types).",
+    "quote": "extract() first asks the model to return JSON that matches the shape described by the schema (right field names and types).",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 92-94",
+    "why": ""
+   },
+   {
+    "claim": "Asking the model to return JSON that matches the shape described by the schema is useful.",
+    "quote": "This is useful",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 93",
+    "why": ""
+   },
+   {
+    "claim": "It eliminates a whole class of failures when the model supports the json_schema mode.",
+    "quote": "it eliminates a whole class of failures when the model supports the json_schema mode",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 93",
+    "why": ""
+   },
+   {
+    "claim": "It does not guarantee that the values make sense.",
+    "quote": "but it does not guarantee that the values make sense.",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 97",
+    "why": ""
+   },
+   {
+    "claim": "A JSON schema cannot express constraints such as “one score per candidate”, “indices must be within the list length”, or “scores must be between 0 and 10”.",
+    "quote": "A JSON schema cannot express constraints such as “one score per candidate”, “indices must be within the list length”, or “scores must be between 0 and 10”.",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 97-101",
+    "why": ""
+   },
+   {
+    "claim": "Those kinds of errors are still possible even though the output is schema‑valid.",
+    "quote": "Those kinds of errors are still possible even though the output is schema‑valid",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 97-100",
+    "why": ""
+   },
+   {
+    "claim": "The function must still run a Pydantic validation step to catch them.",
+    "quote": "so the function must still run a Pydantic validation step to catch them",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 103, 117-118",
+    "why": ""
+   },
+   {
+    "claim": "The Pydantic validation step gives the model concrete feedback for a retry.",
+    "quote": "and give the model concrete feedback for a retry",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 103-104, 119-122",
+    "why": ""
+   },
+   {
+    "claim": "Not every model can enforce a JSON schema.",
+    "quote": "not every model can enforce a JSON schema",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 94, 111-112",
+    "why": ""
+   },
+   {
+    "claim": "The older llama‑3.3‑70b model is an example of a model that cannot enforce a JSON schema.",
+    "quote": "(e.g., the older llama‑3.3‑70b model)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "When the API rejects the json_schema request, extract() falls back to plain JSON.",
+    "quote": "When the API rejects the json_schema request, extract() falls back to plain JSON",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 111-113",
+    "why": ""
+   },
+   {
+    "claim": "When extract() falls back to plain JSON, it relies entirely on the validation loop to detect problems.",
+    "quote": "and relies entirely on the validation loop to detect problems.",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 95, 112",
+    "why": ""
+   },
+   {
+    "claim": "Validating the returned JSON against the Pydantic model is the second line of defence.",
+    "quote": "the second line of defence – validating the returned JSON against the Pydantic model – is necessary",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 90, 103, 117",
+    "why": ""
+   },
+   {
+    "claim": "Validating the returned JSON against the Pydantic model is necessary to catch “sense” errors.",
+    "quote": "necessary both to catch “sense” errors",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 97, 103",
+    "why": ""
+   },
+   {
+    "claim": "Validating the returned JSON against the Pydantic model is necessary to handle models that cannot enforce the schema in the first place.",
+    "quote": "and to handle models that cannot enforce the schema in the first place.",
+    "verdict": "supported",
+    "source": "01_foundations/llm.py 111-113",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   4,
+   5
+  ],
+  "unanchored": 1,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 7223
+ },
+ "engine :: What counts as a doom loop, and what does the runtime do when it detects one?": {
+  "claims": [
+   {
+    "claim": "A doom loop is a pattern of repeated, unproductive activity.",
+    "quote": "A doom loop is any pattern of repeated, unproductive activity that the runtime’s loop‑detector flags as “stuck”.",
+    "verdict": "supported",
+    "source": "runtime.py 181-218",
+    "why": ""
+   },
+   {
+    "claim": "The runtime’s loop-detector flags doom loops as “stuck”.",
+    "quote": "the runtime’s loop‑detector flags as “stuck”",
+    "verdict": "supported",
+    "source": "runtime.py 181-218, 220-249",
+    "why": ""
+   },
+   {
+    "claim": "The `_doom_loop` routine looks for four concrete shapes of doom loops.",
+    "quote": "The `_doom_loop` routine looks for four concrete shapes",
+    "verdict": "supported",
+    "source": "runtime.py 185-216",
+    "why": ""
+   },
+   {
+    "claim": "One shape of a doom loop is identical tool calls.",
+    "quote": "Identical tool calls – the same tool is invoked twice in a row with exactly the same arguments",
+    "verdict": "supported",
+    "source": "runtime.py 185-186",
+    "why": ""
+   },
+   {
+    "claim": "Identical tool calls occur when the same tool is invoked twice in a row with exactly the same arguments.",
+    "quote": "the same tool is invoked twice in a row with exactly the same arguments",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "The code for identical tool calls is found at 4†L1-L5.",
+    "quote": "【4†L1-L5】",
+    "verdict": "contradicted",
+    "source": "runtime.py 185-186",
+    "why": "The code for identical tool calls is found at runtime.py lines 185-186, not 4†L1-L5."
+   },
+   {
+    "claim": "One shape of a doom loop is repeated errors.",
+    "quote": "Repeated errors – the tool returns the same error message on two consecutive attempts",
+    "verdict": "supported",
+    "source": "runtime.py 189-190",
+    "why": ""
+   },
+   {
+    "claim": "Repeated errors occur when the tool returns the same error message on two consecutive attempts.",
+    "quote": "the tool returns the same error message on two consecutive attempts",
+    "verdict": "supported",
+    "source": "point 2",
+    "why": ""
+   },
+   {
+    "claim": "The code for repeated errors is found at 4†L7-L9.",
+    "quote": "【4†L7-L9】",
+    "verdict": "contradicted",
+    "source": "runtime.py 189-190",
+    "why": "The code for repeated errors is found at runtime.py lines 189-190, not 4†L7-L9."
+   },
+   {
+    "claim": "One shape of a doom loop is oscillation.",
+    "quote": "Oscillation – the conversation alternates between two different tool calls in an A‑B‑A‑B pattern",
+    "verdict": "supported",
+    "source": "runtime.py 194-195",
+    "why": ""
+   },
+   {
+    "claim": "Oscillation occurs when the conversation alternates between two different tool calls in an A-B-A-B pattern.",
+    "quote": "the conversation alternates between two different tool calls in an A‑B‑A‑B pattern",
+    "verdict": "supported",
+    "source": "point 3",
+    "why": ""
+   },
+   {
+    "claim": "Oscillation means four recent decisions form two identical pairs.",
+    "quote": "four recent decisions form two identical pairs",
+    "verdict": "supported",
+    "source": "runtime.py 193-194",
+    "why": ""
+   },
+   {
+    "claim": "The code for oscillation is found at 4†L11-L15.",
+    "quote": "【4†L11-L15】",
+    "verdict": "contradicted",
+    "source": "runtime.py 193-195",
+    "why": "The code for oscillation is found at runtime.py lines 193-195, not 4†L11-L15."
+   },
+   {
+    "claim": "One shape of a doom loop is the same result with near-identical arguments.",
+    "quote": "Same result with near‑identical arguments – a tool is asked essentially the same question again and returns the same result",
+    "verdict": "supported",
+    "source": "runtime.py 214-216",
+    "why": ""
+   },
+   {
+    "claim": "This occurs when a tool is asked essentially the same question again and returns the same result.",
+    "quote": "a tool is asked essentially the same question again and returns the same result",
+    "verdict": "supported",
+    "source": "point 4",
+    "why": ""
+   },
+   {
+    "claim": "The arguments are judged “similar” in this case.",
+    "quote": "the arguments are judged “similar”",
+    "verdict": "supported",
+    "source": "runtime.py 215",
+    "why": ""
+   },
+   {
+    "claim": "The code for same result with near-identical arguments is found at 4†L17-L23.",
+    "quote": "【4†L17-L23】",
+    "verdict": "contradicted",
+    "source": "runtime.py 214-216",
+    "why": "The code for same result with near-identical arguments is found at runtime.py lines 214-216, not 4†L17-L23."
+   },
+   {
+    "claim": "When any of these conditions is met, the method returns a descriptive string.",
+    "quote": "When any of these conditions is met, the method returns a descriptive string",
+    "verdict": "supported",
+    "source": "runtime.py 186, 190, 195, 216",
+    "why": ""
+   },
+   {
+    "claim": "An example of a descriptive string returned is “the same tool call with identical arguments repeated”.",
+    "quote": "e.g., “the same tool call with identical arguments repeated”",
+    "verdict": "supported",
+    "source": "runtime.py 186",
+    "why": ""
+   },
+   {
+    "claim": "The `Runtime` monitors the output of `_doom_loop`.",
+    "quote": "The `Runtime` monitors the output of `_doom_loop`.",
+    "verdict": "supported",
+    "source": "runtime.py 220",
+    "why": ""
+   },
+   {
+    "claim": "If `_doom_loop` returns a non-`None` reason, the `Runtime` treats it as a doom-loop stop.",
+    "quote": "If a non‑`None` reason is returned, it treats the situation as a doom‑loop stop",
+    "verdict": "supported",
+    "source": "runtime.py 221, 232",
+    "why": ""
+   },
+   {
+    "claim": "The outer runtime halts the agent’s execution when a doom loop is detected.",
+    "quote": "the outer runtime halts the agent’s execution",
+    "verdict": "supported",
+    "source": "runtime.py 221",
+    "why": ""
+   },
+   {
+    "claim": "The outer runtime performs a graceful stop when a doom loop is detected.",
+    "quote": "performs a *graceful stop*",
+    "verdict": "supported",
+    "source": "runtime.py 220, 223",
+    "why": ""
+   },
+   {
+    "claim": "The graceful stop reports what actually happened.",
+    "quote": "reports what actually happened",
+    "verdict": "supported",
+    "source": "runtime.py 223-226",
+    "why": ""
+   },
+   {
+    "claim": "The graceful stop prevents continuing indefinitely.",
+    "quote": "rather than continuing indefinitely",
+    "verdict": "supported",
+    "source": "runtime.py 220-221, 223",
+    "why": ""
+   },
+   {
+    "claim": "The code for this behavior is found at 3†L9-L12.",
+    "quote": "【3†L9-L12】",
+    "verdict": "contradicted",
+    "source": "runtime.py 220-249",
+    "why": "The code for this behavior is found at runtime.py lines 220-249, not 3†L9-L12."
+   },
+   {
+    "claim": "The runtime aborts the loop.",
+    "quote": "the runtime aborts the loop",
+    "verdict": "supported",
+    "source": "runtime.py 221",
+    "why": ""
+   },
+   {
+    "claim": "The runtime emits a stop-event that includes the detected reason.",
+    "quote": "emits a stop‑event that includes the detected reason",
+    "verdict": "supported",
+    "source": "runtime.py 221, 239, 249",
+    "why": ""
+   },
+   {
+    "claim": "The runtime prevents further budget consumption.",
+    "quote": "prevents further budget consumption",
+    "verdict": "supported",
+    "source": "runtime.py 221",
+    "why": ""
+   },
+   {
+    "claim": "The runtime prevents endless cycling.",
+    "quote": "endless cycling",
+    "verdict": "supported",
+    "source": "runtime.py 221",
+    "why": ""
+   },
+   {
+    "claim": "The inner `Loop` component itself does not receive doom-loop protection.",
+    "quote": "the inner `Loop` component itself does **not** receive doom‑loop protection",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Doom-loop protection lives in the outer `Runtime`.",
+    "quote": "that protection lives in the outer `Runtime`",
+    "verdict": "supported",
+    "source": "runtime.py 181-249",
+    "why": ""
+   },
+   {
+    "claim": "The code for this is found at 1†L13-L15.",
+    "quote": "【1†L13-L15】",
+    "verdict": "contradicted",
+    "source": "runtime.py 181-249",
+    "why": "The code for this is found throughout runtime.py, specifically in the _doom_loop and _end_gracefully methods, not 1†L13-L15."
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 12976
+ },
+ "engine :: What is the difference between a tool that refuses and one that is broken, and which does the model get to see?": {
+  "claims": [
+   {
+    "claim": "A refused result means the tool ran but deliberately answered no or gave a reason for not fulfilling the request.",
+    "quote": "A **refused** result means the tool was able to run but deliberately answered “no” (or gave a reason why it can’t fulfil the request).",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 54-55, 135-136",
+    "why": ""
+   },
+   {
+    "claim": "A refused result is treated as a normal, recoverable outcome that the model can act on.",
+    "quote": "It is treated as a normal, recoverable outcome that the model can act on",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 54-55, 71",
+    "why": ""
+   },
+   {
+    "claim": "An example of a refused result is 'no weather station for Narnia, try a larger nearby city.'",
+    "quote": "for example, “no weather station for Narnia, try a larger nearby city.”",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence does not provide this specific example."
+   },
+   {
+    "claim": "A broken result means the tool failed due to an internal error or bug.",
+    "quote": "A **broken** result means the tool failed because of an internal error or bug",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 142-143",
+    "why": ""
+   },
+   {
+    "claim": "An exception other than `ToolError` indicates a broken result.",
+    "quote": "(e.g., an exception other than `ToolError`)",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 135, 142",
+    "why": ""
+   },
+   {
+    "claim": "The model cannot fix a broken tool failure.",
+    "quote": "The model cannot fix such a failure",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 56, 143-145",
+    "why": ""
+   },
+   {
+    "claim": "A broken result is considered a problem that should be hidden from the model's reasoning.",
+    "quote": "so it is considered a problem that should be hidden from the model’s reasoning.",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 56-57, 143-145",
+    "why": ""
+   },
+   {
+    "claim": "Only the refused kind of result is passed back to the model in the conversation.",
+    "quote": "Only the **refused** kind is passed back to the model in the conversation.",
+    "verdict": "contradicted",
+    "source": "03_tools/invoke.py 54-55, 59",
+    "why": "The model also sees 'ok', 'timeout', 'unverified', and 'bad_arguments' results, not just 'refused'."
+   },
+   {
+    "claim": "When a tool returns a broken result, the `for_the_model` flag is set to `False`.",
+    "quote": "When a tool returns a **broken** result, the `for_the_model` flag is set to `False`",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 56, 59, 146",
+    "why": ""
+   },
+   {
+    "claim": "For a broken result, the conversation receives a generic message like '<tool> could not be completed'.",
+    "quote": "the conversation receives a generic message like “<tool> could not be completed”",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 178-179, 03_tools/README.md 94-95",
+    "why": ""
+   },
+   {
+    "claim": "For a broken result, the detailed error stays in `Result.value` for a human reader.",
+    "quote": "while the detailed error stays in `Result.value` for a human reader",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 179, 03_tools/README.md 95",
+    "why": ""
+   },
+   {
+    "claim": "The model sees refusals.",
+    "quote": "the model sees refusals",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 54-55, 59, 172",
+    "why": ""
+   },
+   {
+    "claim": "Broken-tool failures are kept out of the model's view.",
+    "quote": "broken‑tool failures are kept out of the model’s view.",
+    "verdict": "supported",
+    "source": "03_tools/invoke.py 56-57, 143-145, 178-179",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "unanchored": 1,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 9090
+ },
+ "engine :: Why is recall injected into the loop while remembering is a tool the agent calls?": {
+  "claims": [
+   {
+    "claim": "Recall (reading) is built into the loop as an injected component.",
+    "quote": "Recall (reading) is built into the loop as an **injected component**",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7; 04_memory/README.md 187, 188; point 1",
+    "why": ""
+   },
+   {
+    "claim": "Remembering (writing) is exposed only as a tool that the model must call explicitly.",
+    "quote": "remembering (writing) is exposed only as a **tool** that the model must call explicitly",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 8; 04_memory/README.md 188; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The loop treats any object with a .run(conversation) method as a component.",
+    "quote": "The loop treats any object with a `.run(conversation)` method as a component",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 3; 04_memory/README.md 187",
+    "why": ""
+   },
+   {
+    "claim": "The Retrieve component is placed before the Think step.",
+    "quote": "the `Retrieve` component is placed before the `Think` step",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The Retrieve component automatically injects any relevant memories into the prompt on every turn.",
+    "quote": "automatically injects any relevant memories into the prompt on every turn",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7; 04_memory/README.md 190",
+    "why": ""
+   },
+   {
+    "claim": "The “reading is injected” design means the model sees the memory context before it decides how to answer.",
+    "quote": "This “reading is injected” design means the model sees the memory context before it decides how to answer",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7",
+    "why": ""
+   },
+   {
+    "claim": "The model sees the memory context regardless of whether it asked for it.",
+    "quote": "regardless of whether it asked for it",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7; point 1",
+    "why": ""
+   },
+   {
+    "claim": "Writing to memory is implemented as a tool (`remember`).",
+    "quote": "writing to memory is implemented as a tool (`remember`)",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 8; 04_memory/README.md 189",
+    "why": ""
+   },
+   {
+    "claim": "The `remember` tool can be invoked by the model when it decides something is worth keeping.",
+    "quote": "that the model can invoke when it decides something is worth keeping",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 8; point 1",
+    "why": ""
+   },
+   {
+    "claim": "The runtime has no place to hold a memory handle.",
+    "quote": "Because the runtime has no place to hold a memory handle",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The tool’s closure captures the journal.",
+    "quote": "the tool’s closure captures the journal",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The tool’s closure returns a line like “remembered as #26”.",
+    "quote": "returns a line like “remembered as #26”",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "The notebook notes that this separation was intentional.",
+    "quote": "The notebook notes that this separation was intentional",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 11; 04_memory/README.md 190",
+    "why": ""
+   },
+   {
+    "claim": "Recall is by injection.",
+    "quote": "recall by injection",
+    "verdict": "supported",
+    "source": "04_memory/README.md 190",
+    "why": ""
+   },
+   {
+    "claim": "Write is by tool.",
+    "quote": "write by tool",
+    "verdict": "supported",
+    "source": "04_memory/README.md 190",
+    "why": ""
+   },
+   {
+    "claim": "Reading is injected rather than offered so the model gets the information up-front.",
+    "quote": "reading is injected rather than offered so the model gets the information up‑front",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 13-17; 04_memory/README.md 191-199",
+    "why": ""
+   },
+   {
+    "claim": "Writing must be a deliberate action by the agent.",
+    "quote": "writing must be a deliberate action by the agent",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 8, 20; point 1, 4",
+    "why": ""
+   },
+   {
+    "claim": "Recall is injected to give the model immediate context each turn.",
+    "quote": "recall is injected to give the model immediate context each turn",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 7, 13-17",
+    "why": ""
+   },
+   {
+    "claim": "Remembering is a tool so the model only writes to memory when it explicitly chooses to do so.",
+    "quote": "remembering is a tool so the model only writes to memory when it explicitly chooses to do so",
+    "verdict": "supported",
+    "source": "04_memory/memory_tools.py 8, 20; point 1, 4",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   4
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 9410
+ },
+ "engine :: What does compaction leave untouched, and why?": {
+  "claims": [
+   {
+    "claim": "Compaction (`compact()`) deliberately does not modify several kinds of items.",
+    "quote": "Compaction (`compact()`) deliberately does not modify several kinds of items",
+    "verdict": "supported",
+    "source": "05_context/compression.py 261",
+    "why": ""
+   },
+   {
+    "claim": "Compaction does not modify Pinned items – rules, instructions, requests.",
+    "quote": "Pinned items – rules, instructions, requests",
+    "verdict": "supported",
+    "source": "05_context/compression.py 262",
+    "why": ""
+   },
+   {
+    "claim": "Pinned items must stay word-for-word because a paraphrased rule is a different rule.",
+    "quote": "A summarizer would paraphrase them, and a paraphrased rule is a different rule, so they must stay word‑for‑word.",
+    "verdict": "supported",
+    "source": "05_context/compression.py 262",
+    "why": ""
+   },
+   {
+    "claim": "Compaction does not modify Task‑state items – the current plan and scratchpad.",
+    "quote": "Task‑state items – the current plan and scratchpad",
+    "verdict": "supported",
+    "source": "05_context/compression.py 263",
+    "why": ""
+   },
+   {
+    "claim": "Task-state items are already the run’s own summary of where things stand.",
+    "quote": "They are already the run’s own summary of where things stand",
+    "verdict": "supported",
+    "source": "05_context/compression.py 263-264",
+    "why": ""
+   },
+   {
+    "claim": "Summarising task-state items would lose step numbers or other essential structure.",
+    "quote": "summarising them would lose step numbers or other essential structure.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Compaction does not modify The last `keep_recent` turns (the most recent few messages).",
+    "quote": "The last `keep_recent` turns (the most recent few messages)",
+    "verdict": "supported",
+    "source": "05_context/compression.py 265",
+    "why": ""
+   },
+   {
+    "claim": "The last `keep_recent` turns must be kept verbatim because the next step of the run builds directly on these turns.",
+    "quote": "The next step of the run builds directly on these turns, so they must be kept verbatim.",
+    "verdict": "supported",
+    "source": "05_context/compression.py 265",
+    "why": ""
+   },
+   {
+    "claim": "Compaction does not modify anything that did not originate from the run.",
+    "quote": "Anything that did not originate from the run – e.g., a pasted profile, an always‑present catalogue, a retrieved memory",
+    "verdict": "supported",
+    "source": "05_context/compression.py 266",
+    "why": ""
+   },
+   {
+    "claim": "External summaries are not targeted by the run’s compression.",
+    "quote": "the run’s compression only targets its own conversation, not pre‑existing material.",
+    "verdict": "supported",
+    "source": "05_context/compression.py 267",
+    "why": ""
+   },
+   {
+    "claim": "Compaction does not modify Constraints (a special class of pinned items).",
+    "quote": "Constraints (a special class of pinned items)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Summaries would change the meaning of a constraint.",
+    "quote": "Summaries would change the meaning of a constraint",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Constraints must be kept exactly or omitted entirely.",
+    "quote": "they must be kept exactly or omitted entirely.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "Compaction does not modify Task state.",
+    "quote": "Task state (again emphasized)",
+    "verdict": "supported",
+    "source": "05_context/compression.py 263",
+    "why": ""
+   },
+   {
+    "claim": "Task state is already a compressed representation.",
+    "quote": "Already a compressed representation",
+    "verdict": "supported",
+    "source": "05_context/compression.py 263-264",
+    "why": ""
+   },
+   {
+    "claim": "Further summarisation of task state would discard needed detail.",
+    "quote": "further summarisation would discard needed detail.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": ""
+   },
+   {
+    "claim": "`compact()` protects anything that is essential for correct reasoning (rules, current plan, recent dialogue).",
+    "quote": "`compact()` protects anything that is either essential for correct reasoning (rules, current plan, recent dialogue)",
+    "verdict": "supported",
+    "source": "05_context/compression.py 262, 05_context/compression.py 263-264, 05_context/compression.py 265",
+    "why": ""
+   },
+   {
+    "claim": "`compact()` protects anything that is already a safe summary (external resources).",
+    "quote": "already a safe summary (external resources)",
+    "verdict": "supported",
+    "source": "05_context/compression.py 267, 05_context/compression.py 271",
+    "why": ""
+   },
+   {
+    "claim": "Altering protected items could change meaning.",
+    "quote": "altering them could change meaning",
+    "verdict": "supported",
+    "source": "05_context/compression.py 262",
+    "why": ""
+   },
+   {
+    "claim": "Altering protected items could lose critical context.",
+    "quote": "lose critical context",
+    "verdict": "supported",
+    "source": "05_context/compression.py 264, 05_context/compression.py 265",
+    "why": ""
+   },
+   {
+    "claim": "Altering protected items could break the next step of the agent’s execution.",
+    "quote": "break the next step of the agent’s execution.",
+    "verdict": "supported",
+    "source": "05_context/compression.py 264, 05_context/compression.py 265",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 9364
+ },
+ "engine :: What is the difference between handing off a conversation and delegating to another agent?": {
+  "claims": [
+   {
+    "claim": "In a hand-off, the current agent steps out of the dialogue and transfers ownership of the whole chat to a new agent.",
+    "quote": "The current agent *steps out* of the dialogue and transfers ownership of the whole chat to a new agent.",
+    "verdict": "supported",
+    "source": "supervisor.py 114-116",
+    "why": ""
+   },
+   {
+    "claim": "In a hand-off, the new agent sees the entire transcript and answers the user directly, using its own voice.",
+    "quote": "The new agent sees the entire transcript (including the user’s original messages) and answers the user directly, using its own voice.",
+    "verdict": "supported",
+    "source": "supervisor.py 115-116, README.md 67",
+    "why": ""
+   },
+   {
+    "claim": "The transfer in a hand-off is performed by a `transfer_to_<name>` tool.",
+    "quote": "The transfer is performed by a `transfer_to_<name>` tool",
+    "verdict": "supported",
+    "source": "supervisor.py 118-119",
+    "why": ""
+   },
+   {
+    "claim": "When the `transfer_to_<name>` tool is called, the current agent’s loop is cancelled and the next turn is answered by the new owner.",
+    "quote": "when it is called the current agent’s loop is cancelled and the next turn is answered by the new owner",
+    "verdict": "supported",
+    "source": "supervisor.py 119-121",
+    "why": ""
+   },
+   {
+    "claim": "In delegation, the supervising agent stays in charge of the conversation.",
+    "quote": "The supervising agent stays in charge of the conversation.",
+    "verdict": "supported",
+    "source": "supervisor.py 113-114",
+    "why": ""
+   },
+   {
+    "claim": "In delegation, the supervising agent asks another agent for an answer, receives the response, and then rewrites or forwards that answer back to the user.",
+    "quote": "When it needs expertise it *asks* another agent for an answer, receives the response, and then rewrites or forwards that answer back to the user.",
+    "verdict": "supported",
+    "source": "supervisor.py 113-114",
+    "why": ""
+   },
+   {
+    "claim": "In delegation, the supervisor never leaves the loop.",
+    "quote": "The supervisor never leaves the loop",
+    "verdict": "supported",
+    "source": "supervisor.py 113-114",
+    "why": ""
+   },
+   {
+    "claim": "In delegation, the supervisor merely forwards the specialist’s output and can continue to route subsequent turns.",
+    "quote": "it merely forwards the specialist’s output and can continue to route subsequent turns",
+    "verdict": "supported",
+    "source": "supervisor.py 113-114",
+    "why": ""
+   },
+   {
+    "claim": "In the code, delegation is implemented by adding the specialist’s tools to the supervisor’s runtime.",
+    "quote": "In the code, this is implemented by adding the specialist’s tools to the supervisor’s runtime",
+    "verdict": "supported",
+    "source": "README.md 57-58, supervisor.py 7, 11",
+    "why": ""
+   },
+   {
+    "claim": "In delegation, the supervisor’s persona remains the one that replies to the user.",
+    "quote": "but the supervisor’s persona remains the one that replies to the user",
+    "verdict": "supported",
+    "source": "README.md 67, supervisor.py 113-114",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 7473
+ },
+ "engine :: Does running an MCP server as a separate process sandbox it? Could it read my API keys?": {
+  "claims": [
+   {
+    "claim": "Running an MCP server in its own process does not provide a security sandbox.",
+    "quote": "Running an MCP server in its own process does not give you a security sandbox.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "The server is started as a child of the notebook (or whatever process launches it).",
+    "quote": "The server is started as a child of the notebook (or whatever process launches it)",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 110-111",
+    "why": ""
+   },
+   {
+    "claim": "The server inherits the parent’s environment and any credentials present there.",
+    "quote": "it inherits the parent’s environment and therefore any credentials that are present there.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "The notebooks point out that the server can read variables (e.g., FORGE_FAKE_API_KEY).",
+    "quote": "As the notebooks point out, the server can read those variables (e.g., FORGE_FAKE_API_KEY)",
+    "verdict": "supported",
+    "source": "07_mcp/README.md 111-112",
+    "why": ""
+   },
+   {
+    "claim": "The server can open files with the same authority as the launching process.",
+    "quote": "open files, and reach the network with the same authority as the launching process.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "The server can reach the network with the same authority as the launching process.",
+    "quote": "reach the network with the same authority as the launching process.",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "The separation only isolates failures (crashes).",
+    "quote": "The separation only isolates failures (crashes)",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "The separation does not isolate the ability to access secrets such as API keys.",
+    "quote": "not the ability to access secrets such as API keys",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 5762
+ },
+ "llamaindex agent :: How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "claims": [
+   {
+    "claim": "Chapter 6's Shared board is implemented in `06_orchestration/state.py`.",
+    "quote": "Implemented in `06_orchestration/state.py`",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 1-20",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 6's Shared board is a tiny in-memory object.",
+    "quote": "a tiny in‑memory object",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 6",
+    "why": ""
+   },
+   {
+    "claim": "Several agents read from the Shared board.",
+    "quote": "several agents read from",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 1, 5",
+    "why": ""
+   },
+   {
+    "claim": "Several agents write to the Shared board only on declared fields.",
+    "quote": "(only on declared fields) write to",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 12-13",
+    "why": ""
+   },
+   {
+    "claim": "Agents use the Shared board while they are working on a case.",
+    "quote": "while they are working on a case.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 1, 5",
+    "why": ""
+   },
+   {
+    "claim": "The Shared board is not memory.",
+    "quote": "This is **not memory**.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3",
+    "why": ""
+   },
+   {
+    "claim": "`04_memory` keeps what should outlive a run.",
+    "quote": "`04_memory` keeps what should outlive a run",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3",
+    "why": ""
+   },
+   {
+    "claim": "What the Shared board holds is the working state of that case.",
+    "quote": "What this holds is the **working state of that case**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 5",
+    "why": ""
+   },
+   {
+    "claim": "The Shared board is alive for minutes.",
+    "quote": "alive for minutes",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 5",
+    "why": ""
+   },
+   {
+    "claim": "The Shared board is read on nearly every turn.",
+    "quote": "read on nearly every turn",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 5",
+    "why": ""
+   },
+   {
+    "claim": "The board is defined by three wiring decisions.",
+    "quote": "The board is defined by three wiring decisions",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 9-10",
+    "why": ""
+   },
+   {
+    "claim": "These wiring decisions are made once when the agents are wired together.",
+    "quote": "made **once when the agents are wired together**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 9",
+    "why": ""
+   },
+   {
+    "claim": "One wiring decision is who may read a field (`readers`).",
+    "quote": "who may **read** a field (`readers`)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 11",
+    "why": ""
+   },
+   {
+    "claim": "This decision is found in `06_orchestration/state.py†L9-L12`.",
+    "quote": "【06_orchestration/state.py†L9-L12】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 9-12",
+    "why": ""
+   },
+   {
+    "claim": "One wiring decision is who may write a field (`owner`).",
+    "quote": "who may **write** a field (`owner`)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 12",
+    "why": ""
+   },
+   {
+    "claim": "This decision is found in `06_orchestration/state.py†L12-L14`.",
+    "quote": "【06_orchestration/state.py†L12-L14】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 12-14",
+    "why": ""
+   },
+   {
+    "claim": "One wiring decision is what stays private (nothing is written to the board).",
+    "quote": "what stays private (nothing is written to the board)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 15-16",
+    "why": ""
+   },
+   {
+    "claim": "This decision is found in `06_orchestration/state.py†L15-L16`.",
+    "quote": "【06_orchestration/state.py†L15-L16】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 15-16",
+    "why": ""
+   },
+   {
+    "claim": "Reads are injected into an agent’s prompt (`view(agent)`).",
+    "quote": "Reads are injected into an agent’s prompt (`view(agent)`)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 17-18",
+    "why": ""
+   },
+   {
+    "claim": "Writes are a tool that records the author and checks ownership.",
+    "quote": "writes are a tool that records the author and checks ownership",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 18-19",
+    "why": ""
+   },
+   {
+    "claim": "This access pattern is found in `06_orchestration/state.py†L17-L20`.",
+    "quote": "【06_orchestration/state.py†L17-L20】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 17-20",
+    "why": ""
+   },
+   {
+    "claim": "This access pattern is found in `06_orchestration/state.py†L66-L73`.",
+    "quote": "【06_orchestration/state.py†L66-L73】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 66-73",
+    "why": ""
+   },
+   {
+    "claim": "Chapter 4's Memory stores are implemented in `04_memory/stores.py`.",
+    "quote": "Implemented in `04_memory/stores.py`",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 1-12",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are four persistent data-stores.",
+    "quote": "four persistent data‑stores",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 3, 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores survive process restarts.",
+    "quote": "survive process restarts",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 49-50",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used to answer later queries.",
+    "quote": "used to answer **later queries**.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 3",
+    "why": ""
+   },
+   {
+    "claim": "There are four stores.",
+    "quote": "Four stores",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 1",
+    "why": ""
+   },
+   {
+    "claim": "The shape a memory takes follows from what will be asked of it later.",
+    "quote": "The shape it takes follows from **what will be asked of it later**.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 3-5",
+    "why": ""
+   },
+   {
+    "claim": "This design principle is found in `04_memory/stores.py†L1-L5`.",
+    "quote": "【04_memory/stores.py†L1-L5】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 1-5",
+    "why": ""
+   },
+   {
+    "claim": "One of the four stores is KeyValue.",
+    "quote": "**KeyValue**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 6",
+    "why": ""
+   },
+   {
+    "claim": "KeyValue store is for exact-name look-ups.",
+    "quote": "exact‑name look‑ups",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 6",
+    "why": ""
+   },
+   {
+    "claim": "An example of KeyValue use is a timezone.",
+    "quote": "e.g., a timezone",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 7",
+    "why": ""
+   },
+   {
+    "claim": "KeyValue store is found in `04_memory/stores.py†L6-L7`.",
+    "quote": "【04_memory/stores.py†L6-L7】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 6-7",
+    "why": ""
+   },
+   {
+    "claim": "One of the four stores is Records.",
+    "quote": "**Records**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 7",
+    "why": ""
+   },
+   {
+    "claim": "Records store is for filter / order / count operations.",
+    "quote": "filter / order / count",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 7",
+    "why": ""
+   },
+   {
+    "claim": "An example of Records use is deploy logs.",
+    "quote": "e.g., deploy logs",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 8",
+    "why": ""
+   },
+   {
+    "claim": "Records store is found in `04_memory/stores.py†L7-L8`.",
+    "quote": "【04_memory/stores.py†L7-L8】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 7-8",
+    "why": ""
+   },
+   {
+    "claim": "One of the four stores is Journal.",
+    "quote": "**Journal**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 8",
+    "why": ""
+   },
+   {
+    "claim": "Journal store is for full-text / vector search for prose or “resemblance” queries.",
+    "quote": "full‑text / vector search for prose or “resemblance” queries",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 8-9",
+    "why": ""
+   },
+   {
+    "claim": "Journal store is found in `04_memory/stores.py†L8-L9`.",
+    "quote": "【04_memory/stores.py†L8-L9】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 8-9",
+    "why": ""
+   },
+   {
+    "claim": "One of the four stores is Graph.",
+    "quote": "**Graph**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 10",
+    "why": ""
+   },
+   {
+    "claim": "Graph store is for walking relationships.",
+    "quote": "walk relationships",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 10",
+    "why": ""
+   },
+   {
+    "claim": "An example of Graph use is ownership graphs.",
+    "quote": "e.g., ownership graphs",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 10",
+    "why": ""
+   },
+   {
+    "claim": "Graph store is found in `04_memory/stores.py†L9-L10`.",
+    "quote": "【04_memory/stores.py†L9-L10】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 9-10",
+    "why": ""
+   },
+   {
+    "claim": "All stores persist to disk.",
+    "quote": "All stores persist to disk",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 49",
+    "why": ""
+   },
+   {
+    "claim": "The persistence technologies used are SQLite, Chroma, Neo4j.",
+    "quote": "(SQLite, Chroma, Neo4j)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are long-term memory.",
+    "quote": "they are **long‑term memory**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 49-50; 06_orchestration/state.py, line 3",
+    "why": ""
+   },
+   {
+    "claim": "This persistence information is found in `04_memory/stores.py†L49-L52`.",
+    "quote": "【04_memory/stores.py†L49-L52】",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 49-52",
+    "why": ""
+   },
+   {
+    "claim": "Shared board lives only for the duration of a single case (minutes).",
+    "quote": "Lives only for the duration of a single case (minutes).",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 4-6",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores persist across runs.",
+    "quote": "Persists across runs",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3; 04_memory/stores.py, line 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are stored on disk.",
+    "quote": "stored on disk.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3; 04_memory/stores.py, line 49",
+    "why": ""
+   },
+   {
+    "claim": "Shared board is coordination-state that agents need right now.",
+    "quote": "Coordination‑state that agents need *right now*",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 1, 5",
+    "why": ""
+   },
+   {
+    "claim": "Shared board's purpose includes tracking who owns what.",
+    "quote": "(who owns what",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 12, 19",
+    "why": ""
+   },
+   {
+    "claim": "Shared board's purpose includes tracking what the team has agreed on.",
+    "quote": "what the team has agreed on).",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 1, 70-71",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are long-term factual knowledge.",
+    "quote": "Long‑term factual",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3; 04_memory/stores.py, lines 6-10",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are long-term procedural knowledge.",
+    "quote": "or procedural knowledge",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The sources describe memory stores as holding factual information (timezones, deploys, tickets, metrics, agent's findings, ownership graphs) but do not explicitly mention \"procedural knowledge\"."
+   },
+   {
+    "claim": "Memory stores are knowledge that agents may retrieve later.",
+    "quote": "that agents may retrieve later.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 3; 06_orchestration/state.py, line 3",
+    "why": ""
+   },
+   {
+    "claim": "Shared board has a fixed set of fields.",
+    "quote": "Fixed set of fields",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 9-14",
+    "why": ""
+   },
+   {
+    "claim": "Shared board has explicit owners/readers.",
+    "quote": "with explicit owners/readers",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 11-12",
+    "why": ""
+   },
+   {
+    "claim": "Shared board writes are recorded in a simple dict + history.",
+    "quote": "writes are recorded in a simple dict + history.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 6, 68, 102, 106",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores have separate stores.",
+    "quote": "Separate stores",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 1, 6-10",
+    "why": ""
+   },
+   {
+    "claim": "Each memory store is optimized for a query pattern.",
+    "quote": "each optimized for a query pattern",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 3-10",
+    "why": ""
+   },
+   {
+    "claim": "Memory store query patterns include key-value.",
+    "quote": "(key‑value",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 6",
+    "why": ""
+   },
+   {
+    "claim": "Memory store query patterns include SQL-like.",
+    "quote": "SQL‑like",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 7",
+    "why": ""
+   },
+   {
+    "claim": "Memory store query patterns include full-text.",
+    "quote": "full‑text",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 8",
+    "why": ""
+   },
+   {
+    "claim": "Memory store query patterns include graph.",
+    "quote": "graph).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 10",
+    "why": ""
+   },
+   {
+    "claim": "Shared board is injected into each turn’s prompt (`view(agent)`).",
+    "quote": "Injected into each turn’s prompt (`view(agent)`)",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 17-18",
+    "why": ""
+   },
+   {
+    "claim": "Shared board is written via a tool that checks ownership.",
+    "quote": "written via a tool that checks ownership.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 18-19, 67-73",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are accessed via store-specific tools.",
+    "quote": "Accessed via store‑specific tools (`get`, `find`, `query`, etc.)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 6-10",
+    "why": ""
+   },
+   {
+    "claim": "Memory store access tools may involve SQL.",
+    "quote": "that may involve SQL",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 7, 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory store access tools may involve FTS.",
+    "quote": "FTS",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 8",
+    "why": ""
+   },
+   {
+    "claim": "Memory store access tools may involve embeddings.",
+    "quote": "embeddings",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 8-9, 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory store access tools may involve graph traversals.",
+    "quote": "or graph traversals.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 10, 49",
+    "why": ""
+   },
+   {
+    "claim": "Shared board ownership is declared up-front.",
+    "quote": "Ownership is declared up‑front",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 9, 12-13",
+    "why": ""
+   },
+   {
+    "claim": "A Shared board field that two agents can both set is considered untrustworthy.",
+    "quote": "a field that two agents can both set is considered **untrustworthy**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 13-14",
+    "why": ""
+   },
+   {
+    "claim": "This ownership rule is found in `06_orchestration/state.py†L12-L14`.",
+    "quote": "【06_orchestration/state.py†L12-L14】",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 12-14",
+    "why": ""
+   },
+   {
+    "claim": "Trust is not enforced by the memory store.",
+    "quote": "Trust is not enforced by the store",
+    "verdict": "supported",
+    "source": "Implied by absence of ownership/trust mechanisms in 04_memory/stores.py and contrast with 06_orchestration/state.py",
+    "why": ""
+   },
+   {
+    "claim": "Authorship may be recorded in memory stores (e.g., Journal vs. Records).",
+    "quote": "authorship may be recorded (e.g., Journal vs. Records)",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence describes the purpose and query patterns of Journal and Records stores but does not mention whether authorship is recorded in them."
+   },
+   {
+    "claim": "Both Journal and Records can be read by any agent that queries the store.",
+    "quote": "but both can be read by any agent that queries the store.",
+    "verdict": "supported",
+    "source": "Implied by absence of access restrictions in 04_memory/stores.py and contrast with 06_orchestration/state.py",
+    "why": ""
+   },
+   {
+    "claim": "Use a shared board when you need a short-lived, mutable view of the current case.",
+    "quote": "You need a **short‑lived, mutable view of the current case**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 1, 5, 67",
+    "why": ""
+   },
+   {
+    "claim": "This view is something every participating agent can see instantly.",
+    "quote": "that every participating agent can see instantly",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 5-7",
+    "why": ""
+   },
+   {
+    "claim": "Examples of such views include “risk”, “batch”, “customer reply”.",
+    "quote": "(e.g., “risk”, “batch”, “customer reply”).",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence does not provide specific examples like \"risk\", \"batch\", or \"customer reply\" for shared board fields."
+   },
+   {
+    "claim": "Use a shared board when you want to enforce ownership.",
+    "quote": "You want to enforce **ownership**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 12, 19, 70-71",
+    "why": ""
+   },
+   {
+    "claim": "Ownership enforcement means only the designated agent can set a field.",
+    "quote": "so that only the designated agent can set a field",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 69-73",
+    "why": ""
+   },
+   {
+    "claim": "Ownership enforcement means others can rely on its value.",
+    "quote": "and others can rely on its value.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 70-71",
+    "why": ""
+   },
+   {
+    "claim": "Use a shared board when the information is transient.",
+    "quote": "The information is **transient**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 3, 5",
+    "why": ""
+   },
+   {
+    "claim": "Transient means once the case is closed, the board can be discarded.",
+    "quote": "once the case is closed, the board can be discarded.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 4-5",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores when you need persistent knowledge.",
+    "quote": "You need **persistent knowledge**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3; 04_memory/stores.py, line 49",
+    "why": ""
+   },
+   {
+    "claim": "Persistent knowledge survives beyond a single interaction.",
+    "quote": "that survives beyond a single interaction",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3; 04_memory/stores.py, line 49",
+    "why": ""
+   },
+   {
+    "claim": "Examples of persistent knowledge include a list of time-zones.",
+    "quote": "(e.g., a list of time‑zones",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 6-7",
+    "why": ""
+   },
+   {
+    "claim": "Examples of persistent knowledge include historic deploy records.",
+    "quote": "historic deploy records",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 7-8",
+    "why": ""
+   },
+   {
+    "claim": "Examples of persistent knowledge include past incident notes.",
+    "quote": "past incident notes).",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence mentions \"tickets\" and \"what the agent worked out\" but does not explicitly provide \"past incident notes\" as an example for memory stores."
+   },
+   {
+    "claim": "Use memory stores when the query pattern matches one of the four store types.",
+    "quote": "The query pattern matches one of the four store types",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 3-5",
+    "why": ""
+   },
+   {
+    "claim": "The four store types include exact name lookup.",
+    "quote": "(exact name lookup",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 6",
+    "why": ""
+   },
+   {
+    "claim": "The four store types include filtered counting.",
+    "quote": "filtered counting",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 7",
+    "why": ""
+   },
+   {
+    "claim": "The four store types include full-text / similarity search.",
+    "quote": "full‑text / similarity search",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 8-9",
+    "why": ""
+   },
+   {
+    "claim": "The four store types include relationship traversal.",
+    "quote": "or relationship traversal).",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 10",
+    "why": ""
+   },
+   {
+    "claim": "Use memory stores when you want to recall information later.",
+    "quote": "You want to **recall** information later",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, line 3; 06_orchestration/state.py, line 3",
+    "why": ""
+   },
+   {
+    "claim": "Recalling information can be in a different run.",
+    "quote": "possibly in a different run",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3; 04_memory/stores.py, line 49",
+    "why": ""
+   },
+   {
+    "claim": "Recalling information can be by a different agent.",
+    "quote": "or by a different agent",
+    "verdict": "supported",
+    "source": "Implied by absence of agent-specific access restrictions in 04_memory/stores.py",
+    "why": ""
+   },
+   {
+    "claim": "Recalling information can be without re-creating the case context.",
+    "quote": "without re‑creating the case context.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is the working-state “whiteboard”.",
+    "quote": "the shared board is the **working‑state “whiteboard”**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 1, 5",
+    "why": ""
+   },
+   {
+    "claim": "Agents collaborate on the shared board in real time.",
+    "quote": "that agents collaborate on in real time",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, lines 1, 5",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are the long-term databases.",
+    "quote": "the memory stores are the **long‑term databases**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py, lines 1, 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores supply the factual background that agents draw on across sessions.",
+    "quote": "that supply the factual and procedural background that agents draw on across sessions.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py, line 3; 04_memory/stores.py, lines 6-10, 49",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores supply the procedural background that agents draw on across sessions.",
+    "quote": "that supply the factual and procedural background that agents draw on across sessions.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence describes memory stores as holding factual information but does not explicitly mention \"procedural background\"."
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 35654
+ },
+ "scratch agent :: How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?": {
+  "claims": [
+   {
+    "claim": "The shared board is a shared state object.",
+    "quote": "A **shared state object** that agents read from and write to during a case.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 5",
+    "why": ""
+   },
+   {
+    "claim": "Agents read from the shared board during a case.",
+    "quote": "agents read from and write to during a case.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 5",
+    "why": ""
+   },
+   {
+    "claim": "Agents write to the shared board during a case.",
+    "quote": "agents read from and write to during a case.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 18",
+    "why": ""
+   },
+   {
+    "claim": "Each board defines fields.",
+    "quote": "Each board defines **fields**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py lines 11-12",
+    "why": ""
+   },
+   {
+    "claim": "Each board defines an owner for each field.",
+    "quote": "an **owner** for each field",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 12",
+    "why": ""
+   },
+   {
+    "claim": "Each board defines a set of readers.",
+    "quote": "a set of **readers**.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 11",
+    "why": ""
+   },
+   {
+    "claim": "Writing to the board is done through a tool.",
+    "quote": "Writing is done through a tool",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 18",
+    "why": ""
+   },
+   {
+    "claim": "The tool records the author.",
+    "quote": "a tool that records the author",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 18, 67",
+    "why": ""
+   },
+   {
+    "claim": "The board can enforce \"who may set which field\".",
+    "quote": "the board can enforce “who may set which field”.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py lines 12-14, 67-73",
+    "why": ""
+   },
+   {
+    "claim": "Reading from the board is done by injecting its current values into an agent's context.",
+    "quote": "Reading is done by **injecting** the board’s current values into an agent’s context.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py lines 6-7, 17",
+    "why": ""
+   },
+   {
+    "claim": "The board is used to coordinate multiple agents.",
+    "quote": "The board is used to coordinate multiple agents (e.g., engineering and support) without one agent having to ask the other directly.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 1",
+    "why": ""
+   },
+   {
+    "claim": "Ownership decisions for the board are made up-front.",
+    "quote": "Ownership decisions are made up‑front",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py lines 9, 12",
+    "why": ""
+   },
+   {
+    "claim": "Ownership decisions for the board are not made at runtime.",
+    "quote": "not at runtime.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 9",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is described in `06_orchestration/notebooks/03_communication_state_and_collaboration.ipynb`.",
+    "quote": "06_orchestration/notebooks/03_communication_state_and_collaboration.ipynb",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence is from 06_orchestration/state.py, not the specified notebook."
+   },
+   {
+    "claim": "The description of the shared board is in the section \"Communication, Shared State and Collaboration\".",
+    "quote": "Communication, Shared State and Collaboration",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not mention this section."
+   },
+   {
+    "claim": "The description of the shared board is on lines 53-67 and 78-86.",
+    "quote": "lines 53‑67; 78‑86",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not mention these line numbers."
+   },
+   {
+    "claim": "There are four durable memory stores.",
+    "quote": "Four durable stores",
+    "verdict": "supported",
+    "source": "04_memory/stores.py lines 1, 49",
+    "why": ""
+   },
+   {
+    "claim": "Each memory store is chosen by the type of query the memory will be asked.",
+    "quote": "each chosen **by the type of query** the memory will be asked",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 3",
+    "why": ""
+   },
+   {
+    "claim": "The `KeyValue` store's query type is \"lookup by name\".",
+    "quote": "`KeyValue` | lookup by name",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 6",
+    "why": ""
+   },
+   {
+    "claim": "An example query for the `KeyValue` store is \"what is this user’s timezone\".",
+    "quote": "“what is this user’s timezone”",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 6",
+    "why": ""
+   },
+   {
+    "claim": "The `Records` store's query type is \"filter, order, count\".",
+    "quote": "`Records` | filter, order, count",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 7",
+    "why": ""
+   },
+   {
+    "claim": "An example query for the `Records` store is \"which deployment failed most recently\".",
+    "quote": "“which deployment failed most recently”",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 7",
+    "why": ""
+   },
+   {
+    "claim": "The `Journal` store's query type is \"literal or similarity search\".",
+    "quote": "`Journal` | literal or similarity search",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 8",
+    "why": ""
+   },
+   {
+    "claim": "An example query for the `Journal` store is \"where did `PGRST204` come from\".",
+    "quote": "“where did `PGRST204` come from”",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 9",
+    "why": ""
+   },
+   {
+    "claim": "The `Graph` store's query type is \"walk relationships\".",
+    "quote": "`Graph` | walk relationships",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 10",
+    "why": ""
+   },
+   {
+    "claim": "An example query for the `Graph` store is \"who else touched this\".",
+    "quote": "“who else touched this”",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 10",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are persisted.",
+    "quote": "The stores are **persisted**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 49",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are persisted using files.",
+    "quote": "(files, SQLite, Neo4j)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 49",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are persisted using SQLite.",
+    "quote": "(files, SQLite, Neo4j)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 49",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are persisted using Neo4j.",
+    "quote": "(files, SQLite, Neo4j)",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 49",
+    "why": ""
+   },
+   {
+    "claim": "Persistence allows an agent to be restarted and still answer the same questions.",
+    "quote": "so an agent can be restarted and still answer the same questions.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 49",
+    "why": ""
+   },
+   {
+    "claim": "The memory stores are described in `04_memory/notebooks/02_stores.ipynb`.",
+    "quote": "04_memory/notebooks/02_stores.ipynb",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence is from 04_memory/stores.py, not the specified notebook."
+   },
+   {
+    "claim": "The description of the memory stores is in the section \"Stores\".",
+    "quote": "Stores",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not mention this section."
+   },
+   {
+    "claim": "The description of the memory stores is on lines 11-17 and 66-72.",
+    "quote": "lines 11‑17; 66‑72",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not mention these line numbers."
+   },
+   {
+    "claim": "Procedural knowledge does not need a store.",
+    "quote": "Procedural knowledge (how to act) does **not** need a store",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not discuss procedural knowledge."
+   },
+   {
+    "claim": "Procedural knowledge lives in the model’s system prompt.",
+    "quote": "it lives in the model’s system prompt",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not discuss procedural knowledge."
+   },
+   {
+    "claim": "Procedural knowledge lives in a decorator.",
+    "quote": "or a decorator.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not discuss procedural knowledge."
+   },
+   {
+    "claim": "The information about procedural knowledge is in `04_memory/notebooks/04_types_of_memory.ipynb`.",
+    "quote": "04_memory/notebooks/04_types_of_memory.ipynb",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not mention this notebook."
+   },
+   {
+    "claim": "The information about procedural knowledge is in the section \"Types of Memory\".",
+    "quote": "Types of Memory",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not mention this section."
+   },
+   {
+    "claim": "The information about procedural knowledge is on lines 80-94.",
+    "quote": "lines 80‑94",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The provided evidence does not mention these line numbers."
+   },
+   {
+    "claim": "The shared board is used when several agents need to collaborate on a single, evolving case.",
+    "quote": "when several agents need to **collaborate on a single, evolving case**",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py lines 1, 4",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is used for sharing specific pieces of data with explicit ownership and read-access rules.",
+    "quote": "sharing specific pieces of data with explicit ownership and read‑access rules.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py lines 11-14",
+    "why": ""
+   },
+   {
+    "claim": "The shared board is the mechanism for real-time coordination.",
+    "quote": "It is the mechanism for real‑time coordination",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py lines 1, 5",
+    "why": ""
+   },
+   {
+    "claim": "The shared board allows coordination without having to query a long-term store.",
+    "quote": "without having to query a long‑term store.",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 3",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used when an agent needs to persist information.",
+    "quote": "when an agent needs to **persist information**",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 49; 06_orchestration/state.py line 3",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used for information that will be retrieved later based on the nature of the question.",
+    "quote": "information that will be retrieved later based on the nature of the question",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 3",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used for exact key look-ups.",
+    "quote": "exact key look‑ups",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 6",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used for filtered reports.",
+    "quote": "filtered reports",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 7",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used for full-text search.",
+    "quote": "full‑text or semantic search",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 8",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used for semantic search.",
+    "quote": "full‑text or semantic search",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 8",
+    "why": ""
+   },
+   {
+    "claim": "Memory stores are used for graph traversals.",
+    "quote": "graph traversals.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 10",
+    "why": ""
+   },
+   {
+    "claim": "The appropriate store should be used according to “what will be asked” of that memory.",
+    "quote": "Use the appropriate store according to “what will be asked” of that memory",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 3",
+    "why": ""
+   },
+   {
+    "claim": "Key-value stores are for exact facts.",
+    "quote": "key‑value for exact facts",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 6",
+    "why": ""
+   },
+   {
+    "claim": "Records stores are for counting/filtering.",
+    "quote": "records for counting/filtering",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 7",
+    "why": ""
+   },
+   {
+    "claim": "Journal stores are for prose search.",
+    "quote": "journal for prose search",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 8",
+    "why": ""
+   },
+   {
+    "claim": "Graph stores are for relationship walks.",
+    "quote": "graph for relationship walks",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 10",
+    "why": ""
+   },
+   {
+    "claim": "The board is a short-lived, structured collaboration surface.",
+    "quote": "the **board** is a *short‑lived, structured collaboration surface*",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py lines 1, 5, 11-14",
+    "why": ""
+   },
+   {
+    "claim": "The board has ownership rules.",
+    "quote": "with ownership rules",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 12, 67-73",
+    "why": ""
+   },
+   {
+    "claim": "The stores are long-term, query-driven databases.",
+    "quote": "the **stores** are *long‑term, query‑driven databases*",
+    "verdict": "supported",
+    "source": "06_orchestration/state.py line 3; 04_memory/stores.py lines 3, 49",
+    "why": ""
+   },
+   {
+    "claim": "The stores are for recalling facts.",
+    "quote": "for recalling facts, logs, and relationships.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py lines 6-10",
+    "why": ""
+   },
+   {
+    "claim": "The stores are for recalling logs.",
+    "quote": "for recalling facts, logs, and relationships.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py lines 7, 9",
+    "why": ""
+   },
+   {
+    "claim": "The stores are for recalling relationships.",
+    "quote": "for recalling facts, logs, and relationships.",
+    "verdict": "supported",
+    "source": "04_memory/stores.py line 10",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   6
+  ],
+  "unanchored": 0,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 22672
+ },
+ "scratch agent :: In chapter 8's LangGraph project, compare how the LangGraph desk and the from-scratch case file wait for a person, and what can go wrong with each.": {
+  "claims": [
+   {
+    "claim": "The LangGraph desk's graph node calls interrupt().",
+    "quote": "The graph node calls `interrupt()`.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 526",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph desk's run is paused.",
+    "quote": "The run is paused",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 519",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph desk's checkpoint is stored.",
+    "quote": "the checkpoint is stored",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 519",
+    "why": ""
+   },
+   {
+    "claim": "When a reply arrives, the LangGraph desk's node is re‑invoked from its first line.",
+    "quote": "When a reply arrives the node is **re‑invoked** from its first line.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493, 526",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph desk's node returns a Wait object that tells the system which field to wait on.",
+    "quote": "The node returns a `Wait` object that tells the system which field to wait on.",
+    "verdict": "contradicted",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 384-387, 526",
+    "why": "The `Wait` object is used by the case file, not LangGraph. LangGraph uses `interrupt()`."
+   },
+   {
+    "claim": "The from-scratch case file stores a waiting entry in the shared board.",
+    "quote": "The case file stores a `waiting` entry in the shared board.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 373, 385, 523",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch step returns a Wait object.",
+    "quote": "The step returns a `Wait` object",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 384, 526",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch desk sets `desk.waiting`.",
+    "quote": "the desk sets `desk.waiting`",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 385",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch desk clears `desk.next`.",
+    "quote": "clears `desk.next`",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 386",
+    "why": ""
+   },
+   {
+    "claim": "When a person writes the expected field, `answer()` writes the value in the from-scratch case.",
+    "quote": "When a person writes the expected field, `answer()` writes the value",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 376",
+    "why": ""
+   },
+   {
+    "claim": "When a person writes the expected field, `answer()` clears the waiting flag in the from-scratch case.",
+    "quote": "clears the waiting flag",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 377",
+    "why": ""
+   },
+   {
+    "claim": "When a person writes the expected field, `answer()` advances `next` to the next step in the from-scratch case.",
+    "quote": "advances `next` to the next step.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 378",
+    "why": ""
+   },
+   {
+    "claim": "A resumed node in LangGraph starts at the top.",
+    "quote": "because a resumed node starts at the top",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493, 526",
+    "why": ""
+   },
+   {
+    "claim": "Any side‑effect (e.g., sending an email) is performed again when the LangGraph run is resumed.",
+    "quote": "any side‑effect (e.g., sending an email) is performed **again** when the run is resumed.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "Answers in LangGraph are matched by position in the interrupt list.",
+    "quote": "answers are matched by *position* in the interrupt list",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "A deployment that changes the order of `interrupt()` calls in LangGraph can cause an answer to be applied to the wrong question.",
+    "quote": "a deployment that changes the order of `interrupt()` calls can cause an answer to be applied to the wrong question.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "`Command(resume=…)` in LangGraph can carry any payload.",
+    "quote": "`Command(resume=…)` can carry any payload",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 497",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph graph does not enforce that the responder is the designated owner.",
+    "quote": "the graph does not enforce that the responder is the designated owner",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 497, 529",
+    "why": ""
+   },
+   {
+    "claim": "An unauthorized party can supply a reply in LangGraph.",
+    "quote": "an unauthorized party can supply a reply.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 497",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph check‑pointer only makes the workflow durable.",
+    "quote": "the check‑pointer only makes the *workflow* durable.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 541",
+    "why": ""
+   },
+   {
+    "claim": "External state (e.g., the in‑memory `P.PAYMENTS` list) is not persisted in LangGraph.",
+    "quote": "External state (e.g., the in‑memory `P.PAYMENTS` list) is not persisted",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 541",
+    "why": ""
+   },
+   {
+    "claim": "A LangGraph run that crosses processes can cause actions (payment) to be missed.",
+    "quote": "a run that crosses processes can cause actions (payment) to be missed",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 541",
+    "why": ""
+   },
+   {
+    "claim": "A LangGraph run that crosses processes can cause actions (payment) to be run twice.",
+    "quote": "or run twice.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence states that a real `pay` has to be safe to run twice, but not that LangGraph's cross-process runs *cause* payments to run twice."
+   },
+   {
+    "claim": "The default step limit (10 007) stops a runaway loop in LangGraph.",
+    "quote": "the default step limit (10 007) stops a runaway loop",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 530",
+    "why": ""
+   },
+   {
+    "claim": "A LangGraph loop that repeatedly calls `interrupt()` is not limited.",
+    "quote": "a loop that repeatedly calls `interrupt()` is not limited",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 539",
+    "why": ""
+   },
+   {
+    "claim": "Each resume in LangGraph is a new `invoke`.",
+    "quote": "each resume is a new `invoke`.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence states that a loop through `interrupt()` is bounded only by a counter you keep, implying it's not limited by the default step limit, but it does not explicitly state that 'each resume is a new `invoke`'."
+   },
+   {
+    "claim": "Parallelism is not provided out‑of‑the‑box in LangGraph.",
+    "quote": "parallelism [...] are not provided out‑of‑the‑box.",
+    "verdict": "contradicted",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": "The evidence states that LangGraph *does* provide parallel steps."
+   },
+   {
+    "claim": "Streaming is not provided out‑of‑the‑box in LangGraph.",
+    "quote": "streaming [...] are not provided out‑of‑the‑box.",
+    "verdict": "contradicted",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": "The evidence states that LangGraph *does* provide streaming."
+   },
+   {
+    "claim": "Rewinding/forking is not provided out‑of‑the‑box in LangGraph.",
+    "quote": "rewinding/forking [...] are not provided out‑of‑the‑box.",
+    "verdict": "contradicted",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 532",
+    "why": "The evidence states that LangGraph *does* provide rewinding and correcting a past step."
+   },
+   {
+    "claim": "Timeout is not provided out‑of‑the‑box in LangGraph.",
+    "quote": "timeout [...] are not provided out‑of‑the‑box.",
+    "verdict": "contradicted",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": "The evidence states that LangGraph *does* provide timeouts."
+   },
+   {
+    "claim": "API serving is not provided out‑of‑the‑box in LangGraph.",
+    "quote": "or API serving are not provided out‑of‑the‑box.",
+    "verdict": "contradicted",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": "The evidence states that LangGraph *does* provide a server (for API serving)."
+   },
+   {
+    "claim": "The step that asked the question in the from-scratch case is finished before waiting.",
+    "quote": "because the step that asked the question is *finished* before waiting",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 526",
+    "why": ""
+   },
+   {
+    "claim": "The same action (e.g., sending an email) is never run a second time in the from-scratch case.",
+    "quote": "the same action (e.g., sending an email) is never run a second time.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "Each answer in the from-scratch case is written to a named field (`approval:tomasz`, `approval:ines`, …).",
+    "quote": "each answer is written to a named field (`approval:tomasz`, `approval:ines`, …).",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case file stores the answer in that field.",
+    "quote": "The case file stores the answer in that field",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 495",
+    "why": ""
+   },
+   {
+    "claim": "Reordering of questions does not mis‑route answers in the from-scratch case.",
+    "quote": "reordering of questions does not mis‑route answers.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "Only the owner of a field may write it in the from-scratch case.",
+    "quote": "only the owner of a field may write it",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 376, 495, 529",
+    "why": ""
+   },
+   {
+    "claim": "Attempts by anyone else to write a field in the from-scratch case raise `Denied`.",
+    "quote": "attempts by anyone else raise `Denied`.",
+    "verdict": "not in the sources",
+    "source": "",
+    "why": "The evidence states that attempts by anyone else are 'refused' or that 'only the field's owner gets past this', but it does not explicitly state that they 'raise `Denied`' for general field writes. `Denied` is mentioned specifically for changing the amount."
+   },
+   {
+    "claim": "This prevents unauthorized answers in the from-scratch case.",
+    "quote": "This prevents unauthorized answers.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 495, 529",
+    "why": ""
+   },
+   {
+    "claim": "Every write in the from-scratch case is also a row in the `Records` SQLite table.",
+    "quote": "every write is also a row in the `Records` SQLite table",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 525",
+    "why": ""
+   },
+   {
+    "claim": "Any process can pick up the from-scratch case later.",
+    "quote": "any process can pick up the case later",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 519, 525",
+    "why": ""
+   },
+   {
+    "claim": "The history is durable in the from-scratch case.",
+    "quote": "the history is durable.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 525",
+    "why": ""
+   },
+   {
+    "claim": "The case‑file design does not support parallel execution.",
+    "quote": "the case‑file design does **not** support parallel execution",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": ""
+   },
+   {
+    "claim": "The case‑file design does not support streaming.",
+    "quote": "streaming",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": ""
+   },
+   {
+    "claim": "The case‑file design does not support rewinding/forking.",
+    "quote": "rewinding/forking",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 532",
+    "why": ""
+   },
+   {
+    "claim": "The case‑file design does not support step‑level time‑outs.",
+    "quote": "step‑level time‑outs",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": ""
+   },
+   {
+    "claim": "The case‑file design does not support serving the workflow over an API.",
+    "quote": "or serving the workflow over an API",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": ""
+   },
+   {
+    "claim": "Those behaviours (parallel execution, streaming, rewinding/forking, step-level time-outs, API serving) have to be built manually in the from-scratch case.",
+    "quote": "those behaviours have to be built manually.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 533",
+    "why": ""
+   },
+   {
+    "claim": "The LangGraph code excerpt is from `ap_graph.py`.",
+    "quote": "# ap_graph.py",
+    "verdict": "supported",
+    "source": "point 1",
+    "why": ""
+   },
+   {
+    "claim": "Resumed nodes in LangGraph run again from the first line.",
+    "quote": "Resumed nodes run again from the first line",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493, 526",
+    "why": ""
+   },
+   {
+    "claim": "Resumed nodes in LangGraph cause duplicate sends.",
+    "quote": "→ duplicate sends.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch code excerpt is from `case.py`.",
+    "quote": "# case.py",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 369",
+    "why": ""
+   },
+   {
+    "claim": "Answers in the from-scratch case are matched to the explicit field.",
+    "quote": "Answers are matched to the explicit field",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 374, 495",
+    "why": ""
+   },
+   {
+    "claim": "The step in the from-scratch case proceeds only once.",
+    "quote": "the step proceeds only once.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 366, 526",
+    "why": ""
+   },
+   {
+    "claim": "`case.set(party, field, value)` in `case.py` means only the owner can write.",
+    "quote": "case.set(party, field, value)          # only owner can write",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 376",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph’s checkpoint‑based waiting is powerful (parallelism, streaming, rewinding, etc.).",
+    "quote": "LangGraph’s checkpoint‑based waiting is powerful (parallelism, streaming, rewinding, etc.)",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 532-533, 535",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph’s checkpoint‑based waiting comes with pitfalls.",
+    "quote": "but comes with pitfalls",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 537, 539",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph’s checkpoint‑based waiting causes duplicate side‑effects on resume.",
+    "quote": "duplicate side‑effects on resume",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493, 527",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph’s checkpoint‑based waiting uses positional answer matching.",
+    "quote": "positional answer matching",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 495, 528",
+    "why": ""
+   },
+   {
+    "claim": "LangGraph’s checkpoint‑based waiting has no built‑in ownership checks.",
+    "quote": "no built‑in ownership checks.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 497, 529",
+    "why": ""
+   },
+   {
+    "claim": "The from‑scratch case‑file waiting is simpler for human‑driven steps.",
+    "quote": "The from‑scratch case‑file waiting is simpler and safer for human‑driven steps",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 537",
+    "why": ""
+   },
+   {
+    "claim": "The from‑scratch case‑file waiting is safer for human‑driven steps.",
+    "quote": "The from‑scratch case‑file waiting is simpler and safer for human‑driven steps",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 537",
+    "why": ""
+   },
+   {
+    "claim": "Each question in the from-scratch case-file waiting is a named field.",
+    "quote": "each question is a named field",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 495",
+    "why": ""
+   },
+   {
+    "claim": "Ownership is enforced in the from-scratch case-file waiting.",
+    "quote": "ownership is enforced",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 376, 495, 529",
+    "why": ""
+   },
+   {
+    "claim": "Actions are not re‑executed in the from-scratch case-file waiting.",
+    "quote": "actions are not re‑executed.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 366, 527",
+    "why": ""
+   },
+   {
+    "claim": "The from-scratch case-file waiting lacks the richer orchestration features that LangGraph provides.",
+    "quote": "It lacks the richer orchestration features that LangGraph provides.",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 532-533",
+    "why": ""
+   },
+   {
+    "claim": "Waiting implementation and pitfalls for LangGraph are discussed in the “Run and show” section.",
+    "quote": "waiting implementation and pitfalls for LangGraph are discussed in the “Run and show” section",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493-502",
+    "why": ""
+   },
+   {
+    "claim": "Waiting implementation and pitfalls for LangGraph are discussed in `08_frameworks/02_langgraph/ap_desk.ipynb § Part 2 · Run and show, lines 493‑502`.",
+    "quote": "【08_frameworks/02_langgraph/ap_desk.ipynb § Part 2 · Run and show, lines 493‑502】",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 493-502",
+    "why": ""
+   },
+   {
+    "claim": "The case‑file waiting logic is shown in the `answer` and `_go` methods of `case.py`.",
+    "quote": "The case‑file waiting logic and ownership checks are shown in the `answer` and `_go` methods of `case.py`",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 370, 381",
+    "why": ""
+   },
+   {
+    "claim": "Ownership checks are shown in the `answer` and `_go` methods of `case.py`.",
+    "quote": "ownership checks are shown in the `answer` and `_go` methods of `case.py`",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 376",
+    "why": ""
+   },
+   {
+    "claim": "The case‑file waiting logic and ownership checks are shown in `08_frameworks/02_langgraph/ap_desk.ipynb § Part 1 · Build, lines 367‑392`.",
+    "quote": "【08_frameworks/02_langgraph/ap_desk.ipynb § Part 1 · Build, lines 367‑392】",
+    "verdict": "supported",
+    "source": "08_frameworks/02_langgraph/ap_desk.ipynb, lines 367-392",
+    "why": ""
+   }
+  ],
+  "points made": [
+   1,
+   2,
+   3,
+   4,
+   5,
+   7
+  ],
+  "unanchored": 4,
+  "unmarked": 0,
+  "judge": "gemini-2.5-flash",
+  "judge tokens": 28993
+ }
+}
