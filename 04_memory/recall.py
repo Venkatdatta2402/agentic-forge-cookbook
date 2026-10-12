@@ -183,7 +183,7 @@ class Recall:
         threshold = self.evict_below if threshold is None else threshold
         if threshold is None:
             return []
-        rows = self.journal.db.execute("SELECT id, at, pinned FROM entries")
+        rows = self.journal.entries()
         found = [(self.activation(r["id"], r["at"]), r["id"]) for r in rows if not r["pinned"]]
         return sorted(a for a in found if a[0] < threshold)
 

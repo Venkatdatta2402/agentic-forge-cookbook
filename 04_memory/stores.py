@@ -54,6 +54,7 @@ thing in this repo needing a service up somewhere; that cost is part of choosing
 import json
 import math
 import os
+import re
 import sqlite3
 import time
 from pathlib import Path
@@ -119,6 +120,74 @@ class KeyValue:
 
     def __len__(self):
         return len(self.data)
+
+
+class Profile:
+    """Facts with names, like `KeyValue` -- each replaced by its newest value, with the value it replaced kept
+    beside it, and when each was written.
+
+    Replacing is the point of a named fact: a race that moves leaves one race date, not two for a model to choose
+    between. What plain replacing loses is the record that anything changed. Measured in `08_frameworks/06_mem0`:
+    when a write missed a change, the old value was shown to the agent as a plain current fact, with nothing beside it
+    to contradict it. So each fact keeps one step of history -- `was`, and `was_since` -- and `lines()` shows it.
+
+    The fields are designed in advance, from what will be asked (a profile has a race, a goal, the days they run),
+    and `add_field` lets more be added when something worth keeping fits none of them. Each field has an `about`,
+    which is what a form asking for it is told it holds.
+    """
+
+    def __init__(self, path, fields=None):
+        self.path = Path(path)
+        saved = json.loads(self.path.read_text(encoding="utf-8")) if self.path.exists() else {}
+        self.about = {**(fields or {}), **saved.get("fields", {})}
+        self.facts = saved.get("facts", {})
+
+    def fields(self):
+        return dict(self.about)
+
+    def add_field(self, name, about):
+        self.about[name] = about
+        self._flush()
+        return self
+
+    @staticmethod
+    def same(a, b):
+        """Two values that say the same thing: case, spacing and punctuation aside."""
+        norm = lambda v: " ".join(re.findall(r"[a-z0-9:]+", (v or "").lower()))
+        return norm(a) == norm(b)
+
+    def write(self, name, value, at):
+        """Replace a fact -- unless the value is the one already there. Measured in `06_mem0`: a form that re-wrote
+        every field with its unchanged value reset every "since" date and pushed the real previous value out of
+        `was`. Returns whether anything changed."""
+        old = self.facts.get(name, {})
+        if old and self.same(old.get("value"), value):
+            return False
+        history = old.get("history", []) + ([{"value": old["value"], "since": old["since"]}] if old else [])
+        self.facts[name] = {"value": value, "since": at, "was": old.get("value"), "was_since": old.get("since"),
+                            "history": history}
+        self.about.setdefault(name, "")
+        self._flush()
+        return True
+
+    def read(self, name, default=None):
+        return self.facts.get(name, {}).get("value", default)
+
+    def lines(self, before=True):
+        """One line per fact: its value, since when, and -- with `before` -- what it said before, and since when."""
+        out = []
+        for name, f in self.facts.items():
+            earlier = (f"; before: {f['was']}" + (f" (since {f['was_since']})" if f.get("was_since") else "")
+                       if before and f.get("was") else "")
+            out.append(f"- {name}: {f['value']} (since {f['since']}{earlier})")
+        return out
+
+    def _flush(self):
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+        self.path.write_text(json.dumps({"fields": self.about, "facts": self.facts}, indent=2), encoding="utf-8")
+
+    def __len__(self):
+        return len(self.facts)
 
 
 # --------------------------------------------------------------------------------------
@@ -684,12 +753,263 @@ class Journal:
     def get(self, entry_id):
         return self.db.execute("SELECT * FROM entries WHERE id = ?", (entry_id,)).fetchone()
 
+    def entries(self):
+        """Every entry's id, date and pin -- what a forgetting sweep reads, without knowing how it is stored."""
+        return self.db.execute("SELECT id, at, pinned FROM entries").fetchall()
+
     def meta(self, entry_id):
         got = self.vectors.get(ids=[str(entry_id)])
         return got["metadatas"][0] if got["ids"] else None
 
     def __len__(self):
         return self.db.execute("SELECT COUNT(*) AS n FROM entries").fetchone()["n"]
+
+
+# --------------------------------------------------------------------------------------
+# 3b. the same journal, on one engine
+
+
+_QDRANT = {}          # one client per folder: local Qdrant locks its folder against a second client
+_BM25 = []
+
+
+def _bm25():
+    if not _BM25:
+        from fastembed import SparseTextEmbedding
+        _BM25.append(SparseTextEmbedding(model_name="Qdrant/bm25"))
+    return _BM25[0]
+
+
+class QdrantJournal:
+    """`Journal`'s methods, on Qdrant alone: one record per entry, holding the text, its meaning vector and its
+    keyword vector together.
+
+    `Journal` runs two engines because local Chroma has no keyword search and no fusion -- so every write, update
+    and delete has to reach both, and one that reaches only one leaves an entry findable half the time. Qdrant's
+    local mode has both searches and fuses them itself, so each of those is a single operation on a single record.
+    What each method answers is unchanged, which is why `Recall`, `Retrieve` and the add/update/ignore check run on
+    either journal:
+
+        find_exact   BM25 over a sparse keyword vector (fastembed's `Qdrant/bm25`, with Qdrant weighting each word
+                     by its rarity). Like FTS5 it can return NOTHING: `PGRST20` does not find `PGRST204`, case is
+                     ignored. Unlike FTS5 it STEMS: "batches" finds "batch", "locked" finds "lock" -- better for
+                     prose, and the one place the two journals answer differently. FTS5's query syntax (AND,
+                     phrases) is not supported: the words of `term` are matched as any-of
+        find_like    cosine over Gemini embeddings (`embed`, with the same task types), filtered BEFORE ranking.
+                     `where` takes the Chroma form `pipeline.py` writes, so a pipeline step can use either journal
+        find_hybrid  reciprocal rank fusion, done by Qdrant -- with `rrf_k` passed, because its own default is 2
+        values       the values a field has taken, from Qdrant's facets
+        used         when an entry was used, kept on the entry itself
+
+    Dates are stored twice, as `at` ("2026-08-12", what the rows of `Journal` hold) and `day` (20260812), because
+    ordering and ranges want a number -- the same split `Journal` makes between SQLite and Chroma.
+
+    Local mode has two limits worth knowing. Only one client may open a folder at a time (so clients are shared
+    per folder here). And filters scan every entry rather than using an index, which is nothing at a few thousand
+    entries; past that, Qdrant runs as a server.
+    """
+
+    STOPWORDS = Journal.STOPWORDS
+    _fts_query = Journal._fts_query
+
+    # A note can say which profile fields it depends on -- the fifth, optional element of an entry -- and `retire`
+    # takes every note depending on a field out of every search when that field changes. Measured in `06_mem0`: a
+    # note saying "runs Tuesday, Thursday, Saturday and Sunday evenings" kept coming back weeks after both had
+    # changed, because nothing replaces a note. Retired notes stay stored; `live=False` reaches them.
+
+    def __init__(self, path, summarize=None):
+        from qdrant_client import QdrantClient, models
+        self.models = models
+        folder = str((Path(path) / "qdrant").resolve())
+        Path(folder).mkdir(parents=True, exist_ok=True)
+        if folder not in _QDRANT:
+            _QDRANT[folder] = QdrantClient(path=folder)
+        self.client, self.name, self.summarize = _QDRANT[folder], "journal", summarize
+        if not self.client.collection_exists(self.name):
+            self.client.create_collection(
+                self.name,
+                vectors_config={"dense": models.VectorParams(size=EMBED_DIM, distance=models.Distance.COSINE)},
+                sparse_vectors_config={"bm25": models.SparseVectorParams(modifier=models.Modifier.IDF)})
+        ids = [p.id for p in self._all()]
+        self._next = max(ids, default=0) + 1
+
+    # -- the pieces every method shares ------------------------------------------------
+
+    def _all(self, flt=None):
+        points, offset = [], None
+        while True:
+            batch, offset = self.client.scroll(self.name, scroll_filter=flt, limit=256, offset=offset,
+                                               with_payload=True, with_vectors=False)
+            points += batch
+            if offset is None:
+                return points
+
+    def _sparse(self, text, query=False):
+        encoder = _bm25()
+        got = next(iter(encoder.query_embed(text) if query else encoder.embed([text])))
+        return self.models.SparseVector(indices=got.indices.tolist(), values=got.values.tolist())
+
+    def _point(self, entry_id, payload, text):
+        return self.models.PointStruct(
+            id=entry_id, payload=payload,
+            vector={"dense": embed([text], task="RETRIEVAL_DOCUMENT")[0], "bm25": self._sparse(text)})
+
+    @staticmethod
+    def _row(point):
+        return {"id": point.id, **{k: v for k, v in point.payload.items() if k not in ("day", "accesses")}}
+
+    def _filter(self, where=None, live=True, **equal):
+        """Chroma's `where` (as `pipeline._chroma_where` writes it) and plain equalities, as a Qdrant filter --
+        leaving out retired notes unless `live` is False."""
+        m = self.models
+        must = [m.FieldCondition(key=k, match=m.MatchValue(value=v)) for k, v in equal.items() if v is not None]
+        clauses = list(where.get("$and", [where])) if where else []
+        for clause in clauses:
+            for key, cond in clause.items():
+                key = "day" if key == "at" else key
+                if not isinstance(cond, dict):
+                    must.append(m.FieldCondition(key=key, match=m.MatchValue(value=cond)))
+                elif "$in" in cond:
+                    must.append(m.FieldCondition(key=key, match=m.MatchAny(any=list(cond["$in"]))))
+                else:
+                    bounds = {op.strip("$"): v for op, v in cond.items()}
+                    must.append(m.FieldCondition(key=key, range=m.Range(**bounds)))
+        retired = [m.FieldCondition(key="retired", match=m.MatchValue(value=True))] if live else []
+        return m.Filter(must=must, must_not=retired) if must or retired else None
+
+    # -- writing: one record, so nothing can reach one index and miss the other -----------
+
+    def write(self, entries, now=None):
+        """Entries are (at, about, source, text), or with a fifth element: the profile fields the entry depends on."""
+        summaries = [self.summarize(entry[3]) if self.summarize else None for entry in entries]
+        points = []
+        for entry, summary in zip(entries, summaries):
+            at, about, source, text = entry[:4]
+            payload = {"at": at, "day": int(at[:10].replace("-", "")), "about": about, "source": source,
+                       "text": text, "summary": summary, "written": now or at, "pinned": 0, "accesses": [],
+                       "depends_on": list(entry[4]) if len(entry) > 4 else [], "retired": False}
+            points.append(self._point(self._next, payload, text))
+            self._next += 1
+        self.client.upsert(self.name, points)
+        return [p.id for p in points]
+
+    def update(self, entry_id, text, now=None):
+        """Text, summary and both vectors replaced in one write. `at` stays; `written` moves to `now`."""
+        summary = self.summarize(text) if self.summarize else None
+        old = self.client.retrieve(self.name, [entry_id], with_payload=True)
+        if not old:
+            return self
+        payload = {**old[0].payload, "text": text, "summary": summary, "written": now or old[0].payload["at"]}
+        self.client.upsert(self.name, [self._point(entry_id, payload, text)])
+        return self
+
+    def retire(self, field, at):
+        """Take every entry depending on `field` out of the searches, because the field has changed. Returns their
+        ids. The entries stay stored, with when they were retired."""
+        m = self.models
+        hit = self._all(m.Filter(must=[m.FieldCondition(key="depends_on", match=m.MatchAny(any=[field]))],
+                                 must_not=[m.FieldCondition(key="retired", match=m.MatchValue(value=True))]))
+        for point in hit:
+            self._set(point.id, retired=True, retired_on=at)
+        return [p.id for p in hit]
+
+    def forget(self, entry_id):
+        self.client.delete(self.name, points_selector=self.models.PointIdsList(points=[entry_id]))
+        return self
+
+    # -- reading -----------------------------------------------------------------------
+
+    def find_exact(self, term, limit=5):
+        """Entries containing any word of `term`, best BM25 first; [] when none does."""
+        got = self.client.query_points(self.name, query=self._sparse(term, query=True), using="bm25",
+                                       query_filter=self._filter(), limit=limit, with_payload=True)
+        return [self._row(p) for p in got.points]
+
+    def find_like(self, query, k=3, where=None):
+        """[(similarity, id, text)] -- k results, filtered first. No 'not found' here; `Recall`'s floor gives that."""
+        got = self.client.query_points(self.name, query=embed([query], task="RETRIEVAL_QUERY")[0], using="dense",
+                                       query_filter=self._filter(where), limit=k, with_payload=True)
+        return [(p.score, p.id, p.payload["text"]) for p in got.points]
+
+    def find_hybrid(self, query, k=3, rrf_k=60):
+        """Qdrant's own reciprocal rank fusion, given `Journal`'s `rrf_k`. Left to itself Qdrant uses k=2, which
+        does the opposite of what 60 is for: the top place in either ranking all but decides the result. Returns
+        what `Journal.find_hybrid` does: the fused results, and each index's ranking on its own."""
+        m = self.models
+        dense, sparse = embed([query], task="RETRIEVAL_QUERY")[0], self._sparse(query, query=True)
+        live = self._filter()
+        fused = self.client.query_points(self.name, prefetch=[m.Prefetch(query=dense, using="dense", limit=len(self),
+                                                                         filter=live),
+                                                              m.Prefetch(query=sparse, using="bm25", limit=10,
+                                                                         filter=live)],
+                                         query=m.RrfQuery(rrf=m.Rrf(k=rrf_k)), limit=k, with_payload=True)
+        lex_ids = [p.id for p in self.client.query_points(self.name, query=sparse, using="bm25", query_filter=live,
+                                                             limit=10).points]
+        vec_ids = [p.id for p in self.client.query_points(self.name, query=dense, using="dense", query_filter=live,
+                                                             limit=len(self)).points]
+        return [(p.score, p.id, p.payload["text"]) for p in fused.points], lex_ids, vec_ids
+
+    def recent(self, about=None, source=None, limit=5, live=True):
+        got, _ = self.client.scroll(self.name, scroll_filter=self._filter(live=live, about=about, source=source),
+                                    limit=limit,
+                                    order_by=self.models.OrderBy(key="day", direction="desc"), with_payload=True)
+        return [self._row(p) for p in got]
+
+    def count(self, **filters):
+        return self.client.count(self.name, count_filter=self._filter(**filters)).count
+
+    def values(self, field):
+        return sorted(h.value for h in self.client.facet(self.name, key=field, limit=10000).hits)
+
+    def candidates(self, field, text, keep=0.6, limit=20):
+        """`Journal.candidates`, with the same two sources unioned: values whose own words the question uses,
+        and the values carried by entries the question matches."""
+        terms = set(self._fts_query(text).split(" OR ")) - {""}
+        if not terms:
+            return []
+        scored = [(len(terms & set(re.findall(r"[a-z0-9]+", v.lower()))), v) for v in self.values(field)]
+        from_values = [v for n, v in sorted(scored, key=lambda s: -s[0]) if n]
+        from_values = from_values[:max(1, math.ceil(len(from_values) * keep))] if from_values else []
+        from_entries = [r[field] for r in self.find_exact(" ".join(terms), limit=limit) if r.get(field) is not None]
+        return list(dict.fromkeys(from_values + from_entries))
+
+    # -- what has been used -------------------------------------------------------------
+
+    def _set(self, entry_id, **payload):
+        self.client.set_payload(self.name, payload=payload, points=[entry_id])
+
+    def pin(self, entry_id, pinned=True):
+        self._set(entry_id, pinned=1 if pinned else 0)
+        return self
+
+    def is_pinned(self, entry_id):
+        row = self.get(entry_id)
+        return bool(row["pinned"]) if row else False
+
+    def used(self, entry_ids, at):
+        for entry_id in entry_ids:
+            got = self.client.retrieve(self.name, [int(entry_id)], with_payload=True)
+            if got:
+                self._set(int(entry_id), accesses=[*got[0].payload.get("accesses", []), at])
+        return self
+
+    def accesses(self, entry_id):
+        got = self.client.retrieve(self.name, [entry_id], with_payload=True)
+        return sorted(got[0].payload.get("accesses", [])) if got else []
+
+    def get(self, entry_id):
+        got = self.client.retrieve(self.name, [entry_id], with_payload=True)
+        return self._row(got[0]) if got else None
+
+    def entries(self):
+        return [{"id": p.id, "at": p.payload["at"], "pinned": p.payload["pinned"]} for p in self._all()]
+
+    def meta(self, entry_id):
+        row = self.get(entry_id)
+        return {"at": int(row["at"][:10].replace("-", "")), "about": row["about"], "source": row["source"]} if row else None
+
+    def __len__(self):
+        return self.client.count(self.name).count
 
 
 # --------------------------------------------------------------------------------------

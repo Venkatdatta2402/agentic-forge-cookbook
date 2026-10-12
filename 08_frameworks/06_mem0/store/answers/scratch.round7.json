@@ -1,0 +1,614 @@
+{
+ "maya-1": {
+  "runner": "maya",
+  "date": "2026-09-01",
+  "shown": null,
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "Riverside Half Marathon on 2026-10-18",
+      "goal": "under 1:50",
+      "days": "Tuesday, Thursday, Saturday, Sunday",
+      "time_of_day": "evening",
+      "injuries": "left knee soreness after long downhill stretches",
+      "diet": "unchanged",
+      "fuel": "unchanged"
+     },
+     "new_fields": [],
+     "runs": [
+      {
+       "when": "last Sunday",
+       "kind": "long",
+       "km": 14.0,
+       "time": "1:26",
+       "felt": ""
+      }
+     ],
+     "notes": [],
+     "statements": [
+      {
+       "said": "signed up for the Riverside Half Marathon on Sunday 18 October",
+       "went_to": "profile",
+       "field": "race"
+      },
+      {
+       "said": "finish under 1:50",
+       "went_to": "profile",
+       "field": "goal"
+      },
+      {
+       "said": "run four days a week on Tuesday, Thursday, Saturday, Sunday",
+       "went_to": "profile",
+       "field": "days"
+      },
+      {
+       "said": "run in the evening after work",
+       "went_to": "profile",
+       "field": "time_of_day"
+      },
+      {
+       "said": "left knee gets sore after long downhill stretches",
+       "went_to": "profile",
+       "field": "injuries"
+      },
+      {
+       "said": "longest run 14 km last Sunday in 1:26",
+       "went_to": "events",
+       "field": ""
+      }
+     ]
+    },
+    "sent back": [],
+    "refused": [],
+    "said": "Kept: race = Riverside Half Marathon on 2026-10-18; goal = under 1:50; days = Tuesday, Thursday, Saturday, Sunday; time_of_day = evening; injuries = left knee soreness after long downhill stretches; 1 run(s) logged"
+   }
+  ],
+  "reply": "**Long‑run plan (Sept 1 – Oct 13)**  \n\n| Week | Long‑run distance | Pace focus | Downhill strategy |\n|------|-------------------|------------|--------------------|\n| 1 (Sept 5) | 16 km | Easy 6:30–6:45 min/km (≈ +30 s slower than goal race pace) | Run the downhill sections at **5:45–6:00** and keep stride short; add a quick “walk‑catch‑run” (30 s walk, 2 min jog) if you feel the knee tighten. |\n| 2 (Sept 12) | 18 km | Same easy pace, finish last 3 km at **6:00 min/km** (just a touch faster) | Same downhill technique; after the run, do a 5‑min “glute‑hip‑band” activation routine. |\n| 3 (Sept 19) | 20 km | First 15 km easy, last 5 km at **6:10 min/km** (goal race pace ~5:45) | Practice “controlled descent”: stay upright, slightly lean back, keep cadence 180+ spm. |\n| 4 (Sept 26) – recovery week | 14 km | Easy, 6:45 min/km | Include **2 × 2 min** downhill repeats (slow down to 6:00 on the descent, then return to easy pace). |\n| 5 (Oct 3) | 22 km | 15 km easy, 5 km at 6:10, final 2 km at race‑pace **5:45** | Same downhill form; if knee aches, add a 30‑second walk after each 5 km downhill segment. |\n| 6 (Oct 10) – taper long run | 12 km | Easy 6:30, finish 2 km at 5:45 | Short, gentle downhill; focus on smooth footstrike and good hip alignment. |\n\n**Key points for the sore knee on downhills**\n\n1. **Strengthen the supporting muscles** – 2‑3 × week: single‑leg bridges, clamshells, and calf raises (2 × 15 each side).  \n2. **Post‑run icing** – 10‑15 min on the lateral knee after any run with >5 km of descent.  \n3. **Form cues** – keep a slight forward lean from the ankles, avoid excessive braking with the quad; aim for a quick, light step (≈ 180 spm).  \n4. **Gradual exposure** – the plan above increases downhill volume by no more than 10 % each week, which helps the tendon adapt without overload.\n\nStick to the schedule, monitor any swelling, and you’ll be on track to hit sub‑1:50 on Oct 18. Good luck, Maya!  ",
+  "stopped": null,
+  "usage": {
+   "calls": 2,
+   "prompt": 1722,
+   "completion": 2645,
+   "total": 4367,
+   "seconds": 11
+  }
+ },
+ "tom-1": {
+  "runner": "tom",
+  "date": "2026-09-02",
+  "shown": null,
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "City Marathon on Sunday 8 November",
+      "goal": "unchanged",
+      "days": "five days a week",
+      "time_of_day": "unchanged",
+      "injuries": "unchanged",
+      "diet": "vegetarian",
+      "fuel": "water alone"
+     },
+     "new_fields": [],
+     "runs": [
+      {
+       "when": "last Saturday",
+       "kind": "long",
+       "km": 24.0,
+       "time": "",
+       "felt": "felt fine"
+      }
+     ],
+     "notes": [
+      {
+       "text": "first marathon",
+       "kind": "fact",
+       "depends_on": [
+        "race"
+       ]
+      },
+      {
+       "text": "long runs on Saturdays",
+       "kind": "habit",
+       "depends_on": [
+        "days"
+       ]
+      }
+     ],
+     "statements": [
+      {
+       "said": "first marathon, City Marathon on Sunday 8 November",
+       "went_to": "profile",
+       "field": "race"
+      },
+      {
+       "said": "run five days a week",
+       "went_to": "profile",
+       "field": "days"
+      },
+      {
+       "said": "long runs on Saturdays",
+       "went_to": "note",
+       "field": ""
+      },
+      {
+       "said": "24 km last Saturday, felt fine",
+       "went_to": "events",
+       "field": ""
+      },
+      {
+       "said": "vegetarian",
+       "went_to": "profile",
+       "field": "diet"
+      },
+      {
+       "said": "long runs on water alone",
+       "went_to": "profile",
+       "field": "fuel"
+      },
+      {
+       "said": "what should I be eating and drinking on long runs?",
+       "went_to": "nothing",
+       "field": ""
+      }
+     ]
+    },
+    "sent back": [],
+    "refused": [],
+    "said": "Kept: race = City Marathon on Sunday 8 November; days = five days a week; diet = vegetarian; fuel = water alone; 1 run(s) logged; 2 note(s) kept"
+   }
+  ],
+  "reply": "**Fuel for your long runs (24 km +)**  \n\n1. **Carbohydrate intake**  \n   • Aim for 30–60 g of carbs per hour once you’re past the first 60 minutes.  \n   • Easy vegetarian options you can carry:  \n     – Sports gels or chews (look for ones with maltodextrin + fructose)  \n     – Small packets of dried fruit (dates, apricots) or raisins  \n     – Homemade energy bites: rolled‑oats, honey, peanut butter, and a pinch of salt, formed into bite‑size balls  \n   • If you prefer a drink, a 5‑6 % carbohydrate sports drink will cover both fluid and carb needs.\n\n2. **Electrolytes**  \n   • After 1 hour of sweating, start adding electrolytes (sodium ≈ 300–500 mg per hour).  \n   • Options:  \n     – Salt tablets or electrolyte capsules (take with your water/gels)  \n     – Sports drinks that list sodium, potassium, magnesium  \n     – Add a pinch of sea salt to your water bottle if you’re using plain water.\n\n3. **Hydration schedule**  \n   • Drink 150–250 ml (5–8 oz) every 15–20 min. Adjust based on temperature and sweat rate.  \n   • If you’re using a sports drink, you can alternate a few sips of water with a sip of the drink to keep sodium intake steady.\n\n4. **Pre‑run snack (30–45 min before)**  \n   • 30–60 g carbs, low fiber: a banana with a tablespoon of nut butter, a small bowl of oatmeal with honey, or a slice of whole‑grain toast with jam.  \n\n5. **During the run**  \n   • Start fueling at the 60‑minute mark, not waiting until you feel hungry.  \n   • Example schedule for a 2.5‑hour 24 km run:  \n     - 0‑60 min: water only (150 ml/15 min)  \n     - 60‑90 min: 1 gel + 150 ml water  \n     - 90‑120 min: 1 gel + 150 ml water + a few dried‑fruit pieces  \n     - 120‑150 min: 1 gel + 150 ml water + a pinch of salt tablets  \n\n6. **Post‑run recovery**  \n   • Within 30 min, consume a 3:1 carb‑to‑protein snack: chocolate milk, a smoothie with fruit, soy yogurt, or a peanut‑butter‑banana sandwich.  \n   • Re‑hydrate with water plus a little extra sodium (e.g., a sports drink or a salty snack) to replace lost electrolytes.\n\n**Quick checklist to pack for Saturday long runs**\n\n- [ ] Water bottle (or handheld flasks) – enough for ~150 ml every 15 min  \n- [ ] 2–3 carbohydrate gels/chews (or homemade energy bites)  \n- [ ] Small zip‑lock bag of dried fruit or dates  \n- [ ] Salt tablets or a pinch of sea salt in a tiny container  \n- [ ] Optional: 5 % carb sports drink for one of the fluid stops  \n\nStick to this plan for the next few long runs and you’ll keep energy levels steady and avoid the “bonk” that can happen when you rely on water alone. Good luck with the City Marathon training!",
+  "stopped": null,
+  "usage": {
+   "calls": 2,
+   "prompt": 1661,
+   "completion": 2987,
+   "total": 4648,
+   "seconds": 10
+  }
+ },
+ "maya-2": {
+  "runner": "maya",
+  "date": "2026-09-08",
+  "shown": "What you know about Maya from earlier check-ins.\nProfile:\n- race: Riverside Half Marathon on 2026-10-18 (since 2026-09-01)\n- goal: under 1:50 (since 2026-09-01)\n- days: Tuesday, Thursday, Saturday, Sunday (since 2026-09-01)\n- time_of_day: evening (since 2026-09-01)\n- injuries: left knee soreness after long downhill stretches (since 2026-09-01)\nRuns, oldest first:\n- 2026-08-30 long 14 km in 86 min",
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "unchanged",
+      "goal": "unchanged",
+      "days": "unchanged",
+      "time_of_day": "unchanged",
+      "injuries": "knee fine",
+      "diet": "unchanged",
+      "fuel": "unchanged"
+     },
+     "new_fields": [],
+     "runs": [
+      {
+       "when": "Sunday",
+       "kind": "long",
+       "km": 16.0,
+       "time": "1:38",
+       "felt": "felt good"
+      },
+      {
+       "when": "Tuesday",
+       "kind": "easy",
+       "km": 6.0,
+       "time": "",
+       "felt": ""
+      },
+      {
+       "when": "Thursday",
+       "kind": "easy",
+       "km": 6.0,
+       "time": "",
+       "felt": ""
+      }
+     ],
+     "notes": [],
+     "statements": [
+      {
+       "said": "felt good",
+       "went_to": "events",
+       "field": ""
+      },
+      {
+       "said": "knee was fine",
+       "went_to": "profile",
+       "field": "injuries"
+      },
+      {
+       "said": "Should I add a tempo run, and if so, on which day?",
+       "went_to": "nothing",
+       "field": ""
+      }
+     ]
+    },
+    "sent back": [],
+    "refused": [],
+    "said": "Kept: injuries = knee fine; 3 run(s) logged"
+   }
+  ],
+  "reply": "Great job on the 16 km long run – 1:38 is a solid effort and it’s a good sign that your knee stayed comfortable.\n\n**Tempo placement**  \nYou have easy 6 km runs on Tuesday and Thursday, a long run on Sunday, and Saturday is currently open. Adding the tempo on **Saturday** works well because:\n\n1. It gives you a mid‑week recovery day (Tuesday) after the long run.  \n2. You’ll finish the week with a quality session before the next long run on Sunday, so the tempo won’t interfere with your recovery from the long run.  \n3. It keeps a clear “easy‑easy‑tempo‑long” pattern, which is easy to follow mentally.\n\n**Sample Saturday tempo**\n\n| Segment | Distance | Pace guidance |\n|---------|----------|----------------|\n| Warm‑up | 2 km | Easy, conversational |\n| Tempo   | 5–6 km | ~10‑15 seconds per km slower than half‑marathon goal pace (≈5:40 min/km for a sub‑1:50 HM) – you should feel “comfortably hard” but still able to speak a short sentence. |\n| Cool‑down| 2 km | Easy, relaxed |\n\nIf 5 km feels too much at first, start with 3 km tempo and build up week by week.\n\n**Other notes**\n\n- Keep Thursday’s 6 km as an easy run; it will serve as a good recovery after the tempo.  \n- Monitor that downhill stretch on the long run; if any knee soreness returns, add a short, gentle strengthening routine (clamshells, single‑leg bridges) after your easy runs.  \n- Stay hydrated and aim for at least 48 h of mostly low‑impact cross‑training (cycling, swimming) before the next long run on Sunday.\n\nLet me know how the Saturday tempo feels and if any knee niggles pop up!",
+  "stopped": null,
+  "usage": {
+   "calls": 2,
+   "prompt": 1872,
+   "completion": 2301,
+   "total": 4173,
+   "seconds": 20
+  }
+ },
+ "maya-3": {
+  "runner": "maya",
+  "date": "2026-09-15",
+  "shown": "What you know about Maya from earlier check-ins.\nProfile:\n- race: Riverside Half Marathon on 2026-10-18 (since 2026-09-01)\n- goal: under 1:50 (since 2026-09-01)\n- days: Tuesday, Thursday, Saturday, Sunday (since 2026-09-01)\n- time_of_day: evening (since 2026-09-01)\n- injuries: knee fine (since 2026-09-08; before: left knee soreness after long downhill stretches (since 2026-09-01))\nRuns, oldest first:\n- 2026-08-30 long 14 km in 86 min\n- 2026-09-01 easy 6 km\n- 2026-09-03 easy 6 km\n- 2026-09-06 long 16 km in 98 min -- felt good",
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "Riverside Half Marathon on 2026-11-01",
+      "goal": "unchanged",
+      "days": "unchanged",
+      "time_of_day": "morning",
+      "injuries": "knee sore after hill repeats on Thursday",
+      "diet": "unchanged",
+      "fuel": "unchanged"
+     },
+     "new_fields": [],
+     "runs": [
+      {
+       "when": "last Sunday",
+       "kind": "long",
+       "km": 17.0,
+       "time": "1:45",
+       "felt": ""
+      }
+     ],
+     "notes": [],
+     "statements": [
+      {
+       "said": "Riverside Half moved to Sunday 1 November because of roadworks",
+       "went_to": "profile",
+       "field": "race"
+      },
+      {
+       "said": "running in the mornings before work",
+       "went_to": "profile",
+       "field": "time_of_day"
+      },
+      {
+       "said": "17 km long run in 1:45",
+       "went_to": "events",
+       "field": ""
+      },
+      {
+       "said": "knee sore after the hill repeats on Thursday",
+       "went_to": "profile",
+       "field": "injuries"
+      },
+      {
+       "said": "How many weeks do I have now, and should I change anything?",
+       "went_to": "nothing",
+       "field": ""
+      }
+     ]
+    },
+    "sent back": [],
+    "refused": [],
+    "said": "Kept: race = Riverside Half Marathon on 2026-11-01; time_of_day = morning; injuries = knee sore after hill repeats on Thursday; 1 run(s) logged"
+   }
+  ],
+  "reply": "You’ve got **about 6 ½ weeks** (≈ 47 days) until the Riverside Half on **Sunday 1 Nov**.\n\n### What to tweak now\n| Day | Current plan | Suggested tweak |\n|-----|--------------|-----------------|\n| **Tuesday** | Morning easy run | Keep it easy – 5–6 km at < 5:45 / km to give the knee a break. |\n| **Thursday** | Hill repeats (knee sore) | Replace the repeats this week with a **steady‑state run**: 6 km at 5:30–5:45 / km on a gentle grade. Resume hills in two weeks, but cut the total uphill volume by 30 % and add a short 5‑minute calf/quad stretch after the session. |\n| **Saturday** | Morning run (unspecified) | Add a **race‑pace segment**: 8 km total, with 3 km in the middle at 5:20 / km, the rest easy. |\n| **Sunday** | Long run 17 km @ 6:13 / km | Keep the distance but start **dropping the pace** a bit each week (target ~5:50 / km by week 5). In the final week before the race, cut back to 12 km at race pace.\n\n### Quick knee care\n1. **Post‑run ice** (10 min) after any hill or long run.  \n2. **Dynamic warm‑up** before hills: leg swings, high‑knees, and short bounding.  \n3. **Strength work** 2× /week (body‑weight squats, glute bridges, single‑leg dead‑lifts) on non‑run days.  \n4. If soreness persists > 48 h, replace the Thursday session with cross‑training (bike/elliptical) until it’s pain‑free.\n\n### Taper\n- **Week 6 (the week of 28 Oct–1 Nov)**: cut Sunday long to 12 km, keep Thursday easy, and do a short 4 km race‑pace run on Tuesday. Rest or very light cross‑train on Friday.  \n\nStick with the morning schedule, keep the total weekly mileage around 40–45 km, and let the knee recover with lighter hill work. You’re on track to hit sub‑1:50. Good luck!",
+  "stopped": null,
+  "usage": {
+   "calls": 2,
+   "prompt": 2054,
+   "completion": 2780,
+   "total": 4834,
+   "seconds": 30
+  }
+ },
+ "tom-2": {
+  "runner": "tom",
+  "date": "2026-09-16",
+  "shown": "What you know about Tom from earlier check-ins.\nProfile:\n- race: City Marathon on Sunday 8 November (since 2026-09-02)\n- days: five days a week (since 2026-09-02)\n- diet: vegetarian (since 2026-09-02)\n- fuel: water alone (since 2026-09-02)\nRuns, oldest first:\n- 2026-08-29 long 24 km -- felt fine\nNotes that bear on this message:\n- 2026-09-02 long runs on Saturdays\n- 2026-09-02 first marathon",
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "unchanged",
+      "goal": "unchanged",
+      "days": "unchanged",
+      "time_of_day": "unchanged",
+      "injuries": "right hamstring tight",
+      "diet": "unchanged",
+      "fuel": "water and gels"
+     },
+     "new_fields": [],
+     "runs": [
+      {
+       "when": "Saturday",
+       "kind": "long",
+       "km": 28.0,
+       "time": "",
+       "felt": "much better"
+      }
+     ],
+     "notes": [
+      {
+       "text": "stomach cramps occur when eating less than two hours before a run",
+       "kind": "habit",
+       "depends_on": [
+        "fuel",
+        "diet"
+       ]
+      }
+     ],
+     "statements": [
+      {
+       "said": "it went much better than on water alone",
+       "went_to": "events",
+       "field": ""
+      },
+      {
+       "said": "right hamstring tight",
+       "went_to": "profile",
+       "field": "injuries"
+      },
+      {
+       "said": "should I still do 30 km this weekend",
+       "went_to": "nothing",
+       "field": ""
+      }
+     ]
+    },
+    "sent back": [
+     "pre_run_meal_timing = 1 hour -- not said: 1"
+    ],
+    "refused": [],
+    "said": "Kept: injuries = right hamstring tight; fuel = water and gels; 1 run(s) logged; 1 note(s) kept"
+   }
+  ],
+  "reply": "Hey Tom,\n\nGreat job powering through the 28 km and getting the gels into play—that’s a solid step forward. The early‑breakfast cramp is classic; aim to have solid fuel at least 2 hours before your long run (or a light, easily digested snack 90 min ahead) to avoid the belly‑ache.\n\n**Hamstring tightness**  \n- Light foam‑roll the right hamstring and the surrounding glutes right now.  \n- Do a 5‑minute dynamic warm‑up (leg swings, walking lunges) before any run.  \n- Finish the next run with a short stretch routine (standing hamstring stretch, pigeon pose).\n\n**Weekend mileage**  \nGiven the lingering tightness and the recent cramp, I’d pull back a bit rather than push to 30 km. Try a **22–24 km** long run at an easy, conversational pace, focusing on good form and staying hydrated with the gels you liked. If the hamstring feels better after the run, you can add a few easy kilometers, but listen to the tissue—don’t force it to 30 km just yet.\n\n**Recovery plan for the next few days**  \n1. **Monday‑Wednesday:** 2–3 easy runs (5–8 km) with a short, brisk walk after each to keep blood flowing.  \n2. **Thursday:** Rest or active recovery (yoga, easy cycling).  \n3. **Friday:** Short shake‑out run (6 km) with a few strides, then a thorough hamstring stretch.  \n\nKeep your vegetarian protein intake up (legumes, tofu, Greek‑style yogurt) and add a bit of carbs 2‑3 hours before your long runs. Let me know how the hamstring feels after the easy run tomorrow, and we’ll tweak the plan if needed.  \n\nRun easy!",
+  "stopped": null,
+  "usage": {
+   "calls": 3,
+   "prompt": 3363,
+   "completion": 4596,
+   "total": 7959,
+   "seconds": 54
+  }
+ },
+ "maya-4": {
+  "runner": "maya",
+  "date": "2026-09-22",
+  "shown": "What you know about Maya from earlier check-ins.\nProfile:\n- race: Riverside Half Marathon on 2026-11-01 (since 2026-09-15; before: Riverside Half Marathon on 2026-10-18 (since 2026-09-01))\n- goal: under 1:50 (since 2026-09-01)\n- days: Tuesday, Thursday, Saturday, Sunday (since 2026-09-01)\n- time_of_day: morning (since 2026-09-15; before: evening (since 2026-09-01))\n- injuries: knee sore after hill repeats on Thursday (since 2026-09-15; before: knee fine (since 2026-09-08))\nRuns, oldest first:\n- 2026-08-30 long 14 km in 86 min\n- 2026-09-01 easy 6 km\n- 2026-09-03 easy 6 km\n- 2026-09-06 long 16 km in 98 min -- felt good\n- 2026-09-13 long 17 km in 105 min",
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "unchanged",
+      "goal": "unchanged",
+      "days": "Tuesday, Friday, Sunday",
+      "time_of_day": "unchanged",
+      "injuries": "knee fine",
+      "diet": "unchanged",
+      "fuel": "unchanged"
+     },
+     "new_fields": [],
+     "runs": [
+      {
+       "when": "Sunday",
+       "kind": "long",
+       "km": 18.0,
+       "time": "1:51",
+       "felt": ""
+      }
+     ],
+     "notes": [
+      {
+       "text": "tight IT band, cleared to run hills",
+       "kind": "fact",
+       "depends_on": [
+        "injuries"
+       ]
+      }
+     ],
+     "statements": [
+      {
+       "said": "knee is fine",
+       "went_to": "profile",
+       "field": "injuries"
+      },
+      {
+       "said": "can only run three days a week now",
+       "went_to": "profile",
+       "field": "days"
+      },
+      {
+       "said": "Sunday's long run was 18 km in 1:51",
+       "went_to": "events",
+       "field": ""
+      },
+      {
+       "said": "cleared to run hills",
+       "went_to": "note",
+       "field": ""
+      }
+     ]
+    },
+    "sent back": [],
+    "refused": [],
+    "said": "Kept: days = Tuesday, Friday, Sunday; injuries = knee fine; 1 run(s) logged; 1 note(s) kept"
+   }
+  ],
+  "reply": "**Maya – updated 3‑day plan (Tue / Fri / Sun)**  \n\n| Day | Workout | Details & Pace | Why it fits |\n|-----|----------|----------------|------------|\n| **Tuesday** | **Hill‑repeat quality session** | • 2 km easy warm‑up (≈ 6:30 / km) <br>• 6 × 90 s hill at 85‑90 % effort (hard but controlled) – jog or walk down for recovery <br>• 2 km easy cool‑down <br>• Finish with 4 × 20 s strides | Clears the IT‑band, rebuilds the leg strength that got sore before, and keeps the neuromuscular spark without adding much mileage. |\n| **Friday** | **Steady‑state run with a finish at race pace** | • 10 km total <br>• First 6 km at easy‑moderate (≈ 6:30‑6:45 / km) <br>• Last 4 km at half‑marathon goal pace (≈ 5:20 / km) <br>• End with 4 × 20 s strides | Gives you a solid aerobic base mid‑week and a taste of goal pace, sharpening you for the long run. |\n| **Sunday** | **Long run (18 km)** | • Keep the first 14 km at comfortable long‑run pace (≈ 6:20‑6:30 / km) <br>• Last 4 km at goal half‑marathon pace (≈ 5:20 / km) <br>• Finish with 5 min easy jog + stretch | Maintains the endurance you need and practices finishing strong at race pace. Your recent 1:51 for 18 km shows you’re already near the right effort; the added pace finish will push you a bit closer to the sub‑1:50 target. |\n\n### Add‑on work (when you have a few spare minutes)\n\n| Day | Quick routine |\n|-----|----------------|\n| **Monday / Wednesday / Thursday** (optional) | 10 min foam‑roll IT‑band & quads, 5 min glute/hip‑strength circuit (clamshells, banded side‑steps, single‑leg bridges). |\n| **Any day** | Light cross‑training (30 min bike/elliptical or yoga) if you feel extra fatigue, but keep it easy. |\n\n### Key points\n\n* **Volume:** 38 km total for the week – a modest drop from before but still enough stimulus to stay on track for a sub‑1:50 half.  \n* **Intensity:** One hard effort (hills) and one race‑pace segment keep your legs sharp without overloading the knee.  \n* **Recovery:** With the long run on Sunday, the Tuesday hill repeats are early enough for recovery, and Friday’s moderate run gives you a “bridge” without taxing the IT‑band.  \n* **Strength/mobility:** A brief daily routine will help keep the IT‑band supple and protect the knee as you increase hill work again.\n\nStick to this schedule for the next 2‑3 weeks, then we can reassess and fine‑tune the Friday run (e.g., tempo vs. steady) based on how you feel. Good luck with the new job schedule—and happy running!",
+  "stopped": null,
+  "usage": {
+   "calls": 2,
+   "prompt": 2166,
+   "completion": 3054,
+   "total": 5220,
+   "seconds": 40
+  }
+ },
+ "maya-5": {
+  "runner": "maya",
+  "date": "2026-09-29",
+  "shown": "What you know about Maya from earlier check-ins.\nProfile:\n- race: Riverside Half Marathon on 2026-11-01 (since 2026-09-15; before: Riverside Half Marathon on 2026-10-18 (since 2026-09-01))\n- goal: under 1:50 (since 2026-09-01)\n- days: Tuesday, Friday, Sunday (since 2026-09-22; before: Tuesday, Thursday, Saturday, Sunday (since 2026-09-01))\n- time_of_day: morning (since 2026-09-15; before: evening (since 2026-09-01))\n- injuries: knee fine (since 2026-09-22; before: knee sore after hill repeats on Thursday (since 2026-09-15))\nRuns, oldest first:\n- 2026-08-30 long 14 km in 86 min\n- 2026-09-01 easy 6 km\n- 2026-09-03 easy 6 km\n- 2026-09-06 long 16 km in 98 min -- felt good\n- 2026-09-13 long 17 km in 105 min\n- 2026-09-20 long 18 km in 111 min",
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "unchanged",
+      "goal": "under 1:45",
+      "days": "unchanged",
+      "time_of_day": "unchanged",
+      "injuries": "unchanged",
+      "diet": "unchanged",
+      "fuel": "unchanged"
+     },
+     "new_fields": [],
+     "runs": [
+      {
+       "when": "Saturday",
+       "kind": "race",
+       "km": 10.0,
+       "time": "49:30",
+       "felt": ""
+      }
+     ],
+     "notes": [
+      {
+       "text": "always starts races too fast",
+       "kind": "habit",
+       "depends_on": []
+      }
+     ],
+     "statements": [
+      {
+       "said": "personal best 10k race",
+       "went_to": "events",
+       "field": ""
+      },
+      {
+       "said": "go for 1:45 at the half",
+       "went_to": "profile",
+       "field": "goal"
+      },
+      {
+       "said": "Is that realistic, and how should my next few weeks look?",
+       "went_to": "nothing",
+       "field": ""
+      }
+     ]
+    },
+    "sent back": [],
+    "refused": [],
+    "said": "Kept: goal = under 1:45; 1 run(s) logged; 1 note(s) kept"
+   }
+  ],
+  "reply": "**Realistic?**  \nA 1:45 half (≈5:00 /km) is ambitious but doable for you. Your 10 k PB of 49:30 shows you can hold ~5:57 /km for 10 k, and you’ve already been logging long runs up to 18 km at about 6:10 /km. With a few more weeks of specific threshold work and a slight increase in long‑run mileage, you can bridge that gap. The key will be:\n\n* Learning to start at goal pace (don’t go out faster than 5:00 /km).  \n* Building aerobic endurance so that 5:00 /km feels sustainable, not “hard”.  \n* Adding a little speed/threshold work to raise your lactate threshold.\n\n---\n\n### 3‑week “build” block (weeks 1‑3)\n\n| Day | Workout | Why it helps |\n|-----|----------|--------------|\n| **Tue** | **Intervals** – 2 × (5 min @ 4:45 /km + 2 min jog) + warm‑up/cool‑down.  <br>*(If you feel fresh, add a third 5‑min interval.)* | Raises VO₂ max and teaches you to run faster than race pace. |\n| **Fri** | **Tempo** – 8 km total: 2 km easy, 5 km at 5:10 – 5:15 /km (just a shade slower than goal), 1 km easy. | Improves lactate threshold, the pace you’ll hold for most of the half. |\n| **Sun** | **Long run** – 20 km, first 12 km easy (6:10‑6:20 /km), last 8 km at goal half‑marathon pace (≈5:00 /km). | Teaches you to finish strong and gets the body used to the target pace. |\n\n*Keep the runs in the morning as you’re used to. Easy runs should feel conversational; the goal is volume, not speed.*\n\n---\n\n### Week 4 – **Race‑pace rehearsal**\n\n| Day | Workout |\n|-----|----------|\n| **Tue** | **Progression** – 12 km: start 6 km easy (6:15 /km), then 4 km at 5:10 /km, finish 2 km at 5:00 /km. |\n| **Fri** | **Race‑start practice** – 5 km total: 1 km at exactly 5:00 /km, then 4 km easy. This trains you to hold the correct first‑kilometre pace. |\n| **Sun** | **Long run** – 22 km, steady at 5:45‑5:50 /km (just a touch faster than your usual long‑run pace). No fast finish this week; focus on time‑on‑feet. |\n\n---\n\n### Week 5 – **Taper**\n\n| Day | Workout |\n|-----|----------|\n| **Tue** | **Short intervals** – 3 × (3 min @ 4:40 /km, 2 min jog). |\n| **Fri** | **Easy** – 6 km at 6:20 /km, include a few strides (20 sec fast, 40 sec jog). |\n| **Sun** | **Mini‑long** – 12 km at 5:45 /km, finish with 2 km at 5:00 /km. |\n\n*Reduce total mileage ~20‑30 % this week, keep the legs fresh.*\n\n---\n\n### Extra notes\n\n1. **Start‑line pacing** – before your next race or time‑trial, do a 1‑km “race‑pace test” the day before a long run. Hit 5:00 /km and note how you feel; adjust your perception of that effort.  \n2. **Strength / knee** – 2 × /week a quick 20‑minute strength circuit (single‑leg squats, glute bridges, calf raises, core work) will keep the knee healthy and improve running economy.  \n3. **Recovery** – after each long run, do 5‑10 min of easy jogging + foam‑rolling, especially on the quads and IT band.  \n4. **Nutrition** – practice your race‑day fueling on the long runs (e.g., a gel or 30 g carbs at the 15‑km mark) so you know what works for you.\n\nStick to the plan, stay disciplined on the first kilometre, and you’ll be in a strong position to hit that 1:45 target on Nov 1. Good luck!",
+  "stopped": null,
+  "usage": {
+   "calls": 2,
+   "prompt": 2238,
+   "completion": 2728,
+   "total": 4966,
+   "seconds": 34
+  }
+ },
+ "tom-3": {
+  "runner": "tom",
+  "date": "2026-09-30",
+  "shown": "What you know about Tom from earlier check-ins.\nProfile:\n- race: City Marathon on Sunday 8 November (since 2026-09-02)\n- days: five days a week (since 2026-09-02)\n- diet: vegetarian (since 2026-09-02)\n- fuel: water and gels (since 2026-09-16; before: water alone (since 2026-09-02))\n- injuries: right hamstring tight (since 2026-09-16)\nRuns, oldest first:\n- 2026-08-29 long 24 km -- felt fine\n- 2026-09-12 long 28 km -- much better\nNotes that bear on this message:\n- 2026-09-02 long runs on Saturdays\n- 2026-09-02 first marathon\n- 2026-09-16 stomach cramps occur when eating less than two hours before a run",
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "unchanged",
+      "goal": "unchanged",
+      "days": "unchanged",
+      "time_of_day": "unchanged",
+      "injuries": "unchanged",
+      "diet": "unchanged",
+      "fuel": "unchanged"
+     },
+     "new_fields": [],
+     "runs": [],
+     "notes": [],
+     "statements": []
+    },
+    "sent back": [],
+    "refused": [],
+    "said": "Nothing new kept."
+   }
+  ],
+  "reply": "**Longest run so far:** 28 km on 12 Sept.  \n\n**Time to race:** Today is 30 Sept → Marathon on 8 Nov is 39 days away, i.e. about **5½ weeks**.\n\n---\n\n### Taper (5‑week plan)\n\n| Week (Mon‑Sun) | Goal | Mileage (≈% of peak week) | Key runs |\n|----------------|------|---------------------------|----------|\n| **Week 5** (now) | Start easing | 80 % | • Mon / Wed easy 6 km <br>• Tue 8 km with a few short pickups <br>• Thu easy 6 km <br>• Sat long 20 km (down from 28 km) <br>• Sun rest |\n| **Week 4** | Build confidence | 60 % | • Mon 5 km easy <br>• Tue 6 km (include 2 × 3 min race‑pace) <br>• Thu 5 km easy <br>• Sat 14 km steady <br>• Sun rest |\n| **Week 3** | Sharpen | 45 % | • Mon 5 km easy <br>• Tue 6 km with 3 × 4 min race‑pace <br>• Thu 4 km easy <br>• Sat 10 km relaxed <br>• Sun rest |\n| **Week 2** | Recovery focus | 30 % | • Mon 4 km easy <br>• Tue 5 km (light strides) <br>• Thu 4 km easy <br>• Sat 8 km very relaxed <br>• Sun rest |\n| **Week 1** (race week) | Rest & carb‑load | 20 % | • Mon 4 km easy <br>• Wed 3 km very easy <br>• Thu rest <br>• Fri 2 km shake‑out <br>• Sat rest <br>• Sun — Race day |\n\n*Keep the right‑hamstring loose with gentle dynamic stretches after each run; avoid any hard intervals while it’s still tight.*\n\n---\n\n### Race‑morning nutrition (vegetarian)\n\n| Time before start | What to eat/drink |\n|-------------------|-------------------|\n| **~3 h** (≈ 6:30 am) | 60–70 g carbs: <br>• 1 cup cooked oatmeal <br>• ½ banana sliced <br>• 1 Tbsp almond butter <br>• 1 Tbsp chia seeds <br>• Small handful of raisins or dried figs <br>• 250 ml water + electrolytes |\n| **~1.5 h** | Light snack if you’re hungry: a half‑size whole‑grain bagel with a thin spread of honey or a small energy bar (≈ 20 g carbs). |\n| **~30 min** | One gel (vegetarian‑friendly, e.g., rice‑based) with 150 ml water. |\n| **At the start** | Sip 150–200 ml water/electrolyte mix; then take a second gel after ~45 min of racing if you feel you need extra carbs. |\n\n**Key points**\n\n* Eat **at least 2 hours** before the start to avoid the stomach cramps you’ve experienced.  \n* Keep the breakfast low‑fiber and low‑fat to aid digestion.  \n* Stay hydrated early, then sip small amounts during the first 30 min of the race; you don’t want a full stomach on the start line.  \n\nGood luck with the taper—keep the hamstring gentle and stick to the timing, and you’ll be set for a strong marathon!",
+  "stopped": null,
+  "usage": {
+   "calls": 2,
+   "prompt": 1933,
+   "completion": 1933,
+   "total": 3866,
+   "seconds": 33
+  }
+ },
+ "maya-6": {
+  "runner": "maya",
+  "date": "2026-10-13",
+  "shown": "What you know about Maya from earlier check-ins.\nProfile:\n- race: Riverside Half Marathon on 2026-11-01 (since 2026-09-15; before: Riverside Half Marathon on 2026-10-18 (since 2026-09-01))\n- goal: under 1:45 (since 2026-09-29; before: under 1:50 (since 2026-09-01))\n- days: Tuesday, Friday, Sunday (since 2026-09-22; before: Tuesday, Thursday, Saturday, Sunday (since 2026-09-01))\n- time_of_day: morning (since 2026-09-15; before: evening (since 2026-09-01))\n- injuries: knee fine (since 2026-09-22; before: knee sore after hill repeats on Thursday (since 2026-09-15))\nRuns, oldest first:\n- 2026-08-30 long 14 km in 86 min\n- 2026-09-01 easy 6 km\n- 2026-09-03 easy 6 km\n- 2026-09-06 long 16 km in 98 min -- felt good\n- 2026-09-13 long 17 km in 105 min\n- 2026-09-20 long 18 km in 111 min\n- 2026-09-26 race 10 km in 49.5 min\nNotes that bear on this message:\n- 2026-09-29 always starts races too fast",
+  "kept": [
+   {
+    "card": {
+     "profile": {
+      "race": "unchanged",
+      "goal": "unchanged",
+      "days": "unchanged",
+      "time_of_day": "unchanged",
+      "injuries": "unchanged",
+      "diet": "unchanged",
+      "fuel": "unchanged"
+     },
+     "new_fields": [],
+     "runs": [],
+     "notes": [],
+     "statements": [
+      {
+       "said": "Final check before I start tapering.",
+       "went_to": "nothing",
+       "field": ""
+      },
+      {
+       "said": "Can you remind me: when is my race, what's my goal time, which days do I run now and at what time of day, and how have my long runs built up so far?",
+       "went_to": "nothing",
+       "field": ""
+      },
+      {
+       "said": "And any advice for race morning?",
+       "went_to": "nothing",
+       "field": ""
+      }
+     ]
+    },
+    "sent back": [],
+    "refused": [],
+    "said": "Nothing new kept."
+   }
+  ],
+  "reply": "**Race & Goal**  \n- **Riverside Half Marathon:** Sunday 2026‑11‑01  \n- **Goal time:** sub 1:45  \n\n**Current training schedule**  \n- **Tuesday – morning:** speed/tempo work  \n- **Friday – morning:** steady‑state run  \n- **Sunday – morning:** long run (currently 18 km)  \n\n**Long‑run progression**  \n- 2026‑08‑30 – 14 km (86 min)  \n- 2026‑09‑06 – 16 km (98 min) – felt good  \n- 2026‑09‑13 – 17 km (105 min)  \n- 2026‑09‑20 – 18 km (111 min) – last long run before taper  \n\n**Race‑morning checklist**  \n1. **Wake up 2 – 2½ h before start** – a light breakfast (e.g., toast with peanut butter + banana, plus a cup of coffee or tea).  \n2. **Hydrate early:** 200‑250 ml water with a pinch of salt about 90 min before the gun.  \n3. **Gear check:** shoes, socks, race bib, timing chip, GPS watch, and a light jacket if it’s cool.  \n4. **Warm‑up:** 10‑15 min easy jog, followed by a few short strides (80‑90 % effort) to prime the legs.  \n5. **Pacing plan:** start at 5:15 min/km for the first 5 km, then settle into 5:05 min/km. Save a bit for the last 2 km to finish strong.  \n\nStick to the routine you’ve practiced, stay relaxed, and trust the mileage you’ve built. Good luck!",
+  "stopped": null,
+  "usage": {
+   "calls": 2,
+   "prompt": 2271,
+   "completion": 1575,
+   "total": 3846,
+   "seconds": 28
+  }
+ }
+}

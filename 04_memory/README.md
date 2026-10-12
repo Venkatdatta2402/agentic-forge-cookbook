@@ -332,6 +332,46 @@ Chroma can do elsewhere, and it is a more ordinary reason to run two engines
 than anything about scale: the product has the feature, the deployment does
 not.
 
+`stores.py` also has **`QdrantJournal`**, written later for chapter 8's running
+coach (`08_frameworks/06_mem0`): the same journal on one engine. Qdrant's local
+mode keeps the keyword index and the vectors on one record and fuses the two
+searches itself, so a write, an update or a delete is one operation instead of
+two kept in step. It has `Journal`'s methods, so `Recall`, `Retrieve` and the
+add/update/ignore check run on either. It differs in two ways: its BM25 stems
+words ("batches" finds "batch"), and Qdrant's own fusion constant is 2, not 60,
+so `rrf_k` is passed in. The notebooks here use `Journal`.
+
+The same project added two more parts, both about **writing** memory down, which the notebooks here leave to
+whoever calls the store. There, a coach's stores did exactly what they were built for, and it still told a runner
+the wrong race date, because the wrong things had been written:
+
+- **`Profile`** (in `stores.py`) is `KeyValue` for facts that change. A new value replaces the old one, which is
+  kept beside it with its dates ("diet: eats meat, since 10 Oct; before: vegetarian, since 2 Sep"). So a missed
+  change is not shown as a plain current fact with nothing beside it. A value equal to the one already there is
+  ignored, so a form that re-writes unchanged fields cannot wipe the history, and every earlier value is kept in
+  `history`. Its fields are designed in advance, from what will be asked, and more can be added.
+- **`QdrantJournal` notes can depend on profile fields.** An entry's optional fifth element names the fields it
+  depends on, and `retire(field)` takes those notes out of every search when that field changes. They stay stored.
+  Nothing replaces a note, so without this a note like "runs Tuesday and Thursday evenings" comes back long after
+  both have changed.
+- **`writing.py`** checks a write before it is kept. This is chapter 3's `verified()` at the moment of writing:
+  - `profile_form`: a form with a required slot for every field, so a field cannot be skipped by not thinking of
+    it, as an optional list of changes allows;
+  - `unsupported`: the days, dates, numbers and names in a value that the source never says, compared by what they
+    mean ("5" is "five"; "2026-11-08" and "8 November" are one day), because compared as written, a correct
+    race date was refused and never stored;
+  - `day_of`: "last Sunday" turned into a date in code, because the model got it wrong even when told the weekday;
+  - `fill`: extract, check, and send back once with the reasons, instead of dropping what failed. An item that
+    should simply not be kept (an event copied from the record) is marked "drop" and removed without a second call;
+  - `rules`: this chapter's principle (what will be asked decides the store) as a form's instructions. A current
+    state goes in the profile, something that happened goes in the events log, and a lasting fact that is neither
+    goes in a note, one fact each, never restating a field. A habit is a note of its own kind (`Note`);
+  - `Statement` and `uncovered`: the form lists every statement with where it went, and code checks each one is
+    really there;
+  - `derived_problems`: a new field the records could work out (longest, total, best) is refused.
+
+  Words that only describe are not checked: rewording them is the job.
+
 **Neo4j** goes further — it has no embedded mode at all, so notebook 2 is the
 only notebook in the repo that cannot run without a service being up
 somewhere. A free instance at <https://console.neo4j.io> takes a couple of

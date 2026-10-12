@@ -34,7 +34,7 @@ reproduced as functions (`*_checks.py`), and offline tests (`test_*.py`) that co
 | `03_crewai` | CrewAI | **Tallyfold's security questionnaire** — three specialists answering in parallel from a policy pack, a lead assembling, code guardrails sending work back; sequential and hierarchical crews. Runs on qwen3.8-27b (see below) | yes | ✅ |
 | `04_autogen` | AutoGen | **Brightwater's analysis team** — a planner, an analyst that writes and runs pandas, a reviewer and a reporter, answering three questions from an order export with two problems planted in it: group chat, code execution, termination, structured messages | yes | ✅ |
 | `05_llamaindex` | LlamaIndex | **Ask the cookbook** — answers questions about this repo from its READMEs, notebook prose and modules: splitting prose and code, a vector index refreshed as files change, fused retrieval, a floor that turns off-topic questions away, cited answers, retrieval evaluation, and an agent that searches and opens files | the agent only | ✅ |
-| `06_mem0` | Mem0 | a running coach that remembers each runner across weeks of sessions | yes | planned |
+| `06_mem0` | Mem0 | **A running coach that remembers** — two runners, nine weekly check-ins, and facts that keep changing (a race moved, new running days, a knee cleared, a new goal): extraction after every conversation, hybrid search, scoping by user, custom instructions, history | yes | ✅ |
 | `07_langsmith` | LangSmith | **Evaluating the cookbook assistant**: `05_llamaindex`'s assistant traced, run on a 10-question dataset whose reference points rest on quoted lines of the repo, scored by free checks and a claim-by-claim judge checked against hand marks, and fixed round by round from its traces: datasets, experiments, evaluators, feedback, traces read back | — | ✅ |
 | `08_langfuse` | Langfuse | **The cookbook assistant in production**: the same assistant, showing only what `07_langsmith` did not: every LlamaIndex step traced through OpenTelemetry, a cost on every model call, the agent's prompt as versions linked to each call, and monitoring through the metrics API | — | ✅ |
 
@@ -105,6 +105,41 @@ evidence is a field the code runner owns.
   - a first build resumes only if it was saved along the way;
   - `citation_chunk_size=512` splits passages into extra sources.
 
+**`06_mem0`**:
+
+- **What decided it was the writing, not the store.** Mem0 writes memory in a step of its own, after every check-in, with a separate model. In round 1 it caught every fact, including one mentioned in passing (Tom's stomach cramps). The scratch build (chapter 4's design: a profile whose fields are replaced, a run log, a notes journal) had the coach write as a side job of replying. It saved a race without its date, never wrote the race moving, put changed days in a note, and dated runs wrong. So at the last check-in it told Maya the old race date and the old days. Giving writing its own step (one `extract()` after the reply) fixed every named fact in round 2.
+- **Mem0 only adds.** In 2.2.1, `add` never updates or deletes, although its docstring still says it does. Old and new facts stay side by side; the coach still picked the current ones, because changes are written as changes and each memory carries its date. Search returned up to its limit of 20 every check-in, and its 0.1 threshold filtered nothing.
+- **By default Mem0 keeps the assistant's advice as memories:** 10 of Maya's 26 in round 1, and the coach twice took a planned run for one she had done. One custom instruction ("only what the runner says") removed them.
+- **A form is only as good as its filling.** In round 2 the scratch write step still left a field stale when a change came under another heading ("gels worked" went into a run's note, so `food` still said water only), and invented detail (Tom's days as Monday to Friday). A stale field is shown as a current fact, which is worse than Mem0's two dated versions. Round 3 fixed both:
+  - a required slot for every field;
+  - every change checked in code against the runner's own words;
+  - old values and the runner's messages kept in view.
+
+  Its last replies to both runners had every named fact right; run dates were still a day or two off. The exact-words check also refused one correct fact (a quote with one word changed), and the kept messages crowded `Recall`'s three slots. It cost 38k Groq tokens, against 27k.
+- **Round 4 undid those mistakes, and its general parts went into chapter 4:**
+  - `Profile`: named facts that keep their previous value and dates;
+  - `writing.py`: a slot per field, a check on every day, date, number and name, `day_of` for dates, and one retry instead of dropping.
+
+  Every run was dated right for the first time; diet and race fuel stayed apart; nothing correct was thrown away. Still wrong:
+  - a form that re-wrote unchanged values wiped the one step of history;
+  - a note repeating a profile fact went stale;
+  - one habit was never written down.
+
+  40k Groq tokens.
+- **Measured against a hand-written answer key** of 50 facts (`answer_key.py`, never shown to either system), for extraction, current-state accuracy and stale exposure (`baseline.py`).
+  - **Round 5:** chapter 4's store rules, habits, a check that every statement is accounted for, notes retired when their field changes. Habits were saved for the first time, but copied old runs cost a second call each, so 65k tokens.
+  - **Round 6:** only this message's runs, with copies dropped without a second call. Back to 41k, but the check compared values as written, refused Tom's race written as "2026-11-08", and his coach made a date up.
+  - **Round 7:** the check compares what dates and numbers mean. 47 of 50 facts saved right, nothing wrong or invented, every current state right, no stale item shown, 44k tokens.
+- **At their best, Mem0 (round 2) and the scratch build (round 7) both answered every current-state question right.**
+  - **Mem0** saved 48 facts, but 17% of what it showed the coach was a fact already replaced. The coach sorted it out from the dates.
+  - **The scratch build** saved 47 facts and showed nothing stale, because its stores replace and retire. It needed seven measured rounds to learn what to check.
+- **Setting it up.** Mem0's extraction prompt is about 7,600 tokens, too big for Groq's free tier (8,000 per request), so Mem0's own model runs on Gemini flash-lite: about 90k input tokens per round. The coach stays on Groq. Full search needs Qdrant, `fastembed` and spaCy, and without them falls back to meaning-only with a single warning line. Other behaviours, each reproduced offline:
+  - `timestamp` raises an error in the open-source build;
+  - telemetry is on by default;
+  - `get_all` stops at 20 without saying so;
+  - the links between memories that the prompt asks for are thrown away.
+- **Added to chapter 4:** `QdrantJournal`, the journal on one engine with `Journal`'s methods, so `Recall` runs on either; `Profile`; and `writing.py`.
+
 **`07_langsmith`**:
 
 - **The loop worked.** Three rounds on the same 10 questions. The baseline answered 9; the LangGraph comparison failed twice, first on a reply Groq refused, then on a request over Groq's size limit. Four fixes in 05, each from a trace:
@@ -163,11 +198,15 @@ OpenTelemetry instrumentation, with `openinference-instrumentation`, `openinfere
 `opentelemetry-instrumentation` 0.66b0. They are pinned to the OpenTelemetry versions already installed, so nothing
 else moved.
 
+**Added for `06_mem0`:** `fastembed` 0.9.0 (BM25 for Mem0's keyword search on Qdrant), and `spacy` 3.8.16 with its
+`en_core_web_sm` model (the names Mem0 links memories by). New packages only; nothing installed moved.
+
 ## What this chapter needs
 
 - **Groq**, as everywhere — every project runs on `openai/gpt-oss-120b` except `03_crewai`, which runs on
   `qwen/qwen3.8-27b` (its free-tier limit is 1,000 output tokens a minute, so a crew takes minutes)
-- **Gemini**, for embeddings, as in `04_memory` (LangChain's retrieval uses chapter 4's `embed()`)
+- **Gemini**, for embeddings, as in `04_memory` (LangChain's retrieval uses chapter 4's `embed()`), and in
+  `06_mem0` also for Mem0's own model, `gemini-3.5-flash-lite`
 - **LangSmith and Langfuse accounts**, for notebooks 7 and 8: `LANGSMITH_API_KEY`,
   `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_HOST` in `.env`. Both are cloud
   services, so traces — prompts and outputs included — leave the machine. Langfuse can be
@@ -181,6 +220,7 @@ Each folder's tests run offline and cost nothing:
 cd 08_frameworks/02_langgraph && python test_ap.py
 cd 08_frameworks/01_langchain && python test_claims.py
 cd 08_frameworks/05_llamaindex && python test_ask.py
+cd 08_frameworks/06_mem0 && python test_coach.py
 ```
 
 The notebooks run on the `agentic-forge` kernel from inside their folder. Live sections spend real

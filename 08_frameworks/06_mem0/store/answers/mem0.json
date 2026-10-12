@@ -1,0 +1,1200 @@
+{
+ "maya-1": {
+  "runner": "maya",
+  "date": "2026-09-01",
+  "recalled": [],
+  "reply": "**Maya – Riverside Half Marathon (Sun Oct 18) – Goal < 1:50**  \n\n---\n\n### Long‑run schedule (now → race)\n\n| Week | Sun date | Distance | Main focus |\n|------|----------|----------|------------|\n| 1 | **Sept 8** | **16 km** | Easy ≈ 1:10–1:15 /km. End the last 3 km on a gentle downhill (practice short, controlled strides). |\n| 2 | **Sept 15** | **18 km** | 5 km in the middle at half‑marathon pace (≈ 5:13 /km). Include a 400‑m downhill segment right after the pace block – keep cadence up. |\n| 3 | **Sept 22** | **20 km** | “Rolling hills” run: 3 km easy, 8 km of undulating terrain (mix uphills & downhills), 3 km easy. Keep effort on downhills light (focus on form). |\n| 4 | **Sept 29** | **14 km** | Cut‑back week – fully easy, good for recovery and knee reset. |\n| 5 | **Oct 6** | **18 km** | 4 × 1 km at race pace (5:13 /km) with 2 min jog recovery. Finish with 2 km easy on a slight downgrade – stay relaxed, quick turnover. |\n| 6 | **Oct 13** | **12 km** | Easy, include 4 × 30 s “downhill drills”: run down a gentle slope, focus on short, quick steps (80‑90 spm). No hard effort. |\n| **Race week** | **Oct 18** | – | Reduce total mileage 30‑40 % (2–3 easy runs, no >8 km). Keep legs fresh with a short 4 km run on Tuesday and a 5 km easy on Thursday. |\n\n---\n\n### Weekly “mid‑week” workouts (keep the 4‑day pattern)\n\n| Day | Workout |\n|-----|----------|\n| **Tue** | **Tempo** – 8 km total: 2 km easy, 4 km at 5:00 /km (slightly faster than goal), 2 km easy. |\n| **Thu** | **Speed / Hill** – 10 km total: 2 km easy, then either 6 × 400 m intervals (5:00 /km) with 90 s jog or 6 × 30 s hill repeats on a moderate incline, 2 km easy. |\n| **Sat** | **Recovery / Easy** – 6‑8 km at conversational pace (≈ 1:20 /km). Add a short core/hip routine (5 min). |\n\n---\n\n### Knee‑care plan (downhill soreness)\n\n1. **Technique** – On any downhill, shorten your stride, keep a slightly forward lean, and raise your cadence to **80‑90 spm**. Think “quick feet, light touch.”\n2. **Strength** – 2 × week (post‑run or separate)  \n   * **Eccentric quad**: 3 × 8 reps of “slow‑down” squats (3‑4 s lowering).  \n   * **Glute bridges**: 3 × 12.  \n   * **Side‑lying clamshells**: 3 × 15 each side.  \n3. **Mobility / Recovery** –  \n   * Foam‑roll IT‑band & quad after each long run (1‑2 min each).  \n   * Ice the knee for 10 min if soreness > 2/10 the next day.  \n   * Stretch calves and hamstrings daily (30 s each).  \n\nIf the soreness persists beyond a mild ache (rating > 3/10 for two days), cut back the downhill volume for a week and focus on the strength work above.\n\n---\n\n### Quick taper checklist (week of Oct 13‑18)\n\n- ✅ No hard intervals after Thursday, Oct 13.  \n- ✅ Keep runs ≤ 8 km, easy pace.  \n- ✅ Carb‑load modestly (≈ 55 % of calories) from Mon‑Wed.  \n- ✅ Sleep ≥ 7 h/night, stay hydrated.  \n- ✅ Do a brief 5‑min dynamic warm‑up on race morning, then easy 1‑km jog, a few strides, and you’re ready.\n\nGood luck, Maya—stay consistent, keep the downhill form light, and you’ll be right on target for a sub‑1:50 finish! 🚀",
+  "usage": {
+   "calls": 1,
+   "prompt": 280,
+   "completion": 1457
+  },
+  "added": {
+   "memories": [
+    "User's name is Maya and she signed up for the Riverside Half Marathon on Sunday, October 18, 2026, with a goal to finish under 1:50",
+    "Maya runs four days a week on Tuesday, Thursday, Saturday, and a long run on Sunday, always in the evening after work",
+    "Maya's longest run before September 2026 was 14 km completed on Sunday, August 30, 2026, in 1:26",
+    "Maya experiences left knee soreness after long downhill stretches",
+    "Maya was provided a long-run schedule leading up to the October 18, 2026 half marathon, starting with 16 km on September 8 and peaking at 20 km on September 22",
+    "Maya was recommended a weekly mid-week running pattern featuring a Tuesday tempo run, Thursday speed or hill intervals, and a Saturday recovery run with a short core routine",
+    "Maya was given a knee-care plan for downhill soreness focusing on running technique with a cadence of 80-90 spm, strength exercises like eccentric quad squats, glute bridges, and clamshells, plus foam rolling and icing"
+   ],
+   "events": [
+    "ADD"
+   ],
+   "memory model": [
+    {
+     "prompt": 9640,
+     "output": 394,
+     "seconds": 3.3
+    }
+   ]
+  }
+ },
+ "tom-1": {
+  "runner": "tom",
+  "date": "2026-09-02",
+  "recalled": [],
+  "reply": "Hey Tom – great to hear the 24 km felt solid! With the marathon just over two months away, dialing in your long‑run nutrition now will pay off on race day. Here’s a quick, vegetarian‑friendly game plan:\n\n### 1. What to take **during** the long run  \n| Time on the run | What to consume | Approx. amount |\n|-----------------|----------------|----------------|\n| Every 30‑45 min | Carbohydrate source (30‑60 g) | 1 gel, 1‑2 energy chews, ½ cup cooked rice/couscous, a few dates, or a small oat‑banana bar |\n| Ongoing | Fluid + electrolytes | 500‑750 ml / hour (water mixed with an electrolyte powder or a low‑sugar sports drink). Aim for ~150‑200 mg Na per liter; add a pinch of sea salt if you sweat heavily. |\n\n**Why it works:** 30‑60 g of carbs per hour keeps liver glycogen from dipping too low, and electrolytes prevent cramping and hyponatremia.  \n\n**Vegetarian options to test:**  \n- **Fruit‑based gels** (e.g., GU Energy Fruit Punch, which is vegan).  \n- **Homemade rice‑banana balls**: ½ cup cooked short‑grain rice, mashed banana, a drizzle of maple syrup, rolled into bite‑size nuggets.  \n- **Date & nut paste**: blend dates with a spoonful of almond butter – easy to pack in a small zip‑top.  \n- **Electrolyte tablets** (Nuun, Skratch) that dissolve in water—no animal ingredients.\n\n### 2. Pre‑run fueling (30‑60 min before)  \n- 1 – 1.5 g carbs per kg bodyweight (e.g., a banana + a slice of whole‑grain toast with peanut butter, or a small bowl of oatmeal with raisins).  \n- Keep it low‑fiber and low‑fat to avoid gut upset.\n\n### 3. Post‑run recovery (within 30 min)  \n- 1 g carbs + 0.3 g protein per kg (e.g., chocolate‑milk, soy‑yogurt with fruit, or a lentil‑sweet‑potato bowl).  \n- Re‑hydrate with water + electrolytes; aim for ~150 % of fluid lost (weigh yourself before/after a training run to gauge).\n\n### 4. Practice, then race‑day plan  \n1. **Trial runs:** Use the next two long runs (28 km on 9 Sep, 30 km on 16 Sep) to test one new fuel each week. Note how your stomach feels and any performance dip.  \n2. **Log it:** Jot down what you took, the timing, temperature, and how you felt.  \n3. **Finalize race kit:** By the week of 30 Sep, settle on a single gel/chew combo plus your preferred electrolyte drink. Pack them in a running belt or handheld bottle so you can grab at the 10 km, 20 km, and 30 km marks.\n\n### Quick checklist for race day\n- **Morning:** Light carb breakfast (e.g., toast + honey + banana) 2‑3 h before the start.  \n- **Start line:** 200‑300 ml water + 1 gel (if you like a “starter” gel).  \n- **During:** Every 45 min → 1 gel + ≈ 200 ml electrolyte drink.  \n- **Finish:** 300‑500 ml water + a recovery snack (e.g., chocolate‑milk or a veg protein bar) within 30 min.\n\nGive these a try on your upcoming long runs and let me know what clicks (or if anything causes trouble). We’ll tweak the plan so you feel fueled and confident on Nov 8! 🚀",
+  "usage": {
+   "calls": 1,
+   "prompt": 250,
+   "completion": 1013
+  },
+  "added": {
+   "memories": [
+    "User's name is Tom and he is running his first marathon, the City Marathon, on November 8, 2026",
+    "Tom runs five days a week with long runs on Saturdays, including a 24 km long run on Saturday, August 29, 2026, which felt fine",
+    "Tom is a vegetarian and has historically done his long runs on water alone without consuming carbs or electrolytes",
+    "Tom's training schedule includes upcoming long runs of 28 km on September 9, 2026, and 30 km on September 16, 2026",
+    "Tom was recommended a vegetarian long-run nutrition plan involving 30-60g of carbs per hour from sources like fruit gels, homemade rice-banana balls, or date-nut paste, along with 500-750ml of fluid and electrolytes per hour"
+   ],
+   "events": [
+    "ADD"
+   ],
+   "memory model": [
+    {
+     "prompt": 9291,
+     "output": 349,
+     "seconds": 3.7
+    }
+   ]
+  }
+ },
+ "maya-2": {
+  "runner": "maya",
+  "date": "2026-09-08",
+  "recalled": [
+   {
+    "memory": "Maya runs four days a week on Tuesday, Thursday, Saturday, and a long run on Sunday, always in the evening after work",
+    "score": 0.833,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.622,
+     "keywords": 0.961,
+     "entities": 0.5
+    }
+   },
+   {
+    "memory": "Maya was recommended a weekly mid-week running pattern featuring a Tuesday tempo run, Thursday speed or hill intervals, and a Saturday recovery run with a short core routine",
+    "score": 0.812,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.724,
+     "keywords": 0.806,
+     "entities": 0.5
+    }
+   },
+   {
+    "memory": "Maya was provided a long-run schedule leading up to the October 18, 2026 half marathon, starting with 16 km on September 8 and peaking at 20 km on September 22",
+    "score": 0.502,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.677,
+     "keywords": 0.232,
+     "entities": 0.346
+    }
+   },
+   {
+    "memory": "Maya's longest run before September 2026 was 14 km completed on Sunday, August 30, 2026, in 1:26",
+    "score": 0.502,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.609,
+     "keywords": 0.148,
+     "entities": 0.498
+    }
+   },
+   {
+    "memory": "User's name is Maya and she signed up for the Riverside Half Marathon on Sunday, October 18, 2026, with a goal to finish under 1:50",
+    "score": 0.428,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.558,
+     "keywords": 0.014,
+     "entities": 0.498
+    }
+   },
+   {
+    "memory": "Maya was given a knee-care plan for downhill soreness focusing on running technique with a cadence of 80-90 spm, strength exercises like eccentric quad squats, glute bridges, and clamshells, plus foam rolling and icing",
+    "score": 0.398,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.646,
+     "keywords": 0.028,
+     "entities": 0.32
+    }
+   },
+   {
+    "memory": "Maya experiences left knee soreness after long downhill stretches",
+    "score": 0.364,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.583,
+     "keywords": 0.038,
+     "entities": 0.289
+    }
+   }
+  ],
+  "reply": "Great job on the 16 km long run—1:38 is solid and it’s reassuring that the knee stayed pain‑free!  \n\n**Tempo addition**  \n- **When?** Keep the tempo on **Tuesday** as originally planned. It’s the best day to slot a quality effort because you still have Thursday for a lighter speed/hill session and Saturday to recover before the next long run.  \n- **What to run?**  \n  1. **Warm‑up:** 1 km easy (10 spm + 10‑15 sec per stride)  \n  2. **Tempo block:** 5 km at “comfortably hard” – aim for ~4:45‑5:00 min/km (roughly 10‑15 sec slower than your 5 km race pace). Keep cadence in the 85‑90 spm range to protect the knee.  \n  3. **Cool‑down:** 1 km easy + 5 min of light stretching/foam‑roll.  \n\n**Thursday** – keep it an easy 6 km or turn it into a short hill/stride workout if you feel fresh:  \n- 1 km warm‑up  \n- 4 × 30‑sec hill repeats (hard effort up, jog back down)  \n- 1 km cool‑down  \n\n**Saturday** – stick with the recovery run (4‑5 km easy) plus the 5‑minute core circuit you’ve been doing (plank, side‑plank, dead‑bug).  \n\n**Knee‑care reminders**  \n- After each run, foam‑roll the quads, IT band, and calves for 1‑2 min.  \n- Do the eccentric quad squats and glute bridges 2‑3 times a week (you can slot them after Tuesday’s tempo).  \n- Ice the left knee for 10 min if you notice any lingering soreness after the long run.  \n\nStick with this pattern for the next two weeks, then we’ll reassess the tempo length as you build toward the 20 km long run on Sept 22. Keep up the consistency—you're on track for that sub‑1:50 half!",
+  "usage": {
+   "calls": 1,
+   "prompt": 513,
+   "completion": 691
+  },
+  "added": {
+   "memories": [
+    "Maya completed a 16 km long run in 1:38 on Sunday, September 6, 2026, feeling good with her left knee remaining pain-free",
+    "Maya completed easy 6 km runs on Tuesday, September 1, and Thursday, September 3, 2026",
+    "Maya was recommended to keep her tempo run on Tuesday, running a 7 km total session featuring a 1 km warm-up, 5 km tempo block at ~4:45-5:00 min/km with 85-90 spm cadence, and a 1 km cool-down",
+    "Maya was recommended to keep Thursday as an easy 6 km run or a short hill/stride workout consisting of a 1 km warm-up, 4 by 30-second hill repeats, and a 1 km cool-down",
+    "Maya was advised to maintain her Saturday recovery run of 4-5 km easy plus a 5-minute core circuit of planks, side-planks, and dead-bugs"
+   ],
+   "events": [
+    "ADD"
+   ],
+   "memory model": [
+    {
+     "prompt": 9408,
+     "output": 476,
+     "seconds": 2.6
+    }
+   ]
+  }
+ },
+ "maya-3": {
+  "runner": "maya",
+  "date": "2026-09-15",
+  "recalled": [
+   {
+    "memory": "Maya was recommended to keep Thursday as an easy 6 km run or a short hill/stride workout consisting of a 1 km warm-up, 4 by 30-second hill repeats, and a 1 km cool-down",
+    "score": 0.863,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.667,
+     "keywords": 0.995,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya runs four days a week on Tuesday, Thursday, Saturday, and a long run on Sunday, always in the evening after work",
+    "score": 0.845,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.617,
+     "keywords": 0.999,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "User's name is Maya and she signed up for the Riverside Half Marathon on Sunday, October 18, 2026, with a goal to finish under 1:50",
+    "score": 0.801,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.649,
+     "keywords": 0.858,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya was recommended a weekly mid-week running pattern featuring a Tuesday tempo run, Thursday speed or hill intervals, and a Saturday recovery run with a short core routine",
+    "score": 0.739,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.651,
+     "keywords": 0.702,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya completed a 16 km long run in 1:38 on Sunday, September 6, 2026, feeling good with her left knee remaining pain-free",
+    "score": 0.659,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.665,
+     "keywords": 0.487,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya completed easy 6 km runs on Tuesday, September 1, and Thursday, September 3, 2026",
+    "score": 0.558,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.645,
+     "keywords": 0.254,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya experiences left knee soreness after long downhill stretches",
+    "score": 0.503,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.602,
+     "keywords": 0.38,
+     "entities": 0.276
+    }
+   },
+   {
+    "memory": "Maya was provided a long-run schedule leading up to the October 18, 2026 half marathon, starting with 16 km on September 8 and peaking at 20 km on September 22",
+    "score": 0.5,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.694,
+     "keywords": 0.168,
+     "entities": 0.386
+    }
+   },
+   {
+    "memory": "Maya's longest run before September 2026 was 14 km completed on Sunday, August 30, 2026, in 1:26",
+    "score": 0.494,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.626,
+     "keywords": 0.115,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya was recommended to keep her tempo run on Tuesday, running a 7 km total session featuring a 1 km warm-up, 5 km tempo block at ~4:45-5:00 min/km with 85-90 spm cadence, and a 1 km cool-down",
+    "score": 0.453,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.661,
+     "keywords": 0.087,
+     "entities": 0.385
+    }
+   },
+   {
+    "memory": "Maya was given a knee-care plan for downhill soreness focusing on running technique with a cadence of 80-90 spm, strength exercises like eccentric quad squats, glute bridges, and clamshells, plus foam rolling and icing",
+    "score": 0.444,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.619,
+     "keywords": 0.212,
+     "entities": 0.278
+    }
+   },
+   {
+    "memory": "Maya was advised to maintain her Saturday recovery run of 4-5 km easy plus a 5-minute core circuit of planks, side-planks, and dead-bugs",
+    "score": 0.42,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.651,
+     "keywords": 0.007,
+     "entities": 0.392
+    }
+   }
+  ],
+  "reply": "**Race timeline**  \n- New race day: **Sunday 1 Nov 2026**  \n- Today is **15 Sept** → you have **7 calendar weeks** (including this week) to train, with **5 weeks of buildup** and a **2‑week taper**.\n\n**What to tweak after the recent sore knee**\n\n1. **Hill work → keep the cadence, cut the volume**  \n   * Do **2 × 30‑sec hill repeats** instead of 4, keeping the 1 km warm‑up and 1 km cool‑down.  \n   * Focus on a quick, light foot‑strike (80‑90 spm) on the up‑hill; stay tall and engage the glutes.  \n   * If the soreness returns, replace Thursday’s hill session with **4‑5 × 100‑m strides** on flat ground (20‑30 s each, full recovery).\n\n2. **Strength & recovery**  \n   * Add **eccentric quad squats** (3 × 8 – 10, lowering over 3‑4 s) on the day after the hill repeat (Friday or Saturday).  \n   * Keep the **glute bridges, clamshells, and core circuit** you’re already doing.  \n   * Ice the knee for 10 min after Thursday’s run and foam‑roll the IT band and quads.\n\n3. **Morning vs. evening**  \n   * Warm up a bit longer (5 min jog + dynamic drills) because your muscles are cooler in the morning.  \n   * Finish each run with a brief 3‑minute walk to help circulation before you head to work.\n\n**Re‑shaped 7‑week plan (morning sessions)**  \n\n| Week | Tue – Tempo (7 km) | Thu – Hill/Stride | Sat – Recovery + Core (4‑5 km) | Sun – Long Run |\n|------|-------------------|-------------------|--------------------------------|----------------|\n| 1 (now) | 1 km WU + 5 km @ 4:45‑5:00 / 85‑90 spm + 1 km CD | 1 km WU + 2 × 30 s hills + 1 km CD | 4‑5 km easy + 5‑min core | 18 km @ ~5:15‑5:30 / km (aim ~1:50) |\n| 2 | Same tempo | **2 × 30 s hills** (or 4‑5 × 100 m strides) | Same recovery | 20 km @ ~5:20 / km (≈1:50) |\n| 3 | Same tempo | Strides only (4‑5 × 100 m) | Same recovery | 18 km easy (drop a few minutes) |\n| 4 | Same tempo | **2 × 30 s hills** (if knee feels good) | Same recovery | 20 km steady (goal ≤1:48) |\n| 5 | Same tempo | Strides only | Same recovery | 16 km easy (start taper) |\n| 6 (taper week) | 5 km easy tempo (no hard effort) | Easy 4 km + strides | 4 km easy + core | 10 km easy |\n| 7 (race week) | 4 km easy with 2 × 20‑s strides | 3 km easy | 3 km easy | **RACE DAY** – aim for sub 1:50 (target 4:45 / km)** |\n\n**Key points for the next two weeks**\n\n- **Listen to the knee**: If any soreness lingers after Thursday, drop the hill repeats completely and do flat strides.  \n- **Maintain cadence**: Keep 80‑90 spm on hills/strides; this reduces impact on the knee.  \n- **Recovery**: Prioritize a solid 8‑9 h of sleep, especially with morning runs, and keep the post‑run foam roll/ice routine.  \n\nYou’re on track—just trim the hill volume, keep the strength work, and let the taper bring you fresh for Nov 1. Good luck, Maya! 🚀",
+  "usage": {
+   "calls": 1,
+   "prompt": 789,
+   "completion": 1352
+  },
+  "added": {
+   "memories": [
+    "Maya's Riverside Half Marathon date was changed from October 18, 2026, to Sunday, November 1, 2026, due to course roadworks",
+    "Maya switched her running routine from evenings to mornings before work because evenings were getting too busy",
+    "Maya completed a 17 km long run in 1:45 on Sunday, September 13, 2026",
+    "Maya experienced knee soreness after doing hill repeats on Thursday, September 10, 2026",
+    "Maya was recommended to trim her Thursday hill repeat volume to 2 x 30-second hills (or replace with flat strides if soreness returns) and add eccentric quad squats the day after hills",
+    "Maya was given a revised 7-week morning training plan leading up to the November 1, 2026 half marathon, featuring a 5-week buildup and a 2-week taper"
+   ],
+   "events": [
+    "ADD"
+   ],
+   "memory model": [
+    {
+     "prompt": 10403,
+     "output": 442,
+     "seconds": 2.1
+    }
+   ]
+  }
+ },
+ "tom-2": {
+  "runner": "tom",
+  "date": "2026-09-16",
+  "recalled": [
+   {
+    "memory": "Tom was recommended a vegetarian long-run nutrition plan involving 30-60g of carbs per hour from sources like fruit gels, homemade rice-banana balls, or date-nut paste, along with 500-750ml of fluid and electrolytes per hour",
+    "score": 0.778,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.675,
+     "keywords": 0.999,
+     "entities": 0.272
+    }
+   },
+   {
+    "memory": "Tom's training schedule includes upcoming long runs of 28 km on September 9, 2026, and 30 km on September 16, 2026",
+    "score": 0.701,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.668,
+     "keywords": 0.786,
+     "entities": 0.297
+    }
+   },
+   {
+    "memory": "Tom runs five days a week with long runs on Saturdays, including a 24 km long run on Saturday, August 29, 2026, which felt fine",
+    "score": 0.523,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.662,
+     "keywords": 0.145,
+     "entities": 0.5
+    }
+   },
+   {
+    "memory": "Tom is a vegetarian and has historically done his long runs on water alone without consuming carbs or electrolytes",
+    "score": 0.418,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.656,
+     "keywords": 0.12,
+     "entities": 0.27
+    }
+   },
+   {
+    "memory": "User's name is Tom and he is running his first marathon, the City Marathon, on November 8, 2026",
+    "score": 0.35,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.585,
+     "keywords": 0.004,
+     "entities": 0.285
+    }
+   }
+  ],
+  "reply": "Hey Tom,\n\nGreat to hear the gels helped – that’s a big win after weeks of water‑only runs. The early‑breakfast cramp is classic: give yourself at least 90‑120 min after a solid breakfast before you start the long effort, or switch to a light carb “fuel‑gel‑only” snack (e.g., a banana‑date paste) right before you head out.\n\n### Hamstring\n- **Foam‑roll** the right hamstring and the surrounding glutes for 2 × 30 sec each.  \n- **Dynamic warm‑up** (leg swings, high‑knees, walking lunges) for 5‑7 min before the run.  \n- If the tightness feels “sharp” or you notice a loss of range, cut the run back and do a recovery day instead.\n\n### 30 km this weekend?\nGiven the recent cramp and lingering hamstring tightness, I’d recommend a **cut‑back**:\n\n1. **Option A – Shorter steady run:** 15‑18 km at an easy conversational pace, keep the gel schedule (30‑45 g carbs / hr) and add a sip of electrolyte drink every 20 min.  \n2. **Option B – Rest + cross‑train:** Take the day off, do 30 min of easy cycling or swimming, then a gentle 5‑km jog the next day to keep the mileage rolling.\n\nEither approach protects the hamstring while still ticking the long‑run box for the week. You can keep the 30‑km on the calendar for next Saturday (Sept 23) when you’ll be fresher.\n\n### Quick pre‑run nutrition fix\n- Eat a **light, low‑fiber carb meal** at least 2 h before the run (e.g., oatmeal with a drizzle of almond butter and a banana).  \n- If you need something closer to the start, sip a **½ cup of a rice‑banana gel** 15 min before you go.\n\nListen to your body—if the hamstring still feels “tight” after the short run, give it an extra rest day and resume the full 30 km next week.\n\nGood luck, and keep those gels coming! 🚀\n\n— Coach",
+  "usage": {
+   "calls": 1,
+   "prompt": 463,
+   "completion": 730
+  },
+  "added": {
+   "memories": [
+    "Tom completed a 28 km long run on Saturday, September 12, 2026, using carbohydrate gels which went much better than running on water alone",
+    "Tom experiences stomach cramps for the first 5 km when eating less than two hours before a run",
+    "Tom has been experiencing right hamstring tightness since his 28 km long run on September 12, 2026",
+    "Tom was recommended by his coach to give himself 90 to 120 minutes after a solid breakfast before a long run, or to use a light carb snack right before starting, to avoid stomach cramps",
+    "Tom was advised by his coach on hamstring care involving foam rolling the right hamstring and glutes, a dynamic warm-up, and cutting back the run if sharp tightness or loss of range occurs",
+    "Tom was recommended a cut-back option for the weekend due to hamstring tightness and recent cramps: either an 15-18 km easy run with gels and electrolytes or a rest and cross-training day, postponing the 30 km run to Saturday, September 23, 2026"
+   ],
+   "events": [
+    "ADD"
+   ],
+   "memory model": [
+    {
+     "prompt": 9279,
+     "output": 418,
+     "seconds": 2.9
+    }
+   ]
+  }
+ },
+ "maya-4": {
+  "runner": "maya",
+  "date": "2026-09-22",
+  "recalled": [
+   {
+    "memory": "Maya runs four days a week on Tuesday, Thursday, Saturday, and a long run on Sunday, always in the evening after work",
+    "score": 0.856,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.646,
+     "keywords": 0.997,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya completed a 16 km long run in 1:38 on Sunday, September 6, 2026, feeling good with her left knee remaining pain-free",
+    "score": 0.851,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.646,
+     "keywords": 0.995,
+     "entities": 0.488
+    }
+   },
+   {
+    "memory": "Maya was recommended a weekly mid-week running pattern featuring a Tuesday tempo run, Thursday speed or hill intervals, and a Saturday recovery run with a short core routine",
+    "score": 0.849,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.711,
+     "keywords": 0.916,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya was provided a long-run schedule leading up to the October 18, 2026 half marathon, starting with 16 km on September 8 and peaking at 20 km on September 22",
+    "score": 0.746,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.65,
+     "keywords": 0.911,
+     "entities": 0.303
+    }
+   },
+   {
+    "memory": "Maya was recommended to trim her Thursday hill repeat volume to 2 x 30-second hills (or replace with flat strides if soreness returns) and add eccentric quad squats the day after hills",
+    "score": 0.594,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.695,
+     "keywords": 0.411,
+     "entities": 0.379
+    }
+   },
+   {
+    "memory": "Maya was recommended to keep her tempo run on Tuesday, running a 7 km total session featuring a 1 km warm-up, 5 km tempo block at ~4:45-5:00 min/km with 85-90 spm cadence, and a 1 km cool-down",
+    "score": 0.515,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.679,
+     "keywords": 0.112,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya completed a 17 km long run in 1:45 on Sunday, September 13, 2026",
+    "score": 0.513,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.59,
+     "keywords": 0.205,
+     "entities": 0.488
+    }
+   },
+   {
+    "memory": "User's name is Maya and she signed up for the Riverside Half Marathon on Sunday, October 18, 2026, with a goal to finish under 1:50",
+    "score": 0.511,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.575,
+     "keywords": 0.215,
+     "entities": 0.488
+    }
+   },
+   {
+    "memory": "Maya's longest run before September 2026 was 14 km completed on Sunday, August 30, 2026, in 1:26",
+    "score": 0.506,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.576,
+     "keywords": 0.201,
+     "entities": 0.488
+    }
+   },
+   {
+    "memory": "Maya experienced knee soreness after doing hill repeats on Thursday, September 10, 2026",
+    "score": 0.5,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.627,
+     "keywords": 0.244,
+     "entities": 0.379
+    }
+   },
+   {
+    "memory": "Maya's Riverside Half Marathon date was changed from October 18, 2026, to Sunday, November 1, 2026, due to course roadworks",
+    "score": 0.498,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.547,
+     "keywords": 0.209,
+     "entities": 0.488
+    }
+   },
+   {
+    "memory": "Maya completed easy 6 km runs on Tuesday, September 1, and Thursday, September 3, 2026",
+    "score": 0.492,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.64,
+     "keywords": 0.093,
+     "entities": 0.496
+    }
+   },
+   {
+    "memory": "Maya was recommended to keep Thursday as an easy 6 km run or a short hill/stride workout consisting of a 1 km warm-up, 4 by 30-second hill repeats, and a 1 km cool-down",
+    "score": 0.49,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.704,
+     "keywords": 0.143,
+     "entities": 0.379
+    }
+   },
+   {
+    "memory": "Maya was advised to maintain her Saturday recovery run of 4-5 km easy plus a 5-minute core circuit of planks, side-planks, and dead-bugs",
+    "score": 0.431,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.665,
+     "keywords": 0.009,
+     "entities": 0.404
+    }
+   },
+   {
+    "memory": "Maya was given a revised 7-week morning training plan leading up to the November 1, 2026 half marathon, featuring a 5-week buildup and a 2-week taper",
+    "score": 0.417,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.647,
+     "keywords": 0.068,
+     "entities": 0.329
+    }
+   },
+   {
+    "memory": "Maya was given a knee-care plan for downhill soreness focusing on running technique with a cadence of 80-90 spm, strength exercises like eccentric quad squats, glute bridges, and clamshells, plus foam rolling and icing",
+    "score": 0.389,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.655,
+     "keywords": 0.037,
+     "entities": 0.281
+    }
+   },
+   {
+    "memory": "Maya experiences left knee soreness after long downhill stretches",
+    "score": 0.385,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.607,
+     "keywords": 0.074,
+     "entities": 0.28
+    }
+   },
+   {
+    "memory": "Maya switched her running routine from evenings to mornings before work because evenings were getting too busy",
+    "score": 0.346,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.582,
+     "keywords": 0.004,
+     "entities": 0.28
+    }
+   }
+  ],
+  "reply": "Hey Maya – great news on the IT‑band and the cleared‑to‑run status! With the new three‑day window (Tue‑Fri‑Sun) we can still hit all the key sessions and protect that knee.\n\n**Your revised week**\n\n| Day | Workout | Details |\n|-----|----------|---------|\n| **Tuesday** | **Tempo Run** | 7 km total – 1 km easy warm‑up, 5 km at 4:45‑5:00 min/km (85‑90 spm cadence), 1 km cool‑down. Finish with the 5‑minute core circuit (plank, side‑plank, dead‑bug). |\n| **Friday** | **Hill/Speed Session** – choose one each week to keep variety and limit total hill load. | **Option A – Hills**: 1 km warm‑up, 2 × 30‑sec hill repeats (hard effort, focus on quick turnover), 1 km cool‑down. <br>**Option B – Speed**: 1 km warm‑up, 4 × 400 m fast (≈5 km/h faster than tempo) with 200 m jog recovery, 1 km cool‑down. <br>After the run do **eccentric quad squats** (3 × 8 – 10 reps, slow 3‑sec descent) and a quick glute‑bridge/clam‑shell circuit. |\n| **Sunday** | **Long Run** | Keep building toward the 20 km peak. This week: 18 km (you’ve just done that). Next week aim for 20 km at ~5:30‑5:45 min/km, ending with a 5‑minute easy jog and the core circuit. Include a brief downhill focus: keep cadence 85‑90 spm and stay light‑footed. |\n\n**What to do on the off‑days (Mon, Wed, Sat)**  \n- **Strength / mobility** – 20 min (e.g., eccentric quad squats, glute bridges, clamshells, single‑leg dead‑lifts, hip‑flexor stretch, foam‑roll IT‑band).  \n- **Optional easy cross‑train** (bike, swim, yoga) if you feel like extra cardio, but keep it low‑impact to let the knee recover.  \n\n**Key points for the next two weeks**\n\n1. **Volume:** You’ll hit ~30‑32 km this week (7 km + ~5 km speed/hill + 18 km long). That’s fine; just listen to any new soreness.  \n2. **Peak Long:** Aim for 20 km on Sunday, Sep 29. After that you’ll start the 2‑week taper (cut long run to 14 km → 10 km, keep tempo at 6 km, keep one light speed/hill session).  \n3. **Knee care:** Continue the post‑run icing/foam‑rolling routine for the IT‑band, especially after hills or long downhill sections.  \n\nLet me know if you’d rather keep hills every other week or swap in more strides on the speed day – we can fine‑tune the Friday session to match how you feel. Good luck with the new schedule and that 20 km long run! 🚀",
+  "usage": {
+   "calls": 1,
+   "prompt": 1018,
+   "completion": 1038
+  },
+  "added": {
+   "memories": [
+    "Maya saw a physiotherapist and was diagnosed with a tight IT band rather than a knee injury, and has been cleared to run normally including hill workouts",
+    "Maya started a new job which reduced her running schedule from four days a week to three days a week: Tuesday, Friday, and Sunday",
+    "Maya completed an 18 km long run in 1:51 on Sunday, September 20, 2026",
+    "Maya was recommended a revised 3-day training schedule for her half marathon featuring a Tuesday tempo run (7 km total with 5 km tempo block), a Friday alternating hill or 400m speed session with eccentric quad squats and glute work, and a Sunday long run building to a 20 km peak on September 27, 2026"
+   ],
+   "events": [
+    "ADD"
+   ],
+   "memory model": [
+    {
+     "prompt": 10271,
+     "output": 403,
+     "seconds": 2.4
+    }
+   ]
+  }
+ },
+ "maya-5": {
+  "runner": "maya",
+  "date": "2026-09-29",
+  "recalled": [
+   {
+    "memory": "Maya started a new job which reduced her running schedule from four days a week to three days a week: Tuesday, Friday, and Sunday",
+    "score": 0.574,
+    "session": "2026-09-22",
+    "parts": {
+     "meaning": 0.529,
+     "keywords": 0.502,
+     "entities": 0.405
+    }
+   },
+   {
+    "memory": "Maya was provided a long-run schedule leading up to the October 18, 2026 half marathon, starting with 16 km on September 8 and peaking at 20 km on September 22",
+    "score": 0.566,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.583,
+     "keywords": 0.487,
+     "entities": 0.345
+    }
+   },
+   {
+    "memory": "Maya was recommended a weekly mid-week running pattern featuring a Tuesday tempo run, Thursday speed or hill intervals, and a Saturday recovery run with a short core routine",
+    "score": 0.561,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.606,
+     "keywords": 0.299,
+     "entities": 0.498
+    }
+   },
+   {
+    "memory": "Maya runs four days a week on Tuesday, Thursday, Saturday, and a long run on Sunday, always in the evening after work",
+    "score": 0.508,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.526,
+     "keywords": 0.246,
+     "entities": 0.498
+    }
+   },
+   {
+    "memory": "Maya was given a revised 7-week morning training plan leading up to the November 1, 2026 half marathon, featuring a 5-week buildup and a 2-week taper",
+    "score": 0.487,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.587,
+     "keywords": 0.304,
+     "entities": 0.328
+    }
+   },
+   {
+    "memory": "Maya was advised to maintain her Saturday recovery run of 4-5 km easy plus a 5-minute core circuit of planks, side-planks, and dead-bugs",
+    "score": 0.452,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.605,
+     "keywords": 0.027,
+     "entities": 0.498
+    }
+   },
+   {
+    "memory": "Maya completed a 16 km long run in 1:38 on Sunday, September 6, 2026, feeling good with her left knee remaining pain-free",
+    "score": 0.443,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.584,
+     "keywords": 0.154,
+     "entities": 0.37
+    }
+   },
+   {
+    "memory": "Maya was recommended a revised 3-day training schedule for her half marathon featuring a Tuesday tempo run (7 km total with 5 km tempo block), a Friday alternating hill or 400m speed session with eccentric quad squats and glute work, and a Sunday long run building to a 20 km peak on September 27, 2026",
+    "score": 0.418,
+    "session": "2026-09-22",
+    "parts": {
+     "meaning": 0.611,
+     "keywords": 0.03,
+     "entities": 0.405
+    }
+   },
+   {
+    "memory": "Maya was recommended to keep her tempo run on Tuesday, running a 7 km total session featuring a 1 km warm-up, 5 km tempo block at ~4:45-5:00 min/km with 85-90 spm cadence, and a 1 km cool-down",
+    "score": 0.402,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.633,
+     "keywords": 0.003,
+     "entities": 0.368
+    }
+   },
+   {
+    "memory": "User's name is Maya and she signed up for the Riverside Half Marathon on Sunday, October 18, 2026, with a goal to finish under 1:50",
+    "score": 0.399,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.603,
+     "keywords": 0.026,
+     "entities": 0.37
+    }
+   },
+   {
+    "memory": "Maya completed a 17 km long run in 1:45 on Sunday, September 13, 2026",
+    "score": 0.391,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.604,
+     "keywords": 0.003,
+     "entities": 0.37
+    }
+   },
+   {
+    "memory": "Maya was recommended to keep Thursday as an easy 6 km run or a short hill/stride workout consisting of a 1 km warm-up, 4 by 30-second hill repeats, and a 1 km cool-down",
+    "score": 0.389,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.61,
+     "keywords": 0.003,
+     "entities": 0.359
+    }
+   },
+   {
+    "memory": "Maya was recommended to trim her Thursday hill repeat volume to 2 x 30-second hills (or replace with flat strides if soreness returns) and add eccentric quad squats the day after hills",
+    "score": 0.377,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.585,
+     "keywords": 0.0,
+     "entities": 0.359
+    }
+   },
+   {
+    "memory": "Maya's Riverside Half Marathon date was changed from October 18, 2026, to Sunday, November 1, 2026, due to course roadworks",
+    "score": 0.373,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.536,
+     "keywords": 0.026,
+     "entities": 0.37
+    }
+   },
+   {
+    "memory": "Maya completed an 18 km long run in 1:51 on Sunday, September 20, 2026",
+    "score": 0.372,
+    "session": "2026-09-22",
+    "parts": {
+     "meaning": 0.557,
+     "keywords": 0.003,
+     "entities": 0.37
+    }
+   },
+   {
+    "memory": "Maya's longest run before September 2026 was 14 km completed on Sunday, August 30, 2026, in 1:26",
+    "score": 0.37,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.551,
+     "keywords": 0.003,
+     "entities": 0.37
+    }
+   },
+   {
+    "memory": "Maya completed easy 6 km runs on Tuesday, September 1, and Thursday, September 3, 2026",
+    "score": 0.366,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.543,
+     "keywords": 0.003,
+     "entities": 0.368
+    }
+   },
+   {
+    "memory": "Maya experienced knee soreness after doing hill repeats on Thursday, September 10, 2026",
+    "score": 0.358,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.537,
+     "keywords": 0.0,
+     "entities": 0.359
+    }
+   },
+   {
+    "memory": "Maya was given a knee-care plan for downhill soreness focusing on running technique with a cadence of 80-90 spm, strength exercises like eccentric quad squats, glute bridges, and clamshells, plus foam rolling and icing",
+    "score": 0.347,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.559,
+     "keywords": 0.003,
+     "entities": 0.305
+    }
+   },
+   {
+    "memory": "Maya saw a physiotherapist and was diagnosed with a tight IT band rather than a knee injury, and has been cleared to run normally including hill workouts",
+    "score": 0.339,
+    "session": "2026-09-22",
+    "parts": {
+     "meaning": 0.563,
+     "keywords": 0.003,
+     "entities": 0.281
+    }
+   }
+  ],
+  "reply": "**Congrats on the 10 K PB!** 49:30 is a 4:57 min/km average – right on the pace you’ll need to hold for a 1:45 half (≈5:00 min/km).  With your current mileage and the work you’ve already done, the goal is **realistic**, but you’ll need to sharpen a few things in the last three weeks.\n\n---\n\n### 1. What to keep (and why)\n\n| Day | Current session | Why it stays |\n|-----|----------------|--------------|\n| **Tue** | 7 km total (1 km WU + 5 km tempo + 1 km CD) | Gives you a solid “steady‑state” at goal pace. |\n| **Fri** | Hill or 400 m speed work **+** eccentric quad squats & glute work | Keeps leg strength, improves economy, and trains you to finish strong. |\n| **Sun** | Long run (building to 20‑22 km) | Builds endurance and teaches you how to hold goal pace when you’re tired. |\n| **Core/IT‑band** | 5‑min plank circuit + foam‑roll/ice after hills | Maintains core stability and the IT‑band health that’s already cleared you. |\n\n---\n\n### 2. Adjustments for a 1:45 target\n\n| Week (starting Mon) | Tue – Tempo | Fri – Speed/Hill | Sun – Long |\n|---------------------|--------------|-------------------|------------|\n| **Sept 30 – Oct 6** | 7 km total – **5 km at 5:00 – 5:05 min/km** (slightly slower than 10 K pace) | 6 × 30‑sec hill repeats (or 4 × 400 m on flat) + strides; finish with 2 × eccentric quad squats | 20 km easy (≈6:15‑6:30) **+ last 5 km at 5:00 min/km** |\n| **Oct 7 – Oct 13** | 8 km total – 6 km at goal pace (add 1 km warm‑up/cool‑down) | 2 × 30‑sec hills **or** 5 × 400 m fast; keep quad/glute work | 22 km easy **+ final 8 km at goal pace** (practice “negative split” feeling) |\n| **Oct 14 – Oct 20** *(start taper)* | 6 km total – 4 km at goal pace, easy otherwise | 4 × 30‑sec hills **or** 3 × 400 m, low volume; strength work as usual | 14 km easy, **last 3 km at goal pace** |\n| **Oct 21 – Oct 27** *(final taper)* | 5 km easy (no tempo block) | 3 × 30‑sec strides on flat, no hills; light strength (body‑weight only) | 10 km easy, **2 km at race pace** |\n| **Oct 28 – Nov 1** *(race week)* | 4 km very easy, 1 km jog + strides | Rest or short 2‑km shake‑out with 3 strides | **Race day – Nov 1** |\n\n*Key points:*  \n- **Goal‑pace segments** on long runs teach you to hold 5:00 min/km when legs are fatigued.  \n- Keep the **tempo block** just slightly slower than your 10 K pace so it feels sustainable.  \n- Hill volume stays low (2‑4 repeats) to protect the IT‑band and avoid the knee soreness you felt earlier.\n\n---\n\n### 3. Race‑start strategy (the “fast‑start” habit)\n\n1. **Start 30‑45 sec slower** than goal pace for the first kilometre (≈5:30 min/km).  \n2. Run the **second kilometre at goal pace** and settle into a steady 5:00 min/km.  \n3. Use the **mid‑race “comfort zone”** (km 5‑9) to stay relaxed—focus on even breathing and a quick cadence (≈85‑90 spm).  \n4. Save a **small “kick”** for the last 2 km; the 400 m speed work you’re doing on Fridays will make that easier.\n\nPractice this in your Tuesday tempo run by deliberately running the first kilometre a touch slower, then hitting the tempo block at goal pace. The feel will translate to race day.\n\n---\n\n### 4. Quick checklist for each week\n\n- **Warm‑up:** 1 km easy + dynamic drills (leg swings, high‑knees).  \n- **Cooldown:** 1 km easy + 5‑minute core circuit (plank, side‑plank, dead‑bug).  \n- **Strength:** Eccentric quad squats, glute bridges, clamshells – 2 × 8‑10 reps each after the Friday session.  \n- **IT‑Band care:** Foam‑roll the outer thigh for 1‑2 min after any hill work; ice if you feel tightness.  \n- **Hydration/Nutrition:** Start practicing race‑day fueling on the long runs (≈30‑45 g carbs per hour, water/electrolytes).\n\n---\n\n### 5. Anything you need to flag?\n\n- Any lingering tightness in the IT‑band or new knee pain?  \n- How did you feel after the 22 km long run last week (if you’ve done it yet)?  \n- Are you comfortable with the 5 km goal‑pace block on Tuesdays, or does it feel too hard?\n\nLet me know the answers and we can fine‑tune the final week. Keep the pacing drills tight and the IT‑band happy—your 1:45 half is well within reach! 🏃‍♀️💨",
+  "usage": {
+   "calls": 1,
+   "prompt": 1163,
+   "completion": 1688
+  },
+  "added": {
+   "memories": [
+    "Maya ran a 10k race on Saturday, September 26, 2026, in a personal best time of 49:30, averaging 4:57 min/km",
+    "Maya has a tendency to go out far too fast in the first kilometre of races and pay for it at the end",
+    "Maya updated her half marathon goal time for the November 1, 2026 Riverside Half Marathon from 1:50 to 1:45 following her 10k personal best",
+    "Maya was recommended a 5-week training progression leading up to the November 1, 2026 half marathon targeting a 1:45 finish time, incorporating goal-pace segments on long runs, reduced-volume hill work, and a two-week taper"
+   ],
+   "events": [
+    "ADD"
+   ],
+   "memory model": [
+    {
+     "prompt": 11258,
+     "output": 341,
+     "seconds": 2.0
+    }
+   ]
+  }
+ },
+ "tom-3": {
+  "runner": "tom",
+  "date": "2026-09-30",
+  "recalled": [
+   {
+    "memory": "Tom experiences stomach cramps for the first 5 km when eating less than two hours before a run",
+    "score": 0.575,
+    "session": "2026-09-16",
+    "parts": {
+     "meaning": 0.595,
+     "keywords": 0.583,
+     "entities": 0.26
+    }
+   },
+   {
+    "memory": "Tom was recommended a vegetarian long-run nutrition plan involving 30-60g of carbs per hour from sources like fruit gels, homemade rice-banana balls, or date-nut paste, along with 500-750ml of fluid and electrolytes per hour",
+    "score": 0.513,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.639,
+     "keywords": 0.367,
+     "entities": 0.276
+    }
+   },
+   {
+    "memory": "Tom runs five days a week with long runs on Saturdays, including a 24 km long run on Saturday, August 29, 2026, which felt fine",
+    "score": 0.494,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.649,
+     "keywords": 0.27,
+     "entities": 0.315
+    }
+   },
+   {
+    "memory": "Tom completed a 28 km long run on Saturday, September 12, 2026, using carbohydrate gels which went much better than running on water alone",
+    "score": 0.396,
+    "session": "2026-09-16",
+    "parts": {
+     "meaning": 0.646,
+     "keywords": 0.03,
+     "entities": 0.315
+    }
+   },
+   {
+    "memory": "Tom's training schedule includes upcoming long runs of 28 km on September 9, 2026, and 30 km on September 16, 2026",
+    "score": 0.389,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.659,
+     "keywords": 0.028,
+     "entities": 0.287
+    }
+   },
+   {
+    "memory": "User's name is Tom and he is running his first marathon, the City Marathon, on November 8, 2026",
+    "score": 0.387,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.656,
+     "keywords": 0.01,
+     "entities": 0.302
+    }
+   },
+   {
+    "memory": "Tom was recommended by his coach to give himself 90 to 120 minutes after a solid breakfast before a long run, or to use a light carb snack right before starting, to avoid stomach cramps",
+    "score": 0.384,
+    "session": "2026-09-16",
+    "parts": {
+     "meaning": 0.64,
+     "keywords": 0.027,
+     "entities": 0.292
+    }
+   },
+   {
+    "memory": "Tom was recommended a cut-back option for the weekend due to hamstring tightness and recent cramps: either an 15-18 km easy run with gels and electrolytes or a rest and cross-training day, postponing the 30 km run to Saturday, September 23, 2026",
+    "score": 0.382,
+    "session": "2026-09-16",
+    "parts": {
+     "meaning": 0.631,
+     "keywords": 0.01,
+     "entities": 0.315
+    }
+   },
+   {
+    "memory": "Tom has been experiencing right hamstring tightness since his 28 km long run on September 12, 2026",
+    "score": 0.365,
+    "session": "2026-09-16",
+    "parts": {
+     "meaning": 0.621,
+     "keywords": 0.028,
+     "entities": 0.264
+    }
+   },
+   {
+    "memory": "Tom was advised by his coach on hamstring care involving foam rolling the right hamstring and glutes, a dynamic warm-up, and cutting back the run if sharp tightness or loss of range occurs",
+    "score": 0.348,
+    "session": "2026-09-16",
+    "parts": {
+     "meaning": 0.577,
+     "keywords": 0.009,
+     "entities": 0.283
+    }
+   },
+   {
+    "memory": "Tom is a vegetarian and has historically done his long runs on water alone without consuming carbs or electrolytes",
+    "score": 0.262,
+    "session": "2026-09-02",
+    "parts": {
+     "meaning": 0.626,
+     "keywords": 0.028,
+     "entities": 0.0
+    }
+   }
+  ],
+  "reply": "**Longest run so far**  \n- Your longest completed long‑run is **28 km** (Saturday 12 Sept). The 30 km you had scheduled for 16 Sept was postponed.\n\n**Time to the City Marathon**  \n- Today is 30 Sept 2026. The marathon is on 8 Nov 2026 → **5 weeks + 3 days** (≈ 5½ weeks) left.\n\n---\n\n### Taper outline (5 weeks → race day)\n\n| Week | Mon‑Fri (easy/tempo) | Sat (long run) | Sun (recovery) |\n|------|----------------------|----------------|----------------|\n| **5** (23‑29 Oct) | 8‑10 km total, easy + 1 × 8‑km at marathon pace | **20 km** (steady, take gels) | 5‑6 km easy |\n| **4** (30 Oct‑5 Nov) | 6‑8 km total, easy | **12 km** (last “race‑pace” segment 4 km) | 4‑5 km easy |\n| **3** (6‑12 Nov) | 5‑6 km easy, short strides | **8 km** (all easy, finish with a quick 2‑km pick‑up) | 3‑4 km easy |\n| **Race week** | 3‑4 km easy run Tue, optional short jog Thu | **Rest** Fri | **Race day** Sun |\n\n*If any hamstring tightness spikes, drop the long run by 2‑3 km or replace it with a cross‑training day (cycling, pool) and keep the rest of the week as planned.*\n\n---\n\n### Race‑morning nutrition (vegetarian)\n\n| Timing | What to eat/drink | Why |\n|--------|-------------------|-----|\n| **90‑120 min before start** | 70‑80 g carbs: e.g., 1 cup cooked oatmeal + ½ sliced banana + 1 tbsp almond butter + a sprinkle of raisins + 1 handful walnuts. 250 ml water + ½ tablet electrolytes (if you use them). | Gives a solid glycogen reserve without heavy stomach load. |\n| **15‑30 min before start** | Light carb snack: 1‑2 gels (30‑60 g carbs total) **or** 1‑2 homemade rice‑banana balls (≈ 30 g carbs). Sip 150‑200 ml water or diluted sports drink. | Tops up blood glucose and ensures you’re not running on an empty stomach. |\n| **During the race** | Every 45‑60 min: 30‑60 g carbs via gels, rice‑banana balls, or date‑nut paste + 150‑200 ml water + electrolytes. | Maintains energy and electrolyte balance for the marathon distance. |\n\n**Quick tips**\n\n- Test the exact breakfast combo on a medium‑length run (12‑15 km) before race day.  \n- Keep the pre‑run snack **low‑fiber** and easy to swallow to avoid the stomach cramps you’ve had when eating too close to the run.  \n- If you usually take coffee, have it with your breakfast (no more than 150 mg caffeine).  \n\nLet me know if you want a more detailed week‑by‑week mileage breakdown or any adjustments for the hamstring. Good luck with the taper!",
+  "usage": {
+   "calls": 1,
+   "prompt": 697,
+   "completion": 1034
+  },
+  "added": {
+   "memories": [
+    "Tom was recommended a vegetarian race-morning nutrition plan for the City Marathon on November 8, 2026, consisting of a solid meal 90 to 120 minutes before the start (70-80g of carbs such as oatmeal with banana, almond butter, raisins, and walnuts, plus water and electrolytes), followed by a light carb snack 15 to 30 minutes before starting (1-2 gels or rice-banana balls for 30-60g of carbs)",
+    "Tom was given a taper schedule by his coach for the final weeks leading up to the City Marathon on November 8, 2026, featuring decreasing Saturday long run distances (20 km, 12 km, 8 km) alongside easy weekday runs, rest days, and instructions to adjust for hamstring tightness"
+   ],
+   "events": [
+    "ADD"
+   ],
+   "memory model": [
+    {
+     "prompt": 10039,
+     "output": 306,
+     "seconds": 2.1
+    }
+   ]
+  }
+ },
+ "maya-6": {
+  "runner": "maya",
+  "date": "2026-10-13",
+  "recalled": [
+   {
+    "memory": "Maya was recommended a 5-week training progression leading up to the November 1, 2026 half marathon targeting a 1:45 finish time, incorporating goal-pace segments on long runs, reduced-volume hill work, and a two-week taper",
+    "score": 0.824,
+    "session": "2026-09-29",
+    "parts": {
+     "meaning": 0.67,
+     "keywords": 0.996,
+     "entities": 0.394
+    }
+   },
+   {
+    "memory": "Maya was recommended a revised 3-day training schedule for her half marathon featuring a Tuesday tempo run (7 km total with 5 km tempo block), a Friday alternating hill or 400m speed session with eccentric quad squats and glute work, and a Sunday long run building to a 20 km peak on September 27, 2026",
+    "score": 0.735,
+    "session": "2026-09-22",
+    "parts": {
+     "meaning": 0.659,
+     "keywords": 0.859,
+     "entities": 0.319
+    }
+   },
+   {
+    "memory": "Maya ran a 10k race on Saturday, September 26, 2026, in a personal best time of 49:30, averaging 4:57 min/km",
+    "score": 0.726,
+    "session": "2026-09-29",
+    "parts": {
+     "meaning": 0.6,
+     "keywords": 0.854,
+     "entities": 0.362
+    }
+   },
+   {
+    "memory": "Maya updated her half marathon goal time for the November 1, 2026 Riverside Half Marathon from 1:50 to 1:45 following her 10k personal best",
+    "score": 0.682,
+    "session": "2026-09-29",
+    "parts": {
+     "meaning": 0.632,
+     "keywords": 0.695,
+     "entities": 0.379
+    }
+   },
+   {
+    "memory": "Maya was given a revised 7-week morning training plan leading up to the November 1, 2026 half marathon, featuring a 5-week buildup and a 2-week taper",
+    "score": 0.67,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.68,
+     "keywords": 0.672,
+     "entities": 0.322
+    }
+   },
+   {
+    "memory": "Maya has a tendency to go out far too fast in the first kilometre of races and pay for it at the end",
+    "score": 0.643,
+    "session": "2026-09-29",
+    "parts": {
+     "meaning": 0.55,
+     "keywords": 0.892,
+     "entities": 0.167
+    }
+   },
+   {
+    "memory": "Maya started a new job which reduced her running schedule from four days a week to three days a week: Tuesday, Friday, and Sunday",
+    "score": 0.569,
+    "session": "2026-09-22",
+    "parts": {
+     "meaning": 0.547,
+     "keywords": 0.557,
+     "entities": 0.318
+    }
+   },
+   {
+    "memory": "Maya was provided a long-run schedule leading up to the October 18, 2026 half marathon, starting with 16 km on September 8 and peaking at 20 km on September 22",
+    "score": 0.477,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.665,
+     "keywords": 0.213,
+     "entities": 0.314
+    }
+   },
+   {
+    "memory": "Maya runs four days a week on Tuesday, Thursday, Saturday, and a long run on Sunday, always in the evening after work",
+    "score": 0.42,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.606,
+     "keywords": 0.131,
+     "entities": 0.313
+    }
+   },
+   {
+    "memory": "User's name is Maya and she signed up for the Riverside Half Marathon on Sunday, October 18, 2026, with a goal to finish under 1:50",
+    "score": 0.403,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.655,
+     "keywords": 0.058,
+     "entities": 0.294
+    }
+   },
+   {
+    "memory": "Maya was recommended to keep her tempo run on Tuesday, running a 7 km total session featuring a 1 km warm-up, 5 km tempo block at ~4:45-5:00 min/km with 85-90 spm cadence, and a 1 km cool-down",
+    "score": 0.382,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.635,
+     "keywords": 0.004,
+     "entities": 0.316
+    }
+   },
+   {
+    "memory": "Maya switched her running routine from evenings to mornings before work because evenings were getting too busy",
+    "score": 0.379,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.542,
+     "keywords": 0.089,
+     "entities": 0.316
+    }
+   },
+   {
+    "memory": "Maya was recommended a weekly mid-week running pattern featuring a Tuesday tempo run, Thursday speed or hill intervals, and a Saturday recovery run with a short core routine",
+    "score": 0.373,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.615,
+     "keywords": 0.004,
+     "entities": 0.314
+    }
+   },
+   {
+    "memory": "Maya was advised to maintain her Saturday recovery run of 4-5 km easy plus a 5-minute core circuit of planks, side-planks, and dead-bugs",
+    "score": 0.368,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.603,
+     "keywords": 0.004,
+     "entities": 0.313
+    }
+   },
+   {
+    "memory": "Maya completed a 16 km long run in 1:38 on Sunday, September 6, 2026, feeling good with her left knee remaining pain-free",
+    "score": 0.367,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.619,
+     "keywords": 0.011,
+     "entities": 0.288
+    }
+   },
+   {
+    "memory": "Maya was recommended to keep Thursday as an easy 6 km run or a short hill/stride workout consisting of a 1 km warm-up, 4 by 30-second hill repeats, and a 1 km cool-down",
+    "score": 0.365,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.606,
+     "keywords": 0.004,
+     "entities": 0.302
+    }
+   },
+   {
+    "memory": "Maya's longest run before September 2026 was 14 km completed on Sunday, August 30, 2026, in 1:26",
+    "score": 0.365,
+    "session": "2026-09-01",
+    "parts": {
+     "meaning": 0.613,
+     "keywords": 0.011,
+     "entities": 0.288
+    }
+   },
+   {
+    "memory": "Maya completed an 18 km long run in 1:51 on Sunday, September 20, 2026",
+    "score": 0.363,
+    "session": "2026-09-22",
+    "parts": {
+     "meaning": 0.609,
+     "keywords": 0.011,
+     "entities": 0.288
+    }
+   },
+   {
+    "memory": "Maya completed a 17 km long run in 1:45 on Sunday, September 13, 2026",
+    "score": 0.362,
+    "session": "2026-09-15",
+    "parts": {
+     "meaning": 0.606,
+     "keywords": 0.011,
+     "entities": 0.288
+    }
+   },
+   {
+    "memory": "Maya completed easy 6 km runs on Tuesday, September 1, and Thursday, September 3, 2026",
+    "score": 0.36,
+    "session": "2026-09-08",
+    "parts": {
+     "meaning": 0.595,
+     "keywords": 0.004,
+     "entities": 0.302
+    }
+   }
+  ],
+  "reply": "**Race & Goal**  \n- **Event:** Riverside Half Marathon – Sunday **Nov 1 2026**  \n- **Target finish:** **1 hour 45 minutes** (≈ 4 : 58 min/km)\n\n**Current training pattern**  \n- **Days:** **Tuesday, Friday, Sunday**  \n- **Time of day:** All runs are **morning sessions** (you switched to pre‑work runs in mid‑September).  \n\n| Day | Typical session |\n|-----|-----------------|\n| **Tue** | 7 km total – 1 km easy warm‑up, **5 km tempo** at 4:45‑5:00 min/km, 1 km cool‑down |\n| **Fri** | Alternating **hill repeats** (4 × 30 s) **or** 400 m speed work + eccentric quad squats & glute work (≈ 6 km total) |\n| **Sun** | Long run – building distance, easy pace, finish with a short stride/stride‑out (≈ 16‑20 km) |\n\n**Long‑run progression so far**  \n\n| Date (Sun) | Distance | Approx. time | Notes |\n|------------|----------|--------------|-------|\n| Sep 6 2026 | 16 km | 1 h 38 m | Knee pain‑free, felt strong |\n| Sep 13 2026| 17 km | 1 h 45 m | Good endurance feel |\n| Sep 20 2026| 18 km | 1 h 51 m | Comfortable, steady effort |\n| Sep 27 2026| **20 km** (planned peak) | – | Aim to complete this week if you haven’t yet; keep it easy‑steady, finish with 2–3 × 20‑sec strides |\n\nYou’ve now hit the 20 km peak that the 5‑week build called for, so you’re ready to start the **2‑week taper** (reduce volume, keep a few short pickups to stay sharp).\n\n---\n\n### Race‑Morning Checklist (keep it simple)\n\n1. **Pre‑run fuel**  \n   - 2–3 h before start: a small, familiar breakfast (e.g., ½ bagel with peanut butter + banana) → ~300 kcal, ~60 g carbs.  \n   - 30 min before: sip ~150 ml water or a sports drink; **no new foods**.\n\n2. **Warm‑up (≈ 15 min total)**  \n   - 5 min easy jog (≈ 8‑9 spm)  \n   - Dynamic drills: high knees, butt kicks, leg swings (30 s each)  \n   - 3‑4 × 20‑sec strides, building to race pace, full recovery jog between.\n\n3. **Pacing strategy**  \n   - **First kilometre:** start **10–15 seconds slower** than goal pace (≈ 5:10 min/km) to avoid the “go‑out‑fast” habit.  \n   - Settle into **4:58 min/km** (goal pace) by km 3–4.  \n   - If you feel strong after 15 km, you can push the last 2–3 km to ~4:50 min/km.\n\n4. **Gear & logistics**  \n   - Lay out shoes, socks, race bib, hydration belt, and a light wind‑breaker the night before.  \n   - Arrive 30–45 min early to locate the start corral, use the restroom, and do your warm‑up.\n\n5. **Mental cue**  \n   - Pick a simple mantra for the tough stretch (e.g., “steady, strong, smooth”).  \n   - Visualize crossing the finish line at 1:45 during your warm‑up.\n\nStick to the plan, trust the training you’ve built, and enjoy the race day vibes. Good luck—you’ve earned this! 🚀",
+  "usage": {
+   "calls": 1,
+   "prompt": 1130,
+   "completion": 1156
+  },
+  "added": {
+   "memories": [],
+   "events": [],
+   "memory model": [
+    {
+     "prompt": 10928,
+     "output": 9,
+     "seconds": 1.9
+    }
+   ]
+  }
+ }
+}
