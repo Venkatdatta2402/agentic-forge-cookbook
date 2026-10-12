@@ -16,6 +16,12 @@ without ever presenting it as current:
                  race on 18 October" is a fact, and a dated fact reads as still true
     ADVICE       memories that are the coach's own advice (Mem0 round 1), counted apart: not wrong, but not the
                  runner's either
+    RETRIEVAL    at the five check-ins that need memory, each fact `answer_key.NEEDED` lists: did it reach the
+                 coach's context in its current version? Listed here only when it did not, labelled by why:
+                   write      never saved right (missing or wrong in EXTRACTION) -- retrieval had nothing to find
+                   retrieval  saved right, but not in the context
+                 Found in the context in any form counts -- a kept message that says it, say -- because that is
+                 what the coach had in front of it
 """
 
 import answer_key as K
@@ -197,4 +203,57 @@ def check():
     for run in RUNS:
         assert set(EXTRACTION[run]) <= ids, run
         assert set(CURRENT[run]) == set(K.ASKED) and all(set(CURRENT[run][c]) == set(K.ASKED[c]) for c in K.ASKED)
+    return True
+
+
+# what did not reach the coach, per run and check-in: {needed: "write" | "retrieval"}
+RETRIEVAL = {
+    "mem0 r1": {},
+    "mem0 r2": {"maya-6": {"starts races too fast": "write"}},          # kept as a one-off in the 10k
+    "scratch r1": {"maya-2": {"long run on Sunday": "write",
+                              "race on 18 October": "retrieval"},      # in a note Recall did not bring
+                   "maya-4": {"race on 1 November": "write"}, "maya-5": {"race on 1 November": "write"},
+                   "tom-3": {"race on 8 November": "write", "gels": "write"},
+                   "maya-6": {"race on 1 November": "write", "14 km on 30 August": "write",
+                              "16 km on 6 September": "write", "17 km on 13 September": "write",
+                              "18 km on 20 September": "write", "starts races too fast": "write"}},
+    "scratch r2": {"maya-2": {"long run on Sunday": "write"},
+                   "tom-3": {"cramps when he eats under 2 hours before": "write"},
+                   "maya-6": {"14 km on 30 August": "write", "16 km on 6 September": "write",
+                              "starts races too fast": "write"}},
+    "scratch r3": {"maya-6": {"14 km on 30 August": "write", "16 km on 6 September": "write",
+                              "18 km on 20 September": "write",
+                              "starts races too fast": "retrieval"}},  # three old messages took Recall's places
+    "scratch r4": {"maya-2": {"long run on Sunday": "write"},
+                   "tom-3": {"cramps when he eats under 2 hours before": "write"},
+                   "maya-6": {"starts races too fast": "write"}},
+    "scratch r5": {"maya-2": {"long run on Sunday": "write"}},
+    "scratch r6": {"maya-2": {"long run on Sunday": "write"},
+                   "tom-3": {"race on 8 November": "write", "gels": "write"}},
+    "scratch r7": {"maya-2": {"long run on Sunday": "write"}},
+}
+
+
+def retrieval_table():
+    """Per run: needed facts that reached the coach, and the misses by cause."""
+    total = sum(len(items) for items in K.NEEDED.values())
+    rows = []
+    for run in RUNS:
+        misses = [why for per in RETRIEVAL[run].values() for why in per.values()]
+        rows.append({"run": run, "reached the coach": f"{total - len(misses)}/{total}",
+                     "never saved (write)": misses.count("write"),
+                     "saved, not retrieved (retrieval)": misses.count("retrieval")})
+    return rows
+
+
+def check_retrieval():
+    needed = {s: {w for w, _ in items} for s, items in K.NEEDED.items()}
+    for run in RUNS:
+        for session, per in RETRIEVAL[run].items():
+            assert set(per) <= needed[session], (run, session)
+            for what, why in per.items():
+                ids = dict(K.NEEDED[session])[what]
+                saved_right = not any(fid in EXTRACTION[run] for fid in ids)
+                # write failures must be facts marked missing or wrong; retrieval failures, facts saved right
+                assert (why == "retrieval") == saved_right, (run, session, what, why)
     return True

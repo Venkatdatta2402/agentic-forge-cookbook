@@ -138,7 +138,14 @@ evidence is a field the code runner owns.
   - telemetry is on by default;
   - `get_all` stops at 20 without saying so;
   - the links between memories that the prompt asks for are thrown away.
-- **Added to chapter 4:** `QdrantJournal`, the journal on one engine with `Journal`'s methods, so `Recall` runs on either; `Profile`; and `writing.py`.
+- **Retrieval, measured.** In the nine check-ins, nearly every fact the coach lacked had never been saved right: only 2 of the misses were retrieval's. With about 100 older memories added per runner (`stress.py`, embeddings only):
+  - **Mem0's single search** let 8 of 14 needed facts through, down from 13. It dropped Maya's current days, mornings and two runs, and kept her old ones.
+  - **The scratch build's profile and run log** were untouched, because they are shown, not searched. Its notes lost both habits until three changes: chapter 4's `Recall` became hybrid by default, it searches one question at a time, and the coach shows habits always. Then 14 of 14 got through.
+- **Added to chapter 4:**
+  - `QdrantJournal`, the journal on one engine with `Journal`'s methods, so `Recall` runs on either;
+  - `Profile`;
+  - `writing.py`;
+  - hybrid, per-question `Recall`. Chapters 4 and 5's notebooks pass `hybrid=False`, which is what they measured.
 
 **`07_langsmith`**:
 
@@ -208,7 +215,8 @@ else moved.
 - **Gemini**, for embeddings, as in `04_memory` (LangChain's retrieval uses chapter 4's `embed()`), and in
   `06_mem0` also for Mem0's own model, `gemini-3.5-flash-lite`
 - **LangSmith and Langfuse accounts**, for notebooks 7 and 8: `LANGSMITH_API_KEY`,
-  `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_HOST` in `.env`. Both are cloud
+  `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY` and `LANGFUSE_BASE_URL` in `.env` (`LANGFUSE_HOST` is the
+  deprecated name); `GEMINI_API_KEY_JUDGE` optionally, for 07's judge. All are listed in `.env.example`. Both are cloud
   services, so traces — prompts and outputs included — leave the machine. Langfuse can be
   self-hosted, but needs Docker, which this machine does not have
 

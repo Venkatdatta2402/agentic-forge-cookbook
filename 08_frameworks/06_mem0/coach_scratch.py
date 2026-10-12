@@ -323,18 +323,36 @@ class Memory:
         return [f"- {r['on_day']} {r['kind']} {r['km']:g} km" + (f" in {r['minutes']:g} min" if r["minutes"] else "") +
                 (f" -- {r['felt']}" if r["felt"] else "") for r in self.runs.recent(limit=12)]
 
-    def render(self, today, message, floor=0.6):
-        """What the coach is shown before it replies: all of the profile, the runs, and the notes that bear on this."""
-        from recall import Recall
+    def render(self, today, message, floor=0.6, share=None, cap=None, search="meaning"):
+        """What the coach is shown before it replies: all of the profile, the runs, and the notes that bear on this.
+
+        search="meaning"    what rounds 1-7 ran: the top 3 above the floor, by meaning alone (or with `share` and
+                            `cap`, that share of all notes, at most `cap`)
+        search="questions"  chapter 4's hybrid `Recall`, one search per question in the message, merged; and every
+                            habit note shown as well, searched or not -- a runner has few, and they bear on every
+                            check-in"""
+        from recall import Recall, questions
         name = R.RUNNERS[self.runner]
         profile, runs = self.lines()
-        notes = ([f"- {at} {text}" for _, _, at, text in Recall(self.notes, today=today, floor=floor)(message, k=3)]
-                 if len(self.notes) else [])
-        if not (profile or runs or notes):
+        habits = []
+        if not len(self.notes):
+            notes = []
+        elif search == "questions":
+            habit_rows = self.notes.recent(source="habit", limit=1000)
+            habits = [f"- {row['at']} {row['text']}" for row in habit_rows]
+            picked = Recall(self.notes, today=today, floor=floor).many(questions(message), k=3, share=share, cap=cap)
+            shown = {row["id"] for row in habit_rows}
+            notes = [f"- {at} {text}" for _, eid, at, text in picked if eid not in shown]
+        else:
+            recall = Recall(self.notes, today=today, floor=floor, hybrid=False)
+            notes = [f"- {at} {text}" for _, _, at, text in recall(message, k=3, share=share, cap=cap)]
+        if not (profile or runs or notes or habits):
             return None
         parts = [f"What you know about {name} from earlier check-ins."]
         parts += ["Profile:", *profile] if profile else ["Profile: nothing yet"]
         parts += ["Runs, oldest first:", *runs] if runs else ["Runs: none logged yet"]
+        if habits:
+            parts += ["Habits:", *habits]
         if notes:
             parts += ["Notes that bear on this message:", *notes]
         return "\n".join(parts)
@@ -507,6 +525,8 @@ ANSWERS6 = R.STORE / "answers" / "scratch.round6.json"
 # Round 7: round 6 unchanged here; chapter 4's check now compares what days, dates and numbers MEAN. Round 6 refused
 # Tom's race written "2026-11-08" against his "8 November", and "5 days a week" against "five" -- so his race was
 # never stored, and at his last check-in the coach made one up.
+# How many of a runner's notes the coach is shown: 30% of them, at most 5 (chapter 4's `Recall(share=, cap=)`).
+NOTES_SHARE, NOTES_CAP = 0.3, 5
 ROUND7 = R.STORE / "scratch-round7"
 ANSWERS7 = R.STORE / "answers" / "scratch.round7.json"
 

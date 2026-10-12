@@ -236,6 +236,44 @@ def test_round_five_offline():
         ("2026-08-30", 14), ("2026-09-06", 16), ("2026-09-13", 17), ("2026-09-20", 18)]
 
 
+def test_chapter4_hybrid_recall_and_questions():
+    import stores
+    from recall import Recall, questions
+    msg = next(s["message"] for s in R.SESSIONS if s["id"] == "maya-6")
+    assert questions(msg)[-1] == "And any advice for race morning?" and len(questions(msg)) == 5
+    tom = next(s["message"] for s in R.SESSIONS if s["id"] == "tom-3")
+    assert questions(tom)[-1] == "And what should I eat on race morning, when?"   # "and when?" stays with it
+    assert questions("No questions here.") == ["No questions here."]
+    entries = [("2026-09-01", "maya", "fact", "PGRST204 came from a stale schema cache"),
+               ("2026-09-02", "maya", "fact", "The pool ran dry under peak traffic"),
+               ("2026-09-03", "maya", "habit", "Always starts races too fast")]
+    root = Path(tempfile.mkdtemp())
+    with T.embeddings():
+        for cls in (stores.Journal, stores.QdrantJournal):
+            j = cls(root / cls.__name__)
+            j.write(entries)
+            # a literal code shares no meaning with the query's other words: below the floor by meaning alone,
+            # found by its keyword in hybrid mode
+            meaning = Recall(j, today="2026-10-01", floor=0.9, hybrid=False, record_use=False)("PGRST204 error", k=2)
+            hybrid = Recall(j, today="2026-10-01", floor=0.9, record_use=False)("PGRST204 error", k=2)
+            assert meaning == [] and [t for _, _, _, t in hybrid] == [entries[0][3]], cls.__name__
+            many = Recall(j, today="2026-10-01", floor=0.0, record_use=False).many(
+                ["what happened with the pool?", "how do races start?"], k=2)
+            assert {t for _, _, _, t in many} == {entries[1][3], entries[2][3]}, cls.__name__
+            assert Recall(j, today="2026-10-01").size(3, share=0.3, cap=5) == 1         # 30% of 3, at most 5
+
+
+def test_the_coach_shows_habits_always():
+    root = Path(tempfile.mkdtemp())
+    with T.embeddings(), T.groq():
+        S.run(root=root, path=root / "s.json", log=lambda *_: None, write="card5")
+        memory = S.Profiled5("maya", root)
+        msg = next(s["message"] for s in R.SESSIONS if s["id"] == "maya-6")
+        shown = memory.render("2026-10-13", msg, share=S.NOTES_SHARE, cap=S.NOTES_CAP, search="questions")
+    habits = shown.split("Habits:")[1].split("Notes that bear")[0]
+    assert "Goes out far too fast in the first kilometre at race starts" in habits
+
+
 def test_a_stopped_run_carries_on():
     root = Path(tempfile.mkdtemp())
     with T.embeddings():
@@ -276,6 +314,7 @@ if __name__ == "__main__":
                  test_the_mem0_coach_offline, test_round_two_offline, test_round_three_offline,
                  test_chapter4_writing, test_round_four_offline,
                  test_chapter4_profile_history_and_retired_notes, test_round_five_offline,
+                 test_chapter4_hybrid_recall_and_questions, test_the_coach_shows_habits_always,
                  test_a_stopped_run_carries_on,
                  test_what_you_have_to_know):
         test()

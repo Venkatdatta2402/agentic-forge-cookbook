@@ -341,6 +341,13 @@ add/update/ignore check run on either. It differs in two ways: its BM25 stems
 words ("batches" finds "batch"), and Qdrant's own fusion constant is 2, not 60,
 so `rrf_k` is passed in. The notebooks here use `Journal`.
 
+**`Recall` is hybrid by default now**, also from that project. It keeps the floor on the raw meaning score, adds
+keyword matches, and ranks the two together by reciprocal rank fusion. It can also search **one question at a
+time** (`questions()` splits a message, `Recall.many` merges the results), and grow how many it returns with the
+store (`share`, up to `cap`; the caller sets both). On about 47 notes per runner there, a note a question needed
+ranked 13th by meaning alone, 6th fused, and 1st when its question was searched on its own. The notebooks here (and
+chapter 5's) pass `hybrid=False`: their measurements, the 0.6 floor among them, were made on meaning alone.
+
 The same project added two more parts, both about **writing** memory down, which the notebooks here leave to
 whoever calls the store. There, a coach's stores did exactly what they were built for, and it still told a runner
 the wrong race date, because the wrong things had been written:

@@ -5,7 +5,7 @@ time, with code and a notebook for each.
 
 ## How it's organized
 
-Each numbered folder is a self-contained chapter. Inside, the same four
+Each numbered folder is a self-contained chapter. Inside, the same three
 questions apply:
 
 - **README.md** — what is it, why does it exist
@@ -24,10 +24,6 @@ Chapters build roughly in order, but each one should be usable on its own.
 | `06_orchestration` | Coordinating multiple agents |
 | `07_mcp` | Model Context Protocol — reaching tools that live in someone else's process |
 | `08_frameworks` | Building one real project per agent framework — LangChain, LangGraph, CrewAI, AutoGen, LlamaIndex, Mem0, LangSmith, Langfuse — and the same project again from this repo's own parts |
-| `09_guardrails` | Safety and constraint enforcement (not started) |
-
-`projects/` applies chapters together into full systems. `playground/` is
-unstructured scratch space, added only if needed.
 
 ## Setup
 

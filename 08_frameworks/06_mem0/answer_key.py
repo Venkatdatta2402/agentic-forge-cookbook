@@ -113,6 +113,47 @@ ASKED = {
 }
 
 
+# What a good reply needs from EARLIER check-ins, at each check-in that needs memory: (what, the facts it rests on).
+# Scored for retrieval: did each reach the coach's context, in its current version?
+NEEDED = {
+    "maya-2": [("runs Tue, Thu, Sat, Sun", ["M04"]), ("long run on Sunday", ["M05"]), ("race on 18 October", ["M02"]),
+               ("goal under 1:50", ["M03"]), ("knee sore after long downhills", ["M10"])],
+    "maya-4": [("race on 1 November", ["M17"]), ("goal under 1:50", ["M03"]), ("runs in the mornings", ["M18"]),
+               ("16 km long run", ["M11"]), ("17 km long run", ["M19"])],
+    "maya-5": [("race on 1 November", ["M17"]), ("runs Tue, Fri, Sun", ["M25"]), ("runs in the mornings", ["M18"]),
+               ("latest long run, 18 km", ["M27"]), ("knee cleared", ["M23"])],
+    "tom-3": [("longest run, 28 km", ["T11"]), ("race on 8 November", ["T03"]), ("vegetarian", ["T09"]),
+              ("gels", ["T13"]), ("cramps when he eats under 2 hours before", ["T14"])],
+    "maya-6": [("race on 1 November", ["M17"]), ("goal 1:45", ["M35"]), ("runs Tue, Fri, Sun", ["M25"]),
+               ("runs in the mornings", ["M18"]), ("14 km on 30 August", ["M07", "M08"]),
+               ("16 km on 6 September", ["M11", "M12"]), ("17 km on 13 September", ["M19", "M20"]),
+               ("18 km on 20 September", ["M27", "M28"]), ("starts races too fast", ["M34"])],
+}
+
+# The state each state-fact sets, so `check()` can confirm a needed state is the one true on the day it is needed
+STATE_OF = {"M02": ("maya", "race date", "18 October"), "M17": ("maya", "race date", "1 November"),
+            "M03": ("maya", "goal", "under 1:50"), "M35": ("maya", "goal", "1:45"),
+            "M04": ("maya", "days", "Tue, Thu, Sat, Sun"), "M25": ("maya", "days", "Tue, Fri, Sun"),
+            "M06": ("maya", "time of day", "evenings"), "M18": ("maya", "time of day", "mornings"),
+            "M10": ("maya", "knee", "sore after long downhills"), "M22": ("maya", "knee", "sore after hill repeats"),
+            "M23": ("maya", "knee", "cleared: a tight IT band"), "T03": ("tom", "race date", "8 November"),
+            "T09": ("tom", "diet", "vegetarian"), "T10": ("tom", "fuel", "water alone"), "T13": ("tom", "fuel", "gels")}
+
+
+def check_needed():
+    """Every needed fact was said at an EARLIER check-in, and every needed state is the one true on the day."""
+    when = {s["id"]: s["date"] for s in R.SESSIONS}
+    said_at = {f[0]: f[1] for f in FACTS}
+    for session, items in NEEDED.items():
+        for what, ids in items:
+            for fid in ids:
+                assert when[said_at[fid]] < when[session], (session, what, fid)
+                if fid in STATE_OF:
+                    runner, state, value = STATE_OF[fid]
+                    assert current(runner, state, when[session]) == value, (session, what, fid)
+    return sum(len(items) for items in NEEDED.values())
+
+
 def current(runner, state, day):
     """What a state was on a day, or None if the runner had not said yet."""
     values = [v for since, v in STATES[(runner, state)] if since <= day]

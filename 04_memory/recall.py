@@ -83,6 +83,8 @@ unanswerable questions on this journal with `gemini-embedding-001`; change eithe
 """
 
 import math
+import re
+import sqlite3
 from datetime import date
 
 
@@ -124,8 +126,12 @@ class Recall:
 
     def __init__(self, journal, today, half_life=30.0, floor=0.6,
                  w_similarity=0.8, w_reinforcement=0.2, over_fetch=3,
-                 alpha=0.5, damped=False, evict_below=None, record_use=None):
+                 alpha=0.5, damped=False, evict_below=None, record_use=None, hybrid=True, rrf_k=60):
         self.journal = journal
+        # hybrid by default: meaning and keywords, ranked together (see `_candidates`). The notebooks that measured
+        # this chapter's floor and weights pass hybrid=False, which is what they measured.
+        self.hybrid = hybrid
+        self.rrf_k = rrf_k
         self.today = today
         self.half_life = half_life
         self.floor = floor
@@ -201,21 +207,100 @@ class Recall:
                 self.journal.forget(entry_id)
         return victims
 
-    def __call__(self, query, k=3, where=None):
-        """Returns [(score, id, at, text)], best first -- or [] when nothing clears the floor."""
-        hits = self.journal.find_like(query, k=k * self.over_fetch, where=where)
+    def _candidates(self, query, n, where=None):
+        """[(relevance, id, at, text)] for one query.
 
-        # raw, before normalising: the only number here that means the same thing twice
-        kept = [(sim, eid, self.journal.get(eid)["at"], text)
-                for sim, eid, text in hits if sim >= self.floor]
-        if not kept:
+        Meaning first, with the floor on the RAW similarity -- the only number here that means the same thing twice.
+        Then, in hybrid mode, keyword matches too: a literal match needs no floor, and the two rankings are fused by
+        rank (reciprocal rank fusion, as `Journal.find_hybrid` does), because their scores share no scale. Measured in
+        `08_frameworks/06_mem0` on about 47 notes: meaning alone ranked the note a question needed 13th and 10th;
+        fused, 6th and 4th. A `where` filter keeps it to meaning alone -- the keyword index cannot apply one.
+        """
+        hits = self.journal.find_like(query, k=n, where=where)
+        kept = [(sim, eid, text) for sim, eid, text in hits if sim >= self.floor]
+        if not self.hybrid or where is not None or not hasattr(self.journal, "find_exact"):
+            return [(sim, eid, self.journal.get(eid)["at"], text) for sim, eid, text in kept]
+        terms = self.journal._fts_query(query)
+        try:
+            lexical = [row["id"] for row in self.journal.find_exact(terms, limit=n)] if terms else []
+        except sqlite3.OperationalError:
+            lexical = []                                  # a query of stopwords and punctuation
+        fused = {}
+        for ranking in ([eid for _, eid, _ in kept], lexical):
+            for rank, eid in enumerate(ranking):
+                fused[eid] = fused.get(eid, 0.0) + 1.0 / (self.rrf_k + rank + 1)
+        out = []
+        for eid, score in fused.items():
+            row = self.journal.get(eid)
+            if row:
+                out.append((score, eid, row["at"], row["text"]))
+        return sorted(out, reverse=True)
+
+    def size(self, k, share=None, cap=None):
+        """How many to return: `k`, or with `share`, that fraction of all entries, up to `cap` -- the most ever
+        returned, however large the store grows. Both are the caller's: nothing here fixes them."""
+        if share:
+            k = math.ceil(share * len(self.journal)) or 1      # an empty store asks for one, finds none
+            if cap:
+                k = min(k, cap)
+        return k
+
+    def many(self, queries, k=3, share=None, cap=None, where=None):
+        """One search per query, merged: each query's ranking counts once, fused by rank across the queries.
+
+        A message asking five things at once is one vague search; asked one at a time, each finds its own. Measured
+        in `08_frameworks/06_mem0`: "any advice for race morning?" on its own ranked the note it needed first, where
+        the whole five-part message had ranked it 13th. `share` and `cap` apply to the merged result."""
+        k = self.size(k, share, cap)
+        rankings = [self._candidates(q, k * self.over_fetch, where) for q in queries]
+        merged, seen = {}, {}
+        for ranking in rankings:
+            for rank, (_, eid, at, text) in enumerate(ranking):
+                merged[eid] = merged.get(eid, 0.0) + 1.0 / (self.rrf_k + rank + 1)
+                seen[eid] = (at, text)
+        if not merged:
             return []
+        kept = [(score, eid, *seen[eid]) for eid, score in merged.items()]
+        return self._rank(kept, k)
 
-        nsim = unit([sim for sim, _, _, _ in kept])
+    def _rank(self, kept, k):
+        """Relevance and reinforcement on one scale, the best k, and their use recorded."""
+        nrel = unit([rel for rel, _, _, _ in kept])
         nact = unit([self.activation(eid, at) for _, eid, at, _ in kept])
         scored = [(self.w_similarity * a + self.w_reinforcement * b, eid, at, text)
-                  for (_, eid, at, text), a, b in zip(kept, nsim, nact)]
+                  for (_, eid, at, text), a, b in zip(kept, nrel, nact)]
         best = sorted(scored, reverse=True)[:k]
         if self.record_use and best:
             self.journal.used([eid for _, eid, _, _ in best], self.today)
         return best
+
+    def __call__(self, query, k=3, where=None, share=None, cap=None):
+        """Returns [(score, id, at, text)], best first -- or [] when nothing clears the floor.
+
+        `share` and `cap`: see `size`. Left as None, k is fixed, as before."""
+        k = self.size(k, share, cap)
+        kept = self._candidates(query, k * self.over_fetch, where)
+        if not kept:
+            return []
+        return self._rank(kept, k)
+
+
+def questions(text):
+    """The questions in a message, each on its own, for `Recall.many` -- or the whole text if it asks none.
+
+    Split at sentence ends, then within a question at a comma before a question word ("when is my race, what's my
+    goal, ..."). A piece of under three words joins the one before it, so "..., and when?" stays with its question.
+    """
+    asked = [s for s in re.split(r"(?<=[?.!])\s+", text.strip()) if s.endswith("?")]
+    parts = []
+    for sentence in asked:
+        for piece in re.split(r",\s*(?:and\s+)?(?=(?:when|what|which|how|where|who|why|any)\b)", sentence,
+                              flags=re.IGNORECASE):
+            piece = piece.strip(" ,")
+            if not piece:
+                continue
+            if parts and len(piece.split()) < 3:
+                parts[-1] += ", " + piece
+            else:
+                parts.append(piece)
+    return parts or [text]

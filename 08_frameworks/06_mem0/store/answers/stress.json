@@ -1,0 +1,115 @@
+{
+ "memories per runner": {
+  "maya": 99,
+  "tom": 100
+ },
+ "mem0": {
+  "maya-6": {
+   "context": "(2026-09-01) User's name is Maya and she has signed up for the Riverside Half Marathon on Sunday, October 18, 2026, with a goal finish time under 1:50\n(2026-09-29) Maya updated her goal finish time for the Riverside Half Marathon on November 1, 2026, from 1:50 to 1:45 following her recent 10k personal best\n(2026-09-01) Maya's longest run so far was 14 km on Sunday, August 30, 2026, completed in 1:26\n(2026-09-01) Maya runs four days a week on Tuesday, Thursday, Saturday, and a long run on Sunday, always in the evening after work\n(2025-12-19) Before the Lakeside 10k Maya had porridge two hours before the start (noted at a check-in)\n(2026-09-29) Maya ran a 10k race on Saturday, September 26, 2026, in 49:30, setting a personal best, though she went out too fast in the first kilometre\n(2026-01-25) Maya ran a long 19 km on Sunday, 25 January 2026 in 119 minutes; cold start, warmed up\n(2026-07-07) Maya's goal for the Spring Half Marathon was to finish under two hours, she told the coach\n(2025-08-11) Maya's goal for the Spring Half Marathon was to finish under two hours\n(2026-05-24) Maya ran a easy 9 km on Sunday, 24 May 2026 in 56 minutes; cold start, warmed up\n(2026-04-26) Maya ran a easy 8 km on Sunday, 26 April 2026 in 51 minutes; cold start, warmed up\n(2026-02-08) Maya ran a easy 8 km on Sunday, 8 February 2026 in 54 minutes; cold start, warmed up\n(2026-04-14) Maya likes a podcast on her easy runs and music on hard ones (noted at a check-in)\n(2025-12-12) Maya ran even splits at the Lakeside 10k and finished strongly (noted at a check-in)\n(2026-03-15) Maya ran the Spring Half Marathon on Sunday, 15 March 2026 in 2:01:30\n(2026-09-08) Maya completed a 16 km long run in 1:38 on Sunday, September 6, 2026, felt good, and experienced no knee issues\n(2026-09-08) Maya completed easy 6 km runs on Tuesday, September 8, 2026, and Thursday, September 10, 2026\n(2025-11-04) Before the Lakeside 10k Maya had porridge two hours before the start\n(2026-07-19) Maya ran a long 21 km on Sunday, 19 July 2026 in 135 minutes; good rhythm\n(2025-10-12) Maya ran the Harbour 10k on Sunday, 12 October 2025 in 53:40",
+   "returned": 20,
+   "older memories among them": 13,
+   "needed": {
+    "race on 1 November": true,
+    "goal 1:45": true,
+    "runs Tue, Fri, Sun": false,
+    "runs in the mornings": false,
+    "14 km on 30 August": true,
+    "16 km on 6 September": true,
+    "17 km on 13 September": false,
+    "18 km on 20 September": false,
+    "starts races too fast": true
+   }
+  },
+  "tom-3": {
+   "context": "(2026-09-02) Tom runs five days a week and does his long runs on Saturdays\n(2026-03-21) Tom eats a large pasta dinner the night before a race, he said\n(2026-02-19) Tom eats a large pasta dinner the night before a race\n(2026-02-04) Tom eats a large pasta dinner the night before a race (noted at a check-in)\n(2026-09-16) Tom experiences stomach cramps for the first 5 km when eating less than two hours before a run\n(2026-09-02) Tom ran a 24 km long run on Saturday, August 29, 2026, which felt fine\n(2026-09-16) Tom ran a 28 km long run on Saturday, September 12, 2026, using energy gels which improved his fueling compared to water alone\n(2026-06-28) Tom ran a long 13 km on Sunday, 28 June 2026 in 81 minutes; cold start, warmed up\n(2026-02-08) Tom ran a long 21 km on Sunday, 8 February 2026 in 131 minutes; cold start, warmed up\n(2026-09-02) Tom has previously done his long training runs on water alone without fueling\n(2026-09-02) User's name is Tom and he is running his first marathon, the City Marathon, on November 8, 2026\n(2026-04-05) Tom ran a long 21 km on Sunday, 5 April 2026 in 131 minutes; easy and relaxed\n(2025-08-03) Last winter Tom did his long runs on Sundays with a club (noted at a check-in)\n(2026-03-15) Tom ran a tempo 6 km on Sunday, 15 March 2026 in 32 minutes; cold start, warmed up\n(2025-10-12) Tom ran a easy 9 km on Sunday, 12 October 2025 in 61 minutes; cold start, warmed up\n(2025-11-16) Tom ran a long 13 km on Sunday, 16 November 2025 in 79 minutes; easy and relaxed\n(2026-06-07) Tom ran a long 15 km on Sunday, 7 June 2026 in 95 minutes; windy on the river path\n(2025-11-09) Tom ran the Hilltop Half Marathon on Sunday, 9 November 2025 in 1:58:20\n(2025-10-19) Tom ran a easy 8 km on Sunday, 19 October 2025 in 54 minutes; cold start, warmed up\n(2026-04-26) Tom ran a long 21 km on Sunday, 26 April 2026 in 133 minutes; tired from work",
+   "returned": 20,
+   "older memories among them": 14,
+   "needed": {
+    "longest run, 28 km": true,
+    "race on 8 November": true,
+    "vegetarian": false,
+    "gels": true,
+    "cramps when he eats under 2 hours before": true
+   }
+  }
+ },
+ "scratch": {
+  "maya-6": {
+   "context": "What you know about Maya from earlier check-ins.\nProfile:\n- race: Riverside Half Marathon on 2026-11-01 (since 2026-09-15; before: Riverside Half Marathon on 2026-10-18 (since 2026-09-01))\n- goal: under 1:45 (since 2026-09-29; before: under 1:50 (since 2026-09-01))\n- days: Tuesday, Friday, Sunday (since 2026-09-22; before: Tuesday, Thursday, Saturday, Sunday (since 2026-09-01))\n- time_of_day: morning (since 2026-09-15; before: evening (since 2026-09-01))\n- injuries: knee fine (since 2026-09-22; before: knee sore after hill repeats on Thursday (since 2026-09-15))\nRuns, oldest first:\n- 2026-06-28 tempo 6 km in 33 min -- rain the whole way\n- 2026-07-05 tempo 8 km in 46 min -- a bit flat\n- 2026-07-12 tempo 8 km in 46 min -- windy on the river path\n- 2026-07-19 long 21 km in 135 min -- good rhythm\n- 2026-07-26 tempo 6 km in 36 min -- windy on the river path\n- 2026-08-30 long 14 km in 86 min\n- 2026-09-01 easy 6 km\n- 2026-09-03 easy 6 km\n- 2026-09-06 long 16 km in 98 min -- felt good\n- 2026-09-13 long 17 km in 105 min\n- 2026-09-20 long 18 km in 111 min\n- 2026-09-26 race 10 km in 49.5 min\nNotes that bear on this message:\n- 2025-11-27 Maya ran even splits at the Lakeside 10k and finished strongly, she told the coach\n- 2026-04-14 Maya likes a podcast on her easy runs and music on hard ones (noted at a check-in)\n- 2026-07-07 Maya's goal for the Spring Half Marathon was to finish under two hours, she told the coach",
+   "needed": {
+    "race on 1 November": true,
+    "goal 1:45": true,
+    "runs Tue, Fri, Sun": true,
+    "runs in the mornings": true,
+    "14 km on 30 August": true,
+    "16 km on 6 September": true,
+    "17 km on 13 September": true,
+    "18 km on 20 September": true,
+    "starts races too fast": false
+   }
+  },
+  "tom-3": {
+   "context": "What you know about Tom from earlier check-ins.\nProfile:\n- race: City Marathon on Sunday 8 November (since 2026-09-02)\n- days: five days a week (since 2026-09-02)\n- diet: vegetarian (since 2026-09-02)\n- fuel: water and gels (since 2026-09-16; before: water alone (since 2026-09-02))\n- injuries: right hamstring tight (since 2026-09-16)\nRuns, oldest first:\n- 2026-05-31 long 12 km in 78 min -- legs heavy\n- 2026-06-07 long 15 km in 95 min -- windy on the river path\n- 2026-06-14 long 12 km in 74 min -- easy and relaxed\n- 2026-06-14 race 10 km -- Park 10k, 46:30\n- 2026-06-21 tempo 8 km in 40 min -- good rhythm\n- 2026-06-28 long 13 km in 81 min -- cold start, warmed up\n- 2026-07-05 tempo 8 km in 42 min -- easy and relaxed\n- 2026-07-12 easy 5 km in 35 min -- cold start, warmed up\n- 2026-07-19 tempo 6 km in 32 min -- tired from work\n- 2026-07-26 easy 5 km in 35 min -- rain the whole way\n- 2026-08-29 long 24 km -- felt fine\n- 2026-09-12 long 28 km -- much better\nNotes that bear on this message:\n- 2026-09-02 long runs on Saturdays\n- 2026-09-02 first marathon\n- 2026-04-06 Tom once ran a half marathon on no breakfast and felt fine, he told the coach",
+   "needed": {
+    "longest run, 28 km": true,
+    "race on 8 November": true,
+    "vegetarian": true,
+    "gels": true,
+    "cramps when he eats under 2 hours before": false
+   }
+  }
+ },
+ "scratch, notes by share": {
+  "maya-6": {
+   "context": "What you know about Maya from earlier check-ins.\nProfile:\n- race: Riverside Half Marathon on 2026-11-01 (since 2026-09-15; before: Riverside Half Marathon on 2026-10-18 (since 2026-09-01))\n- goal: under 1:45 (since 2026-09-29; before: under 1:50 (since 2026-09-01))\n- days: Tuesday, Friday, Sunday (since 2026-09-22; before: Tuesday, Thursday, Saturday, Sunday (since 2026-09-01))\n- time_of_day: morning (since 2026-09-15; before: evening (since 2026-09-01))\n- injuries: knee fine (since 2026-09-22; before: knee sore after hill repeats on Thursday (since 2026-09-15))\nRuns, oldest first:\n- 2026-06-28 tempo 6 km in 33 min -- rain the whole way\n- 2026-07-05 tempo 8 km in 46 min -- a bit flat\n- 2026-07-12 tempo 8 km in 46 min -- windy on the river path\n- 2026-07-19 long 21 km in 135 min -- good rhythm\n- 2026-07-26 tempo 6 km in 36 min -- windy on the river path\n- 2026-08-30 long 14 km in 86 min\n- 2026-09-01 easy 6 km\n- 2026-09-03 easy 6 km\n- 2026-09-06 long 16 km in 98 min -- felt good\n- 2026-09-13 long 17 km in 105 min\n- 2026-09-20 long 18 km in 111 min\n- 2026-09-26 race 10 km in 49.5 min\nNotes that bear on this message:\n- 2025-11-27 Maya ran even splits at the Lakeside 10k and finished strongly, she told the coach\n- 2026-04-14 Maya likes a podcast on her easy runs and music on hard ones (noted at a check-in)\n- 2026-07-07 Maya's goal for the Spring Half Marathon was to finish under two hours, she told the coach\n- 2026-03-29 Maya found that eating a banana an hour before a run sits fine with her (noted at a check-in)\n- 2025-12-12 Maya ran even splits at the Lakeside 10k and finished strongly (noted at a check-in)",
+   "needed": {
+    "race on 1 November": true,
+    "goal 1:45": true,
+    "runs Tue, Fri, Sun": true,
+    "runs in the mornings": true,
+    "14 km on 30 August": true,
+    "16 km on 6 September": true,
+    "17 km on 13 September": true,
+    "18 km on 20 September": true,
+    "starts races too fast": false
+   }
+  },
+  "tom-3": {
+   "context": "What you know about Tom from earlier check-ins.\nProfile:\n- race: City Marathon on Sunday 8 November (since 2026-09-02)\n- days: five days a week (since 2026-09-02)\n- diet: vegetarian (since 2026-09-02)\n- fuel: water and gels (since 2026-09-16; before: water alone (since 2026-09-02))\n- injuries: right hamstring tight (since 2026-09-16)\nRuns, oldest first:\n- 2026-05-31 long 12 km in 78 min -- legs heavy\n- 2026-06-07 long 15 km in 95 min -- windy on the river path\n- 2026-06-14 long 12 km in 74 min -- easy and relaxed\n- 2026-06-14 race 10 km -- Park 10k, 46:30\n- 2026-06-21 tempo 8 km in 40 min -- good rhythm\n- 2026-06-28 long 13 km in 81 min -- cold start, warmed up\n- 2026-07-05 tempo 8 km in 42 min -- easy and relaxed\n- 2026-07-12 easy 5 km in 35 min -- cold start, warmed up\n- 2026-07-19 tempo 6 km in 32 min -- tired from work\n- 2026-07-26 easy 5 km in 35 min -- rain the whole way\n- 2026-08-29 long 24 km -- felt fine\n- 2026-09-12 long 28 km -- much better\nNotes that bear on this message:\n- 2026-09-02 long runs on Saturdays\n- 2026-09-02 first marathon\n- 2026-04-06 Tom once ran a half marathon on no breakfast and felt fine, he told the coach\n- 2026-03-22 Tom once ran a half marathon on no breakfast and felt fine\n- 2025-08-03 Last winter Tom did his long runs on Sundays with a club (noted at a check-in)",
+   "needed": {
+    "longest run, 28 km": true,
+    "race on 8 November": true,
+    "vegetarian": true,
+    "gels": true,
+    "cramps when he eats under 2 hours before": false
+   }
+  }
+ },
+ "scratch, hybrid per question + habits": {
+  "maya-6": {
+   "context": "What you know about Maya from earlier check-ins.\nProfile:\n- race: Riverside Half Marathon on 2026-11-01 (since 2026-09-15; before: Riverside Half Marathon on 2026-10-18 (since 2026-09-01))\n- goal: under 1:45 (since 2026-09-29; before: under 1:50 (since 2026-09-01))\n- days: Tuesday, Friday, Sunday (since 2026-09-22; before: Tuesday, Thursday, Saturday, Sunday (since 2026-09-01))\n- time_of_day: morning (since 2026-09-15; before: evening (since 2026-09-01))\n- injuries: knee fine (since 2026-09-22; before: knee sore after hill repeats on Thursday (since 2026-09-15))\nRuns, oldest first:\n- 2026-06-28 tempo 6 km in 33 min -- rain the whole way\n- 2026-07-05 tempo 8 km in 46 min -- a bit flat\n- 2026-07-12 tempo 8 km in 46 min -- windy on the river path\n- 2026-07-19 long 21 km in 135 min -- good rhythm\n- 2026-07-26 tempo 6 km in 36 min -- windy on the river path\n- 2026-08-30 long 14 km in 86 min\n- 2026-09-01 easy 6 km\n- 2026-09-03 easy 6 km\n- 2026-09-06 long 16 km in 98 min -- felt good\n- 2026-09-13 long 17 km in 105 min\n- 2026-09-20 long 18 km in 111 min\n- 2026-09-26 race 10 km in 49.5 min\nHabits:\n- 2026-09-29 always starts races too fast\nNotes that bear on this message:\n- 2026-04-14 Maya likes a podcast on her easy runs and music on hard ones (noted at a check-in)\n- 2025-11-27 Maya ran even splits at the Lakeside 10k and finished strongly, she told the coach\n- 2026-02-04 Maya uses a running watch to keep her easy runs easy\n- 2025-10-27 Maya struggles to run well in heat above 25 degrees",
+   "needed": {
+    "race on 1 November": true,
+    "goal 1:45": true,
+    "runs Tue, Fri, Sun": true,
+    "runs in the mornings": true,
+    "14 km on 30 August": true,
+    "16 km on 6 September": true,
+    "17 km on 13 September": true,
+    "18 km on 20 September": true,
+    "starts races too fast": true
+   }
+  },
+  "tom-3": {
+   "context": "What you know about Tom from earlier check-ins.\nProfile:\n- race: City Marathon on Sunday 8 November (since 2026-09-02)\n- days: five days a week (since 2026-09-02)\n- diet: vegetarian (since 2026-09-02)\n- fuel: water and gels (since 2026-09-16; before: water alone (since 2026-09-02))\n- injuries: right hamstring tight (since 2026-09-16)\nRuns, oldest first:\n- 2026-05-31 long 12 km in 78 min -- legs heavy\n- 2026-06-07 long 15 km in 95 min -- windy on the river path\n- 2026-06-14 long 12 km in 74 min -- easy and relaxed\n- 2026-06-14 race 10 km -- Park 10k, 46:30\n- 2026-06-21 tempo 8 km in 40 min -- good rhythm\n- 2026-06-28 long 13 km in 81 min -- cold start, warmed up\n- 2026-07-05 tempo 8 km in 42 min -- easy and relaxed\n- 2026-07-12 easy 5 km in 35 min -- cold start, warmed up\n- 2026-07-19 tempo 6 km in 32 min -- tired from work\n- 2026-07-26 easy 5 km in 35 min -- rain the whole way\n- 2026-08-29 long 24 km -- felt fine\n- 2026-09-12 long 28 km -- much better\nHabits:\n- 2026-09-16 stomach cramps occur when eating less than two hours before a run\n- 2026-09-02 long runs on Saturdays\nNotes that bear on this message:\n- 2026-09-02 first marathon\n- 2026-03-22 Tom once ran a half marathon on no breakfast and felt fine\n- 2026-04-06 Tom once ran a half marathon on no breakfast and felt fine, he told the coach",
+   "needed": {
+    "longest run, 28 km": true,
+    "race on 8 November": true,
+    "vegetarian": true,
+    "gels": true,
+    "cramps when he eats under 2 hours before": true
+   }
+  }
+ },
+ "embedded": 0
+}
