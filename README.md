@@ -28,8 +28,8 @@ Most agent tutorials start with a framework. This one ends with them.
 - **Measured, not asserted.** Findings come from real runs on a real model, with numbers. Where
   one run could be luck, the experiment is repeated (for example, *"obeyed 11 times in 24, and 0
   times in 37"*).
-- **Every notebook starts from a real failure.** Each one shows something breaking and the fix
-  that forced, and later chapters say plainly when they had to change an earlier one.
+- **Built from real failures.** Most notebooks show something breaking on a real model and then
+  build the fix, and later chapters say plainly when they had to change an earlier one.
 
 ## The learning path
 
@@ -56,7 +56,7 @@ Chapters build in order, but each one stands on its own and says which earlier p
 | 04 | [Memory](04_memory/) | What does it keep, and where? | 5 | Choose the store by the question it will answer; most memories are a dict, not a vector database |
 | 05 | [Context](05_context/) | What should each call see? | 6 | Separating instructions from data took prompt injection from 11/24 to 0/37 |
 | 06 | [Orchestration](06_orchestration/) | How do *different* agents work together? | 5 | A rule in the supervisor fixed routing 8/8; better agent descriptions fixed it 0/8 |
-| 07 | [MCP](07_mcp/) | How do I use tools someone else runs? | 6 | MCP changes who owns the process, not what a tool is, and a separate process is not a sandbox |
+| 07 | [MCP](07_mcp/) | How do I use tools from other programs, and share my own? | 6 | A tool looks exactly the same over MCP. What changes is that it runs in a separate program, and that program is not a sandbox |
 | 08 | [Frameworks](08_frameworks/) | What do frameworks add, hide and cost? | 8 projects | LangChain, LangGraph, CrewAI, AutoGen, LlamaIndex, Mem0, LangSmith and Langfuse, each against a scratch build |
 
 ## Quick start
@@ -122,25 +122,32 @@ reasoning behind each decision.
 
 ## Conventions
 
-- **No code before it's needed.** Modules are written only when a notebook needs them, against a
-  real failure.
-- **Later chapters reuse earlier ones.** Memory, context and MCP each plug into chapter 2's loop
-  as an ordinary component. When a later chapter *does* change an earlier one, both READMEs say
-  what changed and why.
-- **Stand-ins before tokens.** Logic is tested against stubbed models first; live calls are
-  spent only on what needs a real model.
-- **Repeat before claiming.** A finding that could be chance is measured over repeated trials, and
-  each README says which model a number came from.
+- **Code follows the notebooks.** A module is written only when a notebook needs it.
+- **Later chapters plug into earlier ones instead of rewriting them.** Memory, context and MCP
+  each arrive as an ordinary component in chapter 2's loop. When a later chapter did have to
+  change an earlier one, its README says what changed and why.
+- **Saved outputs are real runs.** Every notebook is committed with the outputs of a live run, so
+  the numbers in the READMEs can be checked against them.
+- **Results say how many runs they rest on.** Where one run could be chance, the experiment is
+  repeated and reported as counts (chapter 5's 0 of 37, chapter 6's 8 of 8). Where free-tier
+  quotas allowed only one run, as in chapter 8's evaluations, the README says so.
 
 ## Running the offline tests
 
-Chapter 8's projects have tests that make no API calls:
+Only chapter 8 has separate tests. Each project there has stand-ins for every model call
+(`*_stubs.py`) and tests that make no API calls (`test_*.py`). Chapters 1–7 have no test files;
+their checks run inside the notebooks.
 
 ```bash
+cd 08_frameworks/01_langchain  && python test_claims.py
+cd 08_frameworks/02_langgraph  && python test_ap.py
+cd 08_frameworks/03_crewai     && python test_questionnaire.py
+cd 08_frameworks/04_autogen    && python test_analysis.py
 cd 08_frameworks/05_llamaindex && python test_ask.py
+cd 08_frameworks/06_mem0       && python test_coach.py
+cd 08_frameworks/07_langsmith  && python test_evals.py
+cd 08_frameworks/08_langfuse   && python test_ops.py
 ```
-
-See [`08_frameworks/README.md`](08_frameworks/README.md#running-it) for all eight.
 
 ## License
 
