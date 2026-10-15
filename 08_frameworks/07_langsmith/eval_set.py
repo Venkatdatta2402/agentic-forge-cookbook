@@ -92,7 +92,7 @@ QUESTIONS = [
            "run can still find it."]),
          ("The cause is kept from the model because telling it invites it to work around something it cannot see.",
           ["Saying so in the conversation invites the model to work around something it cannot see"])],
-        [("03_tools/invoke.py", 50, 72), ("03_tools/invoke.py", 128, 181), ("03_tools/README.md", 86, 99)]),
+        [("03_tools/invoke.py", 50, 72), ("03_tools/invoke.py", 128, 181), ("03_tools/README.md", 77, 84)]),
     _one_shot(
         "Why is recall injected into the loop while remembering is a tool the agent calls?",
         [("Recall is a component (Retrieve) that runs before Think on every turn, whether or not anyone asked; "
@@ -111,7 +111,7 @@ QUESTIONS = [
           "is good at -- so the model decides what to remember.",
           ["There is no cost to *not* writing something down, judging what is worth keeping is a judgement, and a "
            "model is good at judgements. So the model decides."])],
-        [("04_memory/memory_tools.py", 1, 20), ("04_memory/README.md", 186, 199)]),
+        [("04_memory/memory_tools.py", 1, 20), ("04_memory/README.md", 125, 139)]),
     _one_shot(
         "What does compaction leave untouched, and why?",
         [("Pinned items: a summarizer that paraphrases a rule has changed it.",
@@ -148,7 +148,7 @@ QUESTIONS = [
           ["Then **handoffs** against delegation on one customer chat: 2.5× cheaper, the specialist's own voice, but "
            "the supervisor is out of it."])],
         [("06_orchestration/supervisor.py", 1, 13), ("06_orchestration/supervisor.py", 110, 122),
-         ("06_orchestration/README.md", 57, 68)]),
+         ("06_orchestration/README.md", 80, 86)]),
     _one_shot(
         "Does running an MCP server as a separate process sandbox it? Could it read my API keys?",
         [("No: a separate process isolates failures, not authority -- a stdio server starts with your authority and "
@@ -165,7 +165,7 @@ QUESTIONS = [
            "And the leak is the client's doing."]),
          ("The repo's stdio_params(inherit=False) takes it back.",
           ["`stdio_params(inherit=False)` is the switch", "`inherit=False` takes it back"])],
-        [("07_mcp/README.md", 109, 117), ("07_mcp/README.md", 355, 364)]),
+        [("07_mcp/README.md", 99, 106), ("07_mcp/README.md", 108, 110)]),
 
     _agent(
         "How is chapter 6's shared board different from chapter 4's memory stores? When would you use each?",
@@ -199,6 +199,7 @@ QUESTIONS = [
         [("06_orchestration/state.py", 1, 20), ("06_orchestration/state.py", 67, 73),
          ("06_orchestration/state.py", 89, 108), ("04_memory/stores.py", 1, 12), ("04_memory/stores.py", 49, 52)],
         {"06_orchestration/state.py", "04_memory/stores.py", "04_memory/README.md", "06_orchestration/README.md",
+         "04_memory/NOTES.md", "06_orchestration/NOTES.md",
          "06_orchestration/notebooks/03_communication_state_and_collaboration.ipynb",
          "04_memory/notebooks/02_stores.ipynb"}),
     _agent(
@@ -232,7 +233,7 @@ QUESTIONS = [
            "| parallel steps, streaming, caching, timeouts, a server | yes | not built |"])],
         [(AP, 366, 390), (AP, 493, 497), (AP, 519, 541)],
         {AP, "08_frameworks/02_langgraph/case.py", "08_frameworks/02_langgraph/ap_graph.py",
-         "08_frameworks/02_langgraph/ap_scratch.py", "08_frameworks/README.md"}),
+         "08_frameworks/02_langgraph/ap_scratch.py", "08_frameworks/README.md", "08_frameworks/NOTES.md"}),
     _agent(
         "How does chapter 2's runtime stop an agent that keeps calling the same tool, and how does LangGraph's limit "
         "compare in chapter 8's LangGraph project?",
@@ -256,7 +257,7 @@ QUESTIONS = [
         [("02_agent_runtime/runtime.py", 181, 186), ("02_agent_runtime/runtime.py", 220, 232), (AP, 499, 503),
          (AP, 530, 530)],
         {"02_agent_runtime/runtime.py", AP, "02_agent_runtime/notebooks/02_the_agent_loop.ipynb",
-         "08_frameworks/README.md"}),
+         "08_frameworks/README.md", "08_frameworks/NOTES.md"}),
 ]
 
 

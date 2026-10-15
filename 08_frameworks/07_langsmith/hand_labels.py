@@ -31,8 +31,8 @@ BASELINE = {
     Q[6]: {"wrong": [], "points": [1, 2],
            "borderline wrong": ["the server inherits the parent's environment and all of the credentials in it -- the "
                                 "SDK passes only an allowlist without secrets by default, and it is env={**os.environ} "
-                                "that passes everything (07_mcp/README.md 112-116); but the README also says the "
-                                "server 'starts holding whatever we were holding' (110-111)"]},
+                                "that passes everything (07_mcp/NOTES.md 112-116, the README when this was marked); "
+                                "but it also says the server 'starts holding whatever we were holding' (110-111)"]},
     Q[7]: {"wrong": [], "points": [1, 2, 3, 4, 5, 6],
            "note": "cites '【open_file†L1-L7】': the tool's name and lines, never the file -- so 'cites an answer "
                    "file' fails although the answer is right"},

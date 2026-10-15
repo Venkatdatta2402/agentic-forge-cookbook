@@ -1,13 +1,14 @@
 """The corpus: this repo, as the documents an "ask the cookbook" assistant answers from, and the questions it is tested on.
 
-    documents()    every README, the prose of every notebook, and every module, as LlamaIndex `Document`s
+    documents()    every README and NOTES, the prose of every notebook, and every module, as LlamaIndex `Document`s
     EVAL           questions the cookbook answers, each with the file(s) the answer is in, and a word the
                    answer must contain to be about the right thing
     OUT_OF_SCOPE   questions it does not answer, and should say so
 
 What goes in, and what stays out:
-    in     READMEs; notebook MARKDOWN cells, which is where the notebooks explain; .py modules, which is
-           where the explained things are implemented
+    in     READMEs, and each chapter's NOTES.md (the full write-up its README summarises); notebook MARKDOWN
+           cells, which is where the notebooks explain; .py modules, which is where the explained things are
+           implemented
     out    notebook code cells and outputs -- the code is mostly calls into the modules, which are indexed
            themselves, and the outputs are logs and tables; tests and stand-ins; stored runs; and this
            folder and the two that evaluate it (07_langsmith, 08_langfuse), so the assistant cannot find its
@@ -36,7 +37,7 @@ def files():
     """Every file the assistant reads, in a stable order."""
     found = [REPO / "README.md"]
     for chapter in sorted(p for p in REPO.iterdir() if p.is_dir() and p.name[:2].isdigit()):
-        for pattern in ("**/README.md", "**/*.ipynb", "**/*.py"):
+        for pattern in ("**/README.md", "**/NOTES.md", "**/*.ipynb", "**/*.py"):
             found += sorted(p for p in chapter.glob(pattern) if not _skipped(p))
     return found
 
@@ -65,38 +66,45 @@ def documents():
 
 # (question, files the answer is in, a word a right answer contains). Each question is one a reader would ask after
 # reading a chapter's README -- the answer may be in the README, a notebook or the code. Every expected file was
-# checked to hold the answer before it was written down here.
+# checked to hold the answer before it was written down here. Each chapter's NOTES.md is its README before the READMEs
+# were rewritten as overviews, so wherever a README is expected, its NOTES.md is too.
 EVAL = [
     ("The README says extract() asks the API to enforce the schema first. If the API enforces it, why validate as well?",
-     {"01_foundations/llm.py", "01_foundations/notebooks/05_structured_outputs.ipynb", "01_foundations/README.md"}, "sense"),
+     {"01_foundations/llm.py", "01_foundations/notebooks/05_structured_outputs.ipynb", "01_foundations/README.md",
+      "01_foundations/NOTES.md"}, "sense"),
     ("What counts as a doom loop, and what does the runtime do when it detects one?",
      {"02_agent_runtime/runtime.py", "02_agent_runtime/notebooks/02_the_agent_loop.ipynb"}, "identical"),
     ("Why do Graph and forking use threads instead of asyncio.gather?",
-     {"02_agent_runtime/README.md", "02_agent_runtime/notebooks/04_planning.ipynb"}, "event loop"),
+     {"02_agent_runtime/README.md", "02_agent_runtime/NOTES.md", "02_agent_runtime/notebooks/04_planning.ipynb"},
+     "event loop"),
     ("Why can't the runtime's time budget stop a tool that hangs, and what can?",
-     {"03_tools/README.md", "03_tools/invoke.py", "03_tools/notebooks/03_invocation.ipynb"}, "timeout"),
+     {"03_tools/README.md", "03_tools/NOTES.md", "03_tools/invoke.py", "03_tools/notebooks/03_invocation.ipynb"},
+     "timeout"),
     ("What is the difference between a tool that refuses and one that is broken, and which does the model get to see?",
-     {"03_tools/invoke.py", "03_tools/README.md", "03_tools/notebooks/03_invocation.ipynb"}, "could not be completed"),
+     {"03_tools/invoke.py", "03_tools/README.md", "03_tools/NOTES.md", "03_tools/notebooks/03_invocation.ipynb"},
+     "could not be completed"),
     ("Why shouldn't agent memory start with a vector database?",
-     {"04_memory/README.md", "04_memory/notebooks/01_what_memory_is.ipynb", "04_memory/notebooks/02_stores.ipynb",
-      "04_memory/stores.py"}, "approximat"),
+     {"04_memory/README.md", "04_memory/NOTES.md", "04_memory/notebooks/01_what_memory_is.ipynb",
+      "04_memory/notebooks/02_stores.ipynb", "04_memory/stores.py"}, "approximat"),
     ("Why is recall injected into the loop while remembering is a tool the agent calls?",
-     {"04_memory/README.md", "04_memory/notebooks/05_memory_in_the_loop.ipynb", "04_memory/memory_tools.py"}, "decid"),
+     {"04_memory/README.md", "04_memory/NOTES.md", "04_memory/notebooks/05_memory_in_the_loop.ipynb",
+      "04_memory/memory_tools.py"}, "decid"),
     ("What does compaction leave untouched, and why?",
      {"05_context/compression.py", "05_context/notebooks/03_context_compression.ipynb"}, "pinned"),
     ("What is the difference between handing off a conversation and delegating to another agent?",
      {"06_orchestration/supervisor.py", "06_orchestration/notebooks/02_delegation_and_supervision.ipynb",
-      "06_orchestration/README.md"}, "handoff"),
+      "06_orchestration/README.md", "06_orchestration/NOTES.md"}, "handoff"),
     ("Why did the multi-agent desk in chapter 6 skip two of its own patterns, and what fixed it?",
-     {"06_orchestration/notebooks/05_build_a_multi_agent_system.ipynb", "06_orchestration/README.md"}, "form"),
+     {"06_orchestration/notebooks/05_build_a_multi_agent_system.ipynb", "06_orchestration/README.md",
+      "06_orchestration/NOTES.md"}, "form"),
     ("Does running an MCP server as a separate process sandbox it? Could it read my API keys?",
-     {"07_mcp/README.md", "07_mcp/notebooks/05_mcp_transport.ipynb"}, "environment"),
+     {"07_mcp/README.md", "07_mcp/NOTES.md", "07_mcp/notebooks/05_mcp_transport.ipynb"}, "environment"),
     ("Why can verified() only run on the MCP server's side?",
-     {"07_mcp/README.md", "07_mcp/notebooks/04_mcp_server.ipynb"}, "world"),
+     {"07_mcp/README.md", "07_mcp/NOTES.md", "07_mcp/notebooks/04_mcp_server.ipynb"}, "world"),
     ("Why is CrewAI pinned to an old version in this repo?",
-     {"08_frameworks/README.md"}, "chromadb"),
+     {"08_frameworks/README.md", "08_frameworks/NOTES.md"}, "chromadb"),
     ("Why couldn't AutoGen's TokenUsageTermination enforce the token budget?",
-     {"08_frameworks/04_autogen/analysis_team.py", "08_frameworks/README.md",
+     {"08_frameworks/04_autogen/analysis_team.py", "08_frameworks/README.md", "08_frameworks/NOTES.md",
       "08_frameworks/04_autogen/analysis_team.ipynb"}, "turn"),
     ("How does the scratch accounts-payable desk wait for a person without re-running a step?",
      {"08_frameworks/02_langgraph/case.py", "08_frameworks/02_langgraph/ap_desk.ipynb"}, "Wait"),

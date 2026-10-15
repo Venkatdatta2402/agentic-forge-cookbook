@@ -1,126 +1,148 @@
-# Tools
+# 03 · Tools
 
-**What:** Everything between "a model asked to call something" and "a result
-came back" — how a tool is defined, how it's described to the model, how many
-of them an agent can be handed at once, what happens at the moment of the call,
-and how you know the call actually did what it said.
+> Everything between "the model asked to call something" and "a result came back": defining a
+> tool, describing it, holding many of them, calling one safely, and checking it did its job.
 
-**Why:** `01_foundations` made a tool call work and `02_agent_runtime` ran one
-inside a loop, both with two tools written by hand. Neither had to deal with
-what happens once tools are something you have a lot of.
+Chapters 1 and 2 used two hand-written tools. This chapter is about what changes once you have
+*many* tools, written by different people, that fail in different ways.
 
-Written by hand, one tool is the same fact stated three times: the function,
-the JSON the model reads, and the check on the arguments that come back.
-Nothing keeps those three in step. Rename a parameter and the check still
-passes — right up until the call crashes — because the check is one of the
-three that went stale, not something watching the other two.
+**Contents:** [The idea](#the-idea-in-one-picture) · [What you'll learn](#what-youll-learn) ·
+[Notebooks](#notebooks) · [Key ideas](#key-ideas) · [Modules](#modules) ·
+[How it connects](#how-it-connects) · [Running it](#running-it)
 
-**The core idea:** write it once, work the rest out from it. The function
-signature is the one copy that cannot go stale, so the JSON and the check are
-both read off it.
+---
+
+## The idea in one picture
+
+A hand-written tool states the same fact three times, and nothing keeps the three in step:
+
+```
+  def weather(city: str)        the function
+  {"name": "weather", ...}      the JSON schema the model reads
+  class WeatherArgs(...)        the check on the arguments that come back
+```
+
+Rename a parameter in the function and the check still passes, until the call crashes. The check
+is one of the three copies that went stale, so it can't catch the others.
+
+**The fix is to write it once and work out the rest.** The function's signature is the one copy
+that can't go stale, so both the schema and the argument check are generated from it:
+
+```mermaid
+flowchart LR
+    F["def weather(city: str)<br/>+ docstring"] --> S["schema<br/>(what the model sees)"]
+    F --> C["argument check<br/>(Pydantic model)"]
+    S --> M((model))
+    M -- "tool call" --> C
+    C --> F
+```
+
+## What you'll learn
+
+- How `@tool` builds the model's JSON and the argument check from one function signature
+- How a **registry** holds many tools: name clashes, prefixes, subsets, and what 30 tools cost in
+  tokens on *every* turn
+- What happens at the moment of the call: time limits, size limits, and sorting failures by **who
+  can act on them**
+- Why "the tool returned" is not the same as "the tool did its job", and how to check the world
+  afterwards
+- A standard toolbox (HTTP, files confined to one folder, a safe calculator) tested against things
+  that don't cooperate
 
 ## Notebooks
 
-1. `01_what_is_a_tool.ipynb` — a renamed parameter breaking a working tool,
-   then `args_model()` and `Tool`/`@tool`: the argument check built from a
-   signature, the model's JSON built from that, `Annotated` for parameter
-   descriptions, `extra="forbid"`, and a way out for rules a signature can't
-   express ✅
-2. `02_the_registry.ipynb` — the three dicts notebook 1 builds by hand become
-   one object; a plain dict quietly keeping one of two tools called `search`;
-   prefixes; what the API really accepts as a tool name; what thirty tools
-   cost in tokens on every turn; subsets by name and by tag ✅
-3. `03_invocation.ipynb` — what happens at the moment of the call: a tool that
-   hangs and why chapter 2's own time budget can't stop it, failures sorted by
-   who can act on them, a 7,601-token result cut down to what a conversation
-   can carry, and a timeout on a tool that must not be repeated ✅
-4. `04_verification.ipynb` — checking the arguments going in is not the same
-   as checking the world afterwards. A tool that saves 60 characters of a
-   110-character note and reports success; why a check that reads the tool's
-   own answer catches nothing; `verified()`, and `unverified` as its own
-   ending; what cannot be verified at all ✅
-5. `05_built_in_tools.ipynb` — the toolbox against things that don't
-   cooperate: a live API (real 404s, a real dead host, a real 7,254-token
-   response), file tools confined to one folder, and a calculator that isn't
-   a way to run arbitrary Python. Catches `Observe` doing the agent's
-   arithmetic inside its own phrasing call ✅
+| # | Notebook | What it shows |
+|---|---|---|
+| 1 | [`01_what_is_a_tool`](notebooks/01_what_is_a_tool.ipynb) | A renamed parameter breaks a working tool; then `args_model()` and `@tool`, which build the check and the schema from the signature, with `Annotated` descriptions and `extra="forbid"` |
+| 2 | [`02_the_registry`](notebooks/02_the_registry.ipynb) | A plain dict silently keeping one of two `search` tools; prefixes; what the API accepts as a name; the token cost of thirty tools; subsets by name and tag |
+| 3 | [`03_invocation`](notebooks/03_invocation.ipynb) | A tool that hangs (and why chapter 2's time budget can't stop it); failures sorted by who can fix them; a 7,601-token result cut to size; a timeout on a tool that must not run twice |
+| 4 | [`04_verification`](notebooks/04_verification.ipynb) | A tool that saves 60 characters of a 110-character note and reports success; `verified()`, which checks the world instead of the tool's own answer |
+| 5 | [`05_built_in_tools`](notebooks/05_built_in_tools.ipynb) | Real 404s, a dead host and a 7,254-token response; file tools locked to one folder; a calculator that isn't `eval`. Also catches `Observe` doing the agent's arithmetic itself |
 
-## What this chapter does with chapters 1 and 2
+## Key ideas
 
-| From earlier chapters | What `03_tools` does with it |
-|---|---|
-| Hand-typed `tools=[...]` JSON (1, nb 6) | Built by `Tool.schema` from the signature, so it can't disagree with the function |
-| Pydantic argument checking (1, nb 6) | Same check, same Pydantic — but the model doing the checking is generated too, and `Tool.__call__` is the only route to the function |
-| `field_validator` for rules like "not zero" (1, nb 6) | Kept, as `Tool(..., args=YourModel)`. A signature can't say "not zero", so reading the signature is the default rather than the only option |
-| `execute_tool_call()` (1, nb 6) | Still what `Act` runs. `Tool.args` drops into its `schemas` dict unchanged |
-| A tool call that returns = success (1, nb 6) | Not the same claim. A tool can return cheerfully and not have done the job, so `verified()` checks the world afterwards |
-| `str(result)` ending every call (1, nb 6) | Still the last step, but `invoke` decides how much of it the conversation can carry, and keeps the whole thing on `Result.value` |
-| `except Exception: "Error: {e}"` (1, nb 6) | Split by who can act on it. Wrong arguments and a tool that says no go to the model; a bug in the tool does not |
-| `Runtime(max_seconds=...)` (2) | Checked between components, so it cannot stop a blocking tool. `invoke(timeout=)` is the per-call limit that can |
-| `Observe`'s LLM summarizing (2) | Caught twice: dropping the half of a refusal that said what to do next, and converting a value the agent had a tool for — see below |
-| `Act(functions=..., schemas=...)` (2) | Fed from `Tool` objects with a comprehension, or from `Registry.invokers()`. No change to `02_agent_runtime` needed for any of the wiring |
-| `Think(allow_fork=False)` (2) | The plain ReAct loop, used to run every demo here — this chapter is about tools, not about patterns |
-| `DebugThink` repairing arguments (2) | Where a stale description hurts most: the model is asked to fix arguments that were right for the description it was given, and wastes every retry |
+### Every call ends in one of six ways
+`invoke()` never raises. It returns a `Result` whose `kind` says what happened, so the loop can
+decide what the model should see and whether trying again is safe:
 
-**Two changes were made *to* chapter 2, forced by this chapter, both in the same
-prompt** — the one `Observe` uses to turn a raw tool result into an observation.
+| Kind | What happened | Does the model see the details? |
+|---|---|---|
+| `ok` | The tool did its job | Yes |
+| `bad_arguments` | The arguments failed the check | Yes, so it can fix them |
+| `refused` | The tool ran and said no (`ToolError`), usually with a suggestion | Yes, including the suggestion |
+| `unverified` | It returned, but a check on the world afterwards failed | Yes |
+| `timeout` | It ran past its time limit | Yes |
+| `broken` | A bug in the tool itself: a missing key, a bad import | **No**, only that it couldn't be done |
 
-Notebook 3 gives tools a way to fail usefully: `ToolError("No weather station for Vestby. Try a
-larger nearby city.")` is written for the model to act on. But `Observe` turns a
-raw tool result into an observation with an LLM, and its prompt asked for "one
-plain factual sentence" — so the suggestion was summarized away as commentary
-before the model ever saw it. The prompt in `02_agent_runtime/observe.py` now
-says to keep whatever the tool itself said about what to do next.
+### Refused vs broken: who can act on the failure?
+A refusal is written *for the model*. `ToolError("No weather station for Vestby. Try a larger
+nearby city.")` tells it exactly what to do next. A broken tool is ours to fix, and telling the
+model about a `KeyError` only invites it to work around something it can't see.
 
-Notebook 5 then found another clause in it causing the opposite problem. Asked to
-state a result "using the conversation only to phrase it correctly (e.g. which
-units)", `Observe` converted 20 °C to 68 °F itself — so the `calculate` tool was
-never called and the arithmetic appears in no tool result anywhere. The answer
-was right, which is the problem. That clause is now replaced by an instruction
-to copy every value exactly as the tool gave it, and to convert or calculate
-nothing, even when the conversation asks for different units.
+So when a result is broken, `invoker()` hands the conversation `"<tool> could not be completed."`
+and the cause moves to `Result.value`, where whoever is reading the run can still find it. The
+model gets a clear message it can act on, and the developer still gets the real error.
 
-Nothing else in `02_agent_runtime` changes. All the wiring in this chapter goes
-through `Act` and `Think` exactly as they already are.
+### A per-call time limit, because the run's budget can't help
+`Runtime(max_seconds=...)` is checked *between* components, so a tool that hangs inside `Act`
+blocks it forever. `invoke(timeout=...)` limits each call. If the tool is not `repeatable`, for
+example because it sends a payment, `Result.safe_to_retry` says not to try again after a timeout.
 
-**One change was later made *to* this chapter, forced by `07_mcp`.** `Result.for_the_model`
-was computed here and read by nobody: `invoker()` handed the whole `Result` to
-`execute_tool_call`, which finishes with `str(result)`, so a `broken` result — the one kind
-that is supposed to stay out of the conversation — went into it anyway. That was survivable
-while `broken` meant a bug in a function in this repo, which is rare and gets fixed the same
-afternoon. It stopped being survivable in `07_mcp`, where `broken` is the honest reading of
-any failure a server someone else wrote declines to explain.
+### "It returned" is not "it worked"
+A note-saving tool truncated a 110-character note to 60 and reported success. Reading the tool's
+own reply can't catch that, because the reply is the thing that's wrong. `verified()` wraps a tool
+with a check that **looks at the world afterwards** (for a saved note, it reads the note back) and
+turns a mismatch into `unverified`.
 
-`invoker()` now checks the flag: when `for_the_model` is False the conversation gets
-`"<tool> could not be completed."` and the cause moves to `Result.value`, where whoever is
-reading the run can still find it. It is **not** done in `Result.__str__`, because notebook 3
-prints a broken result next to its flag precisely to show what that message says — redacting
-it there would remove the demonstration. Nothing in this chapter's notebooks changes, because
-none of them route a `broken` result through `invoker()`.
+### A large tool result is cut before it reaches the conversation
+A real API response was 7,601 tokens. `invoke(max_tokens=...)` passes the conversation only what
+it can carry, and keeps the whole thing on `Result.value`.
 
 ## Modules
 
-Built incrementally as the notebooks need them, same as every other chapter.
+| File | What's in it |
+|---|---|
+| [`tools.py`](tools.py) | `args_model()` (signature → Pydantic argument check), `Tool` (the function, its schema and its check), `@tool` |
+| [`registry.py`](registry.py) | `Registry`: refuses a duplicate or invalid name; `prefix=` and `merge()` for combining sources; `subset()` by name or tag; `invokers()` to hand tools to chapter 2's `Act` |
+| [`invoke.py`](invoke.py) | `invoke()` (one call, with time and size limits, every ending returned as a `Result`), `ToolError`, `truncate()`, `Result.for_the_model`, `Result.safe_to_retry`, and `invoker()`, the adapter into `Act` |
+| [`verify.py`](verify.py) | `verified()`, a copy of a tool with a check on the world wrapped around it, and `VerificationError` |
+| [`toolbox.py`](toolbox.py) | `http_get`, `file_tools(root)` confined by `within()`, `written_correctly(root)`, and `calculate()`, which walks parsed expressions instead of calling `eval` (not named `builtins.py`, which would shadow Python's own) |
 
-- `tools.py` — `args_model()` (signature → the Pydantic model that checks
-  arguments), `Tool` (the function, plus the model's JSON and the argument
-  check both read off it), `@tool`
-- `registry.py` — `Registry`: the tools an agent can use, and the three views
-  of them chapter 2's loop needs. Refuses a name already taken or one the API
-  won't accept; `prefix=` and `merge()` for combining sources; `subset()` by
-  name or tag; `invokers()` to hand `Act` tools that go through `invoke`
-- `invoke.py` — `invoke()`: one tool call, with a time limit, a size limit,
-  and every ending returned as a `Result` rather than raised — `ok`,
-  `bad_arguments`, `refused`, `unverified`, `timeout`, `broken`. `ToolError`
-  for a tool that ran and said no; `truncate()`; `Result.for_the_model` and
-  `Result.safe_to_retry`. `invoker()` is the adapter into chapter 2's
-  `Act(functions=)`, and the one place `for_the_model` is enforced rather than
-  merely computed — see the note above
-- `verify.py` — `verified()`: a copy of a tool with a check wrapped around it,
-  run after the call and looking at the world rather than at what the tool
-  said. `VerificationError`
-- `toolbox.py` — the standard tools: `http_get` (real network, real status
-  codes), `file_tools(root)` and `within()` for reading and writing confined
-  to one folder, `written_correctly(root)` as its check, and `calculate()`,
-  which walks parsed nodes instead of calling `eval`. Deliberately not named
-  `builtins.py`, which would shadow Python's own
+## How it connects
+
+**Builds on chapters 1 and 2 without changing their wiring.** Tools feed chapter 2's `Act`
+through `Registry.invokers()`, and chapter 1's `execute_tool_call()` still runs every call.
+
+| Before | Now |
+|---|---|
+| Tool JSON typed by hand (ch. 1) | Built from the signature, so it can't disagree with the function |
+| `except Exception: "Error: {e}"` (ch. 1) | Split by who can act on it: the model, or us |
+| A call that returns = success (ch. 1) | `verified()` checks the world |
+| `str(result)` sent in full (ch. 1) | `invoke` sends what fits and keeps the rest on `Result.value` |
+
+**Changed chapter 2.** `Observe`'s prompt had two clauses that caused bugs. It summarized away
+the second half of a refusal ("Try a larger nearby city"), and it converted 20 °C to 68 °F itself
+instead of letting the calculator tool do it. Both clauses are now replaced: `Observe` keeps what
+the tool said to do next, and converts or calculates nothing.
+
+**Changed later by `07_mcp`.** `Result.for_the_model` used to be computed and read by nothing, so
+a broken result's text still reached the model. That was rare while every tool was local. Over MCP,
+`broken` describes any failure a foreign server doesn't explain, so `invoker()` now enforces the
+flag.
+
+**Used by** `04_memory` (`remember` and `recall` are ordinary tools), `06_orchestration` (an
+agent wrapped as a tool), and `07_mcp` (the same `Tool` built from a remote schema).
+
+## Running it
+
+```bash
+conda activate agentic-forge
+# .env needs GROQ_API_KEY
+```
+
+Notebook 5 makes real HTTP requests, including to hosts that don't exist, on purpose.
+
+## Going deeper
+
+[`NOTES.md`](NOTES.md) has the full write-up of every finding and every change to earlier
+chapters.

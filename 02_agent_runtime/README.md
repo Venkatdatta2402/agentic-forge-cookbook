@@ -1,173 +1,186 @@
-# Agent Runtime
+# 02 · Agent Runtime
 
-**What:** A single runtime that executes different agentic design patterns —
-ReAct, Plan & Execute, ReWOO, Reflexion, Debate, Tree of Thoughts — without
-hardcoding any of them. The runtime only walks a declared loop and passes a
-conversation from one component to the next; every pattern is a different
-loop built from the same few primitives.
+> One small runtime that runs ReAct, Plan & Execute, ReWOO, LLM Compiler, Reflexion, Debate,
+> Tree of Thoughts and more, without hardcoding any of them.
 
-**Why:** Agentic patterns get taught as a catalogue of unrelated
-architectures. They aren't. ReWOO is LLM Compiler with the loop back removed —
-same components, same cost, and only one of them can notice it isn't finished.
-Self-Consistency and Debate have identical component lists and differ only in
-two booleans decided at runtime. Building one runtime that supports all of
-them, instead of one hardcoded loop per pattern, is the actual engineering
-problem this chapter solves.
+Agent patterns are usually taught as a catalogue of unrelated architectures. This chapter shows
+they aren't. Each pattern is the same few parts arranged in a different loop. The runtime just
+walks the loop it's given.
 
-## A note on which model these findings came from
+**Contents:** [The idea](#the-idea-in-one-picture) · [What you'll learn](#what-youll-learn) ·
+[Notebooks](#notebooks) · [Key ideas](#key-ideas) · [Patterns](#the-patterns) ·
+[Modules](#modules) · [How it connects](#how-it-connects) · [Running it](#running-it)
 
-Several passages here report things measured against a *specific* model, and one class of them
-matters enough to flag up front.
+---
 
-This chapter was largely built against **`llama-3.3-70b-versatile`**, which Groq has since retired
-for newer accounts. `DEFAULT_MODEL` is now **`openai/gpt-oss-120b`**, and the saved outputs were
-re-run against it.
+## The idea in one picture
 
-The findings about **tool-call syntax do not carry across.** llama-3.3 would, under pressure from
-a large schema, stop emitting tool calls at all and instead produce the call as *text*:
+Every agent does three things, in some order:
 
-```
-<function=delegate{"branches":[{"goal":"Get the current time in Tokyo",...
+```mermaid
+flowchart LR
+    O["<b>Observe</b><br/>bring something in<br/>and make it readable"] --> T["<b>Think</b><br/>decide, plan<br/>or critique"]
+    T --> A["<b>Act</b><br/>carry out the decision<br/>(tool, sub-agent, answer)"]
+    A --> O
 ```
 
-Near-correct JSON, in a wrapper the API rejects — five attempts running, and the run died. That is
-what drove the schema-trimming work: `delegate` from 2898 characters down to 1637, `replan` from
-1202 to about 250, guidance moved out of tool descriptions and into the system message.
+| Part | Its only job | Never does |
+|---|---|---|
+| **Observe** | Turns a user message or a raw tool result into something the conversation can read | Decide anything |
+| **Think** | Reasons over the conversation and produces a decision, a plan or a critique | Touch the outside world |
+| **Act** | Carries out what a Think decided: call a tool, start a sub-agent, finish | Decide anything |
 
-**gpt-oss-120b does none of this.** It emits `delegate` first try. So if you run these notebooks
-today you will not see the failure the text describes, and the schemas will look defensively small
-for no visible reason.
+A pattern is a **declared list** of these parts. This is ReAct, from
+[`patterns.py`](patterns.py) with the optional arguments left out:
 
-They are still the right size, for a reason that outlives any one model: **a tool schema is
-re-sent on every call, and it costs accuracy on every *other* tool in the list.** A single ReAct
-run measured through the API's own `usage` is 2466 tokens, of which 2394 are prompt. That is the
-durable lesson; the `<function=` wrapper is just the model that taught it.
+```python
+Runtime(
+    loop=[
+        Observe(event=request),          # read the request once
+        Think(tools=tools),              # decide the next step
+        Act(functions=functions),        # do it
+        Observe(),                       # read what happened
+    ],
+    repeat_from=1,                       # loop back to Think
+)
+```
 
-**The core idea:** every agent runtime does the same three things, in some
-order:
-- **Observe** — bring something in (a user event, a tool's raw effect) and
-  turn it into something the conversation can read. Never decides.
-- **Think** — reason over the conversation and produce a decision, a plan, or
-  a critique. The only component allowed to reason.
-- **Act** — change the outside world (call a tool, start a sub-agent, finish).
-  Never decides — only executes what a Think already decided.
+`runtime.py` never knows which pattern it's running. It doesn't even import `Observe`, `Think` or
+`Act`. All it needs is that each item in the loop has a `.run(conversation)` method. This one rule,
+"a component is anything with `.run(conversation)`", is what memory, context and MCP plug into in
+later chapters, without changing this one.
 
-`runtime.py` never knows which pattern it's running. It doesn't import
-`Observe`, `Think`, `Act`, or even `Conversation` — only that whatever is in
-its loop has a `.run(conversation)`.
+## What you'll learn
+
+- What separates an **agent** (a loop that decides what runs next) from a **workflow** (a fixed
+  pipeline)
+- How to split a tool-calling loop into Observe / Think / Act, and why raw tool output never goes
+  straight into the conversation
+- How to stop a run safely: budgets, **doom-loop detection**, and a graceful final answer
+- Two ways an agent notices it went wrong and tries again: repairing tool arguments, and
+  reflecting on an answer
+- Two kinds of plan, a plan of **tool calls** (a dependency graph) and a plan of **goals**
+- Sub-agents: when delegating is worth its cost, splitting a budget, debate and self-consistency
+- Ten named patterns as declared loops, and what this design *can't* express
 
 ## Notebooks
 
-1. `01_workflows_vs_agents.ipynb` — what actually distinguishes an AI
-   workflow (predetermined pipeline, each step expects a fixed shape of
-   output) from an AI agent (a loop that decides what runs next from the real
-   content of what it observes) ✅
-2. `02_the_agent_loop.ipynb` — pulls chapter 1's `asend_with_tools()` apart
-   into `Runtime`, `Observe`, `Think`, `Act`; why raw tool output never lands
-   in `messages`; why translating our own message roles back into the API's
-   takes real work; ReAct as a declared loop; then four budgets, doom-loop
-   detection, and a graceful stop ✅
-3. `03_retries_and_reflection.ipynb` — two ways the loop notices something is
-   wrong and goes again: `DebugThink` repairing tool arguments inside `Act`
-   where the conversation never sees it, and `ReflectionThink` critiquing an
-   answer without writing one. Builds `Loop` ✅
-4. `04_planning.ipynb` — two kinds of plan. A plan of **tool calls**, whose
-   `$stepN` references for not-yet-known arguments turn out to be the
-   dependency graph itself, executed by `Graph` — including the full compiler
-   loop, plan → graph → replan → answer. Then a plan of **goals**, which names
-   no tool, emits no decision, and leaves the how to a `Think` ✅
-5. `05_sub_agents.ipynb` — delegation as a tool call, and when it's worth its
-   cost; why a branch gets a self-contained goal and nothing else; splitting a
-   budget across branches; `persistent` × `broadcast` as four configurations,
-   including debate; self-consistency; `SelectThink` and beam search; bringing
-   a branch's whole working back as one block ✅
-6. `06_agent_patterns.ipynb` — ten named patterns as declared loops over
-   everything above, each citing where it was actually executed, plus an
-   honest account of what these components can't express — and of what
-   *constructing* a loop fails to prove about it ✅
+| # | Notebook | What it shows |
+|---|---|---|
+| 1 | [`01_workflows_vs_agents`](notebooks/01_workflows_vs_agents.ipynb) | A workflow expects a fixed shape at every step; an agent decides what runs next from what it actually sees |
+| 2 | [`02_the_agent_loop`](notebooks/02_the_agent_loop.ipynb) | Chapter 1's tool loop pulled apart into `Runtime`, `Observe`, `Think`, `Act`; ReAct as a declared loop; budgets, doom-loop detection and a graceful stop |
+| 3 | [`03_retries_and_reflection`](notebooks/03_retries_and_reflection.ipynb) | `DebugThink` repairs tool arguments out of the conversation's sight; `ReflectionThink` critiques an answer without writing one; `Loop` |
+| 4 | [`04_planning`](notebooks/04_planning.ipynb) | A plan of tool calls, where `$stepN` references *are* the dependency graph, run by `Graph` (plan → graph → replan → answer); then a plan of goals |
+| 5 | [`05_sub_agents`](notebooks/05_sub_agents.ipynb) | Delegation as a tool call; a self-contained goal per branch; budget splitting; `persistent` × `broadcast` (including debate); self-consistency; beam search |
+| 6 | [`06_agent_patterns`](notebooks/06_agent_patterns.ipynb) | Ten named patterns as declared loops, each citing where it was actually run, and an honest list of what these parts can't express |
 
-**A note on notebook count.** The repo's guideline is 2–5 notebooks per
-chapter. This one has 6, for the opposite reason `01_foundations` has 9: not a
-collection of independent primitives, but one topic that turned out to be
-large. Each notebook still builds one runnable thing against one real failure.
+## Key ideas
 
-## What this chapter does with chapter 1
+### Patterns are configurations, not architectures
+- **ReWOO is LLM Compiler with the loop back removed.** They have the same parts and the same
+  cost, but only LLM Compiler can notice it isn't finished and replan.
+- **Self-Consistency and Debate have identical parts.** They differ only in two settings:
+  whether branches see each other's answers (`broadcast`), and whether they stay alive for
+  another turn (`persistent`).
 
-Almost nothing here is invented from scratch. Most of it is a chapter 1
-primitive used again, extended, or deliberately departed from:
+Building one runtime that supports all of them is the real engineering problem. Writing one
+hardcoded loop per pattern would hide how closely they are related.
 
-| From `01_foundations` | What `02_agent_runtime` does with it |
-|---|---|
-| `Conversation` (nb 2) | Still the shared state, but gains roles the API has never heard of — `decision`, `plan`, `critique` — and non-message slots: `pending`, `step_outputs`, `remaining_budget`, `branches` |
-| `notes`, a non-message slot (nb 9) | The precedent for those slots: not everything the agent knows belongs in what the model is shown |
-| `asend_with_tools()` (nb 9) | Split into four components. Its `for _ in range(retries)` becomes `Runtime`'s `while not finished` |
-| Native tool-call messages (nb 6) | `Think._build_messages()` has to *reconstruct* them — the `tool_calls`/`tool_call_id` pairing is the signal that work is done, and inventing new roles destroyed it |
-| `execute_tool_call()` (nb 6) | Reused directly inside `Act.execute()`, Pydantic validation and all — never reimplemented |
-| `resolve_tools()`'s retry (nb 6) | Rethought. It re-asked the same model with the same context; `DebugThink` instead gets the JSON schema and every prior failed attempt, and its repairs never touch the conversation |
-| `extract()` + Pydantic (nb 5) | How every non-tool-calling Think returns structure: `Plan`, `ContinueOrFinish`, `Reflection`, `Selection` |
-| `count_tokens()` (nb 3) | Same measurement, opposite purpose: chapter 1 used it to decide what to *drop* from history, here it decides when to *stop* a run |
-| `temperature` / `top_p` (nb 1) | Per-branch, so several sub-agents can answer one question differently — the knobs used to generate disagreement rather than suppress it |
-| `asyncio.gather` (nb 8) | **Deliberately not used.** `Graph` and forking use `ThreadPoolExecutor`, because notebooks already run an event loop and library code starting its own conflicts with it. The work is blocking I/O, so threads lose nothing |
-| `Agent` / Loopy (nb 9) | The thing `Runtime` generalizes: one fixed loop becomes a declared list |
+### Raw tool output never lands in the conversation
+A tool can return thousands of tokens of JSON. `Observe` turns it into a short observation first.
+It copies values exactly, keeps what the tool said about what to do next, and converts nothing.
+That last rule came from a real bug, described under [How it connects](#how-it-connects).
 
-Two changes were made *to* chapter 1, both forced by this chapter:
+### Stopping is a feature
+A run has budgets (`max_iterations`, `max_tool_calls`, `max_tokens`, `max_seconds`) and
+**doom-loop detection**: the same tool call repeated, the same error twice, or oscillating between
+two calls. When either trips, the run doesn't just die. The Think gets one more turn without tools
+and answers from what it gathered, saying what it couldn't find.
 
-- `llm.py`'s clients pass `max_retries=8`. The SDK already retries HTTP 429s
-  with backoff, but its default of 2 assumes one call at a time — and this
-  chapter runs branches and tool calls concurrently, which bursts straight
-  through the free-tier tokens-per-minute cap.
-- `llm.py` gained `tool_call_failure()`, which turns Groq's rejection of a
-  malformed tool call into something a model can act on. `Think` needs it
-  because the `delegate` schema is the hardest thing in the repo to generate
-  correctly, and a generic "try again" gives the model nothing to correct.
+### A plan of tool calls is a dependency graph
+When a planned step needs the output of an earlier step, it writes `$step1`. Those references
+*are* the edges of a graph, so `Graph` can run independent steps at the same time and resolve
+each reference just before its step runs.
 
-Two changes were later made *to* this chapter, both forced by `03_tools`, and both
-in the same prompt — `observe.py`'s, which turns a raw tool result into an
-observation:
+### Threads, not `asyncio.gather`
+`Graph` and forking use a `ThreadPoolExecutor`. Notebooks already run an event loop, and library
+code that starts its own conflicts with it. The work is blocking network I/O, so threads lose
+nothing.
 
-- It now says to keep anything the tool itself said about what to do next. It
-  used to ask for "one plain factual sentence", which is right for a reading off
-  a sensor and wrong for a tool that refuses with a reason. `03_tools` gives
-  tools a way to fail usefully — "No weather station for Vestby. Try a larger
-  nearby city." — and the suggestion was being summarized away as commentary
-  before the model ever saw it.
-- It now also forbids changing a value at all. It used to say to use the
-  conversation "to phrase it correctly (e.g. which units, which entity)", which
-  was meant to stop mislabelling. Asked for a temperature in Fahrenheit, it read
-  as permission to convert one: `Observe` turned 20 °C into 68 °F itself, the
-  agent's `calculate` tool was never called, and the arithmetic ended up in no
-  tool result anywhere. A correct answer that nothing could check.
+### Tool schemas cost tokens on every call
+A single ReAct run measured through the API's own `usage` was 2,466 tokens, and 2,394 of them were
+prompt. Every tool's schema is re-sent on every call, and a large schema also makes the model
+worse at the *other* tools. That's why `delegate` was cut from 2,898 characters to 1,637, and
+`replan` from 1,202 to about 250.
 
-One change was later made by `05_context`, to `render()` in `think.py`, which
-flattens the conversation for every prompt that isn't `Think`'s own: `Observe`,
-`Graph`, `PlannerThink`, `SelectThink`, `ExpandThink`, `ReflectionThink`:
+## The patterns
 
-- It now writes a tool call's name as well as its arguments,
-  `decision: get_metrics({"service": "checkout-api"})`. A decision keeps the
-  tool's name in `tool` and only the arguments in `content`, and `render()`
-  wrote `content` alone, so two different tools called with the same
-  arguments rendered as the same line. The saved outputs in this chapter's
-  notebooks predate the fix.
+All ten are importable factories in [`patterns.py`](patterns.py). A factory fixes the settings
+that must be right (measured failures) and exposes only real choices.
 
-Groq's daily cap of 100k tokens is real and reachable — notebook 5's forking
-demos can spend a large share of it in one run. That is a quota limit, not a
-code failure; the fix is to run it again tomorrow.
+| Pattern | Factory | The loop in one line |
+|---|---|---|
+| ReAct | `react` | Think → Act → Observe, repeat |
+| Plan & Execute | `plan_and_execute` | Plan goals once, then a ReAct loop works toward them, able to replan |
+| ReWOO | `rewoo` | Plan every tool call, run them as a graph, answer once; no replanning |
+| LLM Compiler | `llm_compiler` | ReWOO plus a loop back: plan → graph → replan → answer |
+| Self-Refine | `self_refine` | Answer, critique, refine, for a set number of rounds |
+| Reflexion | `reflexion` | Attempt, reflect on what went wrong, attempt again |
+| Self-Consistency | `self_consistency` | Several independent branches answer; combine them |
+| Debate | `debate` | Branches that see each other's answers, over several turns |
+| Tree of Thoughts | `tree_of_thoughts` | Expand thoughts, score them, keep the best (beam search) |
+| Graph of Thoughts | `graph_of_thoughts` | Like Tree of Thoughts, with more than one parent per thought |
 
 ## Modules
 
-`runtime.py`, `observe.py`, `think.py`, and `act.py` were built incrementally
-as the notebooks needed them — same as every other chapter, no code before
-there's something to prove it against.
+Built step by step as the notebooks needed them. No code was written before something proved it
+was needed.
 
-- `runtime.py` — `Runtime` (declared loop, `repeat_from`, budgets, doom-loop
-  detection, graceful stop), `Loop` (bounded inner cycle, `count` or `until`),
-  `Graph` (dependency-scheduled plan execution)
-- `observe.py` — `Observe`: raw effect → observation, via a deterministic
-  extractor or an LLM fallback; merges forked branch results; resolves
-  `$stepN` references for the next planned step
-- `think.py` — `Think` (tool call, delegation, or answer), `PlannerThink`,
-  `ReflectionThink`, `SelectThink`, and `DebugThink`, which is deliberately
-  *not* a loop component
-- `act.py` — `Act`: executes `respond`, `tool_call`, `fork`, `advance_branch`,
-  and `prune` decisions. `execute()` is pure, so `Graph` can call it from
-  several threads at once
+| File | What's in it |
+|---|---|
+| [`runtime.py`](runtime.py) | `Runtime` (the declared loop, `repeat_from`, budgets, doom-loop detection, graceful stop), `Loop` (a bounded inner cycle), `Graph` (runs a plan by its dependencies) |
+| [`observe.py`](observe.py) | `Observe`: raw effect → observation, by a deterministic extractor or an LLM; merges branch results; resolves `$stepN` |
+| [`think.py`](think.py) | `Think` (tool call, delegation or answer), `PlannerThink`, `ReflectionThink`, `SelectThink`, `ExpandThink`, and `DebugThink`, which repairs arguments and is deliberately *not* a loop component |
+| [`act.py`](act.py) | `Act`: runs `respond`, `tool_call`, `fork`, `advance_branch` and `prune` decisions. `execute()` is pure, so `Graph` can call it from several threads |
+| [`patterns.py`](patterns.py) | The ten patterns as factories |
+
+## How it connects
+
+**Builds on `01_foundations`.** Almost nothing is new. Chapter 1's `asend_with_tools()` loop
+becomes `Runtime`. `execute_tool_call()` runs inside `Act` unchanged. `extract()` produces every
+structured decision (`Plan`, `Reflection`, `Selection`). `count_tokens()` now decides when to
+*stop* rather than what to drop.
+
+**Changed later, by chapters that found a bug:**
+
+| Change | Found by | What went wrong |
+|---|---|---|
+| `Observe` keeps what a tool says to do next | `03_tools` | "No weather station for Vestby. Try a larger nearby city." was being summarized down to its first half, so the model never saw the suggestion |
+| `Observe` must not change a value | `03_tools` | Asked for Fahrenheit, `Observe` converted 20 °C to 68 °F itself. The calculator tool was never called, and the arithmetic appears in no tool result |
+| `render()` writes the tool's name as well as its arguments | `05_context` | Two different tools called with the same arguments rendered as the same line |
+
+**Used by every later chapter.** Memory (`04`), context (`05`) and MCP reconnection (`07`) each
+arrive as a new component in the loop, and none of them needed a change here.
+
+## Which model the outputs came from
+
+Most of this chapter was built against **`llama-3.3-70b-versatile`**, and the saved outputs were
+re-run on **`openai/gpt-oss-120b`**. Under a large schema, llama-3.3 sometimes wrote a tool call as
+plain *text* (`<function=delegate{...`), which the API rejects. gpt-oss-120b doesn't do this, so the
+schema-trimming work can look unnecessary now. It is still the right size, because schema tokens
+are paid on every call.
+
+## Running it
+
+```bash
+conda activate agentic-forge
+# .env needs GROQ_API_KEY
+```
+
+Notebook 5's forking demos can use a large share of Groq's 100k-tokens-a-day free tier in one run.
+That's a quota limit, not a bug; run it again the next day.
+
+## Going deeper
+
+[`NOTES.md`](NOTES.md) has the full write-up, including a table of every chapter 1 primitive and
+what this chapter does with it.
