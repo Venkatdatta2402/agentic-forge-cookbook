@@ -1,0 +1,39 @@
+[project]
+name = "stats-desk"
+version = "0.1.0"
+description = "Agents that answer questions about India's official statistics, with sources and checks"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "openai>=2.46,<3",          # Groq's OpenAI-compatible API (async client)
+    "pydantic>=2.13,<3",
+    "mcp==2.2.0",               # MoSPI's MCP server, and our analysis server; 2.x API
+    "duckdb>=1.4,<2",           # the release file: stored tables, cards, profiles
+    "jsonschema>=4.26,<5",      # checks agents' arguments against the analysis server's schemas
+    "tiktoken>=0.13,<1",        # token estimates for the governor
+    "python-dotenv>=1.2,<2",
+    "langfuse>=5.2,<6",         # traces of every question (core/trace.py), when its keys are set
+    "fastapi>=0.115,<1",        # the web API (api/app.py)
+    "uvicorn>=0.32,<1",
+    "azure-cosmos>=4.9,<5",     # the store on Azure: records, key leases, counts (api/store.py)
+    "azure-identity>=1.19,<2",  # signs in to Cosmos DB by identity, no password
+    "aiohttp>=3.10,<4",         # azure-cosmos's async transport
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4",
+    "pytest-asyncio>=1.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/stats_desk"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
+pythonpath = ["."]          # the evals package, at the project's root

@@ -1,0 +1,127 @@
+{
+ "about": "The eval questions, with what a right answer says and what a good run has to find. Every number comes from an analysis on the release file (`call`); tests/test_evals.py runs each call and checks its numbers are in the result. Written 2026-11-11 from release 'annual 2025 (and 2024); monthly to 2026-09'. None of these questions or numbers may appear in any agent's instructions or tool descriptions. Q1 is the question the agents were tuned on during development (live runs 1-3): its score is not a clean test.",
+ "release": "annual 2025 (and 2024); monthly to 2026-09",
+ "measures": {"usual": ["usual status", "PS+SS"], "weekly": ["weekly status", "CWS"]},
+ "questions": [
+  {"id": "Q1", "kind": "gap", "seen_in_development": true,
+   "question": "Why do young women in cities struggle to find work?",
+   "measure": "usual",
+   "points": [
+    {"id": "P1", "says": "unemployment of 15-29 year olds in cities, 2025: women 18.9%, men 11.8%", "numbers": ["18.9", "11.8"],
+     "call": {"tool": "gap", "args": {"table": "ur_annual", "field": "gender", "a": "female", "b": "male", "across": "sector", "where": {"age": "15-29 years"}}}},
+    {"id": "P2", "says": "the gender gap is an urban one: +7.1 points in cities, +0.4 in villages", "numbers": ["7.1", "0.4"],
+     "call": {"tool": "gap", "args": {"table": "ur_annual", "field": "gender", "a": "female", "b": "male", "across": "sector", "where": {"age": "15-29 years"}}}},
+    {"id": "P3", "says": "few young urban women are in the labour force at all: 23.2%, against 60.9% of young urban men", "numbers": ["23.2", "60.9"],
+     "call": {"tool": "gap", "args": {"table": "lfpr_annual", "field": "gender", "a": "female", "b": "male", "across": "sector", "where": {"age": "15-29 years"}}}}
+   ],
+   "steps": [
+    {"id": "S1", "find": "unemployment of young urban women against young urban men", "table": "ur_annual", "numbers": ["18.9", "11.8"]},
+    {"id": "S2", "find": "how many young urban women are in the labour force", "table": "lfpr_annual", "numbers": ["23.2"]}
+   ],
+   "checks": [{"id": "no cause read in", "kind": "no_cause_words"}]},
+
+  {"id": "Q2", "kind": "trend",
+   "question": "Is unemployment rising in 2026?",
+   "measure": null,
+   "points": [
+    {"id": "P1", "says": "September 2026: 5.0%, down from 5.2% a year earlier", "numbers": ["5", "5.2"],
+     "call": {"tool": "change", "args": {"table": "ur_monthly"}}},
+    {"id": "P2", "says": "the monthly figures stay between 4.7% and 5.6% over the series: no rise", "numbers": ["4.7", "5.6"],
+     "call": {"tool": "series", "args": {"table": "ur_monthly"}}}
+   ],
+   "steps": [
+    {"id": "S1", "find": "the latest month against the same month a year earlier", "table": "ur_monthly", "numbers": ["5.2", "5"]},
+    {"id": "S2", "find": "the series month by month", "table": "ur_monthly", "numbers": ["4.7", "5.6"]}
+   ],
+   "checks": [{"id": "says March 2026 is not published", "kind": "says_any", "words": ["march", "2026-03"]}]},
+
+  {"id": "Q3", "kind": "states",
+   "question": "Where in India are women least likely to be in the labour force?",
+   "measure": "usual",
+   "points": [
+    {"id": "P1", "says": "Delhi is lowest: 13.1% of women in the labour force in 2025", "numbers": ["13.1"],
+     "call": {"tool": "compare", "args": {"table": "lfpr_annual", "by": "state", "where": {"gender": "female"}}}},
+    {"id": "P2", "says": "against 40% for women in all of India", "numbers": ["40"],
+     "call": {"tool": "compare", "args": {"table": "lfpr_annual", "by": "state", "where": {"gender": "female"}}}},
+    {"id": "P3", "says": "the next lowest large states: Haryana 23.8%, Bihar 24.7%", "numbers": ["23.8", "24.7"],
+     "call": {"tool": "compare", "args": {"table": "lfpr_annual", "by": "state", "where": {"gender": "female"}}}}
+   ],
+   "steps": [
+    {"id": "S1", "find": "women's participation in every state", "table": "lfpr_annual", "numbers": ["13.1", "66.7"]}
+   ],
+   "checks": []},
+
+  {"id": "Q4", "kind": "not published",
+   "question": "What is the unemployment rate of Muslim women in Kerala?",
+   "measure": "usual",
+   "points": [
+    {"id": "P1", "says": "the nearest published figures: Muslim women in all of India 3.6%", "numbers": ["3.6"],
+     "call": {"tool": "value", "args": {"table": "ur_annual", "where": {"religion": "Islam", "gender": "female"}}}},
+    {"id": "P2", "says": "and all women in Kerala 6.4%", "numbers": ["6.4"],
+     "call": {"tool": "value", "args": {"table": "ur_annual", "where": {"state": "Kerala", "gender": "female"}}}}
+   ],
+   "steps": [
+    {"id": "S1", "find": "asks for the combination and is told it is not published", "refused_with": "not published together"},
+    {"id": "S2", "find": "the nearest published figure", "table": "ur_annual", "numbers": ["3.6"]}
+   ],
+   "checks": [{"id": "says it is not published", "kind": "says_any",
+               "words": ["not published", "isn't published", "is not available", "not available", "doesn't publish", "does not publish", "no published"]}]},
+
+  {"id": "Q5", "kind": "trap: true by definition",
+   "question": "Do states where more people are in the labour force also have more people in work?",
+   "measure": "usual",
+   "points": [
+    {"id": "P1", "says": "across states the two go together almost exactly (r = 0.99)", "numbers": ["0.99"],
+     "call": {"tool": "relate", "args": {"x_table": "lfpr_annual", "y_table": "wpr_annual"}}}
+   ],
+   "steps": [
+    {"id": "S1", "find": "the two across states", "numbers": ["0.99"]}
+   ],
+   "checks": [{"id": "says it is true by definition", "kind": "says_any",
+               "words": ["by definition", "built in", "built-in", "computed from", "mechanical", "by construction", "follows from"]}]},
+
+  {"id": "Q6", "kind": "trap: one year only",
+   "question": "In Nagaland, are women more likely than men to be unemployed?",
+   "measure": "usual",
+   "points": [
+    {"id": "P1", "says": "in 2025 yes: women 8.4%, men 5.3%", "numbers": ["8.4", "5.3"],
+     "call": {"tool": "gap", "args": {"table": "ur_annual", "field": "gender", "a": "female", "b": "male", "where": {"state": "Nagaland"}}}},
+    {"id": "P2", "says": "but in 2024 the other way round: women 8.6%, men 10.3%", "numbers": ["8.6", "10.3"],
+     "call": {"tool": "gap", "args": {"table": "ur_annual", "field": "gender", "a": "female", "b": "male", "where": {"state": "Nagaland", "period": "2024"}}}}
+   ],
+   "steps": [
+    {"id": "S1", "find": "women against men in Nagaland, 2025", "table": "ur_annual", "numbers": ["8.4", "5.3"]},
+    {"id": "S2", "find": "the same in 2024", "numbers": ["8.6", "10.3"]}
+   ],
+   "checks": [{"id": "says it reversed in 2024", "kind": "points", "points": ["P2"]}]},
+
+  {"id": "Q7", "kind": "trap: small-sample outlier",
+   "question": "Which state has the highest unemployment among women?",
+   "measure": "usual",
+   "points": [
+    {"id": "P1", "says": "the highest figure is Andaman & Nicobar's 16.4%, set apart as a small-sample outlier", "numbers": ["16.4"],
+     "call": {"tool": "compare", "args": {"table": "ur_annual", "by": "state", "where": {"gender": "female"}}}},
+    {"id": "P2", "says": "the highest of the rest: Chandigarh 14.2%", "numbers": ["14.2"],
+     "call": {"tool": "compare", "args": {"table": "ur_annual", "by": "state", "where": {"gender": "female"}}}}
+   ],
+   "steps": [
+    {"id": "S1", "find": "women's unemployment in every state", "table": "ur_annual", "numbers": ["16.4", "14.2"]}
+   ],
+   "checks": [{"id": "flags the outlier", "kind": "says_any",
+               "words": ["outlier", "small sample", "small-sample", "small samples", "unreliable", "caution", "noisy"]}]},
+
+  {"id": "Q8", "kind": "trap: cause",
+   "question": "Does getting a degree make people more likely to be unemployed?",
+   "measure": "usual",
+   "points": [
+    {"id": "P1", "says": "graduates' unemployment is 11.2% in 2025, against 3.1% for everyone", "numbers": ["11.2", "3.1"],
+     "call": {"tool": "compare", "args": {"table": "ur_annual", "by": "education"}}}
+   ],
+   "steps": [
+    {"id": "S1", "find": "unemployment by education", "table": "ur_annual", "numbers": ["11.2", "0.3"]}
+   ],
+   "checks": [{"id": "no cause read in", "kind": "no_cause_words"},
+              {"id": "no bare yes or no to a cause", "kind": "no_bare_verdict"},
+              {"id": "says the figures can't show cause", "kind": "cannot_tell"}]}
+ ]
+}

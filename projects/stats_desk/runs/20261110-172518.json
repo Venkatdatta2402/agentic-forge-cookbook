@@ -1,0 +1,441 @@
+{
+ "question": "Why do young women in cities struggle to find work?",
+ "brief": {
+  "question": "Why do young women in cities struggle to find work?",
+  "answer": "Young women in urban areas have markedly lower labour force participation and higher unemployment than their rural peers. In 2025, the LFPR for urban women aged 15-29 was 23.2 % versus 29.3 % in rural areas (‑6.1 pp), while the unemployment rate was 18.9 % in urban areas compared with 8.6 % in rural areas (+10.3 pp).",
+  "findings": [
+   {
+    "id": "f1",
+    "task": "Compare labour force participation rate (LFPR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.",
+    "summary": "In 2025, urban young women (age 15-29) had an LFPR of 23.2 %, while rural young women had 29.3 %, a difference of -6.1 percentage points.",
+    "results": [
+     "gap-20dcc9"
+    ],
+    "caveats": "",
+    "verdict": "holds",
+    "reason": "Urban young women’s LFPR is 23.2% and rural is 29.3%, giving an urban‑minus‑rural gap of -6.1 percentage points.",
+    "checked_with": [
+     "gap-8c422b"
+    ]
+   },
+   {
+    "id": "f2",
+    "task": "Compare unemployment rate (UR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.",
+    "summary": "In 2025, the unemployment rate for urban young women was 18.9% and for rural young women 8.6%, a difference of 10.3 percentage points higher in urban areas.",
+    "results": [
+     "gap-2881f3"
+    ],
+    "caveats": "",
+    "verdict": null,
+    "reason": "the skeptic could not finish: reached its token budget of 10,000",
+    "checked_with": []
+   }
+  ],
+  "ruled_out": "",
+  "cannot_tell": "The figures show the extent of participation and unemployment gaps but cannot explain why these gaps exist, such as skill mismatches, discrimination, or sectoral composition.",
+  "all_findings": {
+   "f1": {
+    "id": "f1",
+    "task": "Compare labour force participation rate (LFPR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.",
+    "summary": "In 2025, urban young women (age 15-29) had an LFPR of 23.2 %, while rural young women had 29.3 %, a difference of -6.1 percentage points.",
+    "results": [
+     "gap-20dcc9"
+    ],
+    "caveats": "",
+    "verdict": "holds",
+    "reason": "Urban young women’s LFPR is 23.2% and rural is 29.3%, giving an urban‑minus‑rural gap of -6.1 percentage points.",
+    "checked_with": [
+     "gap-8c422b"
+    ]
+   },
+   "f2": {
+    "id": "f2",
+    "task": "Compare unemployment rate (UR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.",
+    "summary": "In 2025, the unemployment rate for urban young women was 18.9% and for rural young women 8.6%, a difference of 10.3 percentage points higher in urban areas.",
+    "results": [
+     "gap-2881f3"
+    ],
+    "caveats": "",
+    "verdict": null,
+    "reason": "the skeptic could not finish: reached its token budget of 10,000",
+    "checked_with": []
+   }
+  },
+  "evidence": {
+   "gap-8c422b": "result gap-8c422b\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points",
+   "gap-20dcc9": "result gap-20dcc9\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points",
+   "gap-2881f3": "result gap-2881f3\nunemployment rate (UR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 18.9, rural 8.6; urban minus rural = +10.3 points"
+  },
+  "stopped": null,
+  "usage": {
+   "calls": 20,
+   "rejected": 5,
+   "total": 50286,
+   "prompt": 48830,
+   "completion": 1456,
+   "by_model": {
+    "openai/gpt-oss-120b": 50286
+   },
+   "by_agent": {
+    "lead": 13238,
+    "analyst f1": 7667,
+    "skeptic f1": 8074,
+    "analyst f2": 7195,
+    "skeptic f2": 14112
+   },
+   "model_seconds": 20.4,
+   "waited_seconds": 310.9,
+   "seconds": 331.5
+  }
+ },
+ "transcripts": {
+  "lead": [
+   {
+    "role": "user",
+    "content": "profiles: LFPR_annual_2025, LFPR_monthly_2026-09, UR_annual_2025, UR_monthly_2026-09, WPR_annual_2025, WPR_monthly_2026-09"
+   },
+   {
+    "role": "user",
+    "content": "Why do young women in cities struggle to find work?"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_39770883-28da-4110-8d5f-4027339abc06",
+      "name": "profile",
+      "arguments": "{\"name\":\"LFPR_annual_2025\"}",
+      "result": "result profile-816577\nPROFILE labour force participation rate (LFPR), annual, 2025, usual status (PS+SS), ages 15+ unless stated\nheadline (All India, everyone): 59.3%\non the other measure, current weekly status (CWS): 55.7% -- never mix the two\nprevious year (2024): 59.6%\nlargest gaps from the total:\n  - gender = male: 79.1% vs 59.3% overall (+19.8 points)\n  - gender = female: 40% vs 59.3% overall (-19.3 points)\n  - education = 6.diploma/ certificate course: 78.6% vs 59.3% overall (+19.3 points)\ngaps that change most across another field:\n  - The gap women minus men (-39.1 points overall) varies across state: from -58.4 (Delhi) to -9.9 (Ladakh)\n  - The gap youth (15-29) minus all 15+ (-13.3 points overall) varies across state: from -27.5 (Mizoram) to +3.5 (Goa); set apart as outliers (possibly small, noisy samples): Ladakh -34.2\n  - The gap urban minus rural (-10.6 points overall) varies across state: from -23.5 (Sikkim) to +2.2 (Goa); set apart as outliers (possibly small, noisy samples): Chandigarh +56.1\nstrongest correlations across states:\n  - LFPR female and LFPR male: r = 0.41 over 36 states\n  - LFPR urban and LFPR rural: r = 0.38 over 36 states -- rank correlation 0.67 disagrees; driven by Chandigarh\n  - LFPR and UR: r = -0.15 over 36 states\nbiggest changes since last release:\n  - state = Andaman & Nicobar Islands: +6.5 points since 2024\n  - state = Ladakh: +6.1 points since 2024\n  - state = Uttarakhand: -5.6 points since 2024\nnot findings (true by definition): LFPR 15-29 years vs LFPR 15 years and above r = 0.66, because the age bands overlap (15-29 years, 15 years and above); LFPR vs WPR r = 0.99, because WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))\neducation figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band\nAcross-state correlations describe states (people's chances there), not causes.",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_39770883-28da-4110-8d5f-4027339abc06",
+    "name": "profile",
+    "kind": "ok",
+    "content": "result profile-816577\nPROFILE labour force participation rate (LFPR), annual, 2025, usual status (PS+SS), ages 15+ unless stated\nheadline (All India, everyone): 59.3%\non the other measure, current weekly status (CWS): 55.7% -- never mix the two\nprevious year (2024): 59.6%\nlargest gaps from the total:\n  - gender = male: 79.1% vs 59.3% overall (+19.8 points)\n  - gender = female: 40% vs 59.3% overall (-19.3 points)\n  - education = 6.diploma/ certificate course: 78.6% vs 59.3% overall (+19.3 points)\ngaps that change most across another field:\n  - The gap women minus men (-39.1 points overall) varies across state: from -58.4 (Delhi) to -9.9 (Ladakh)\n  - The gap youth (15-29) minus all 15+ (-13.3 points overall) varies across state: from -27.5 (Mizoram) to +3.5 (Goa); set apart as outliers (possibly small, noisy samples): Ladakh -34.2\n  - The gap urban minus rural (-10.6 points overall) varies across state: from -23.5 (Sikkim) to +2.2 (Goa); set apart as outliers (possibly small, noisy samples): Chandigarh +56.1\nstrongest correlations across states:\n  - LFPR female and LFPR male: r = 0.41 over 36 states\n  - LFPR urban and LFPR rural: r = 0.38 over 36 states -- rank correlation 0.67 disagrees; driven by Chandigarh\n  - LFPR and UR: r = -0.15 over 36 states\nbiggest changes since last release:\n  - state = Andaman & Nicobar Islands: +6.5 points since 2024\n  - state = Ladakh: +6.1 points since 2024\n  - state = Uttarakhand: -5.6 points since 2024\nnot findings (true by definition): LFPR 15-29 years vs LFPR 15 years and above r = 0.66, because the age bands overlap (15-29 years, 15 years and above); LFPR vs WPR r = 0.99, because WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))\neducation figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band\nAcross-state correlations describe states (people's chances there), not causes."
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_f101839f-5457-4c93-b432-fa29018daf20",
+      "name": "profile",
+      "arguments": "{\"name\":\"UR_annual_2025\"}",
+      "result": "result profile-d14e59\nPROFILE unemployment rate (UR), annual, 2025, usual status (PS+SS), ages 15+ unless stated\nheadline (All India, everyone): 3.1%\non the other measure, current weekly status (CWS): 5.3% -- never mix the two\nprevious year (2024): 3.2%\nlargest gaps from the total:\n  - education = 7.graduate: 11.2% vs 3.1% overall (+8.1 points)\n  - state = Andaman & Nicobar Islands: 10% vs 3.1% overall (+6.9 points)\n  - education = 8.post graduate & above: 10% vs 3.1% overall (+6.9 points)\ngaps that change most across another field:\n  - The gap youth (15-29) minus all 15+ (+6.8 points overall) varies across state: from +1.6 (Gujarat) to +21.2 (Andaman & Nicobar Islands)\n  - The gap women minus men (+0.0 points overall) varies across education: from -1.1 (3.middle) to +10.6 (8.post graduate & above)\n  - The gap urban minus rural (+2.4 points overall) varies across state: from -0.7 (Punjab) to +7.6 (Rajasthan); set apart as outliers (possibly small, noisy samples): Arunachal Pradesh +10.7; Goa -5.8; Nagaland +8.5\nstrongest correlations across states:\n  - UR female and UR male: r = 0.51 over 36 states\n  - UR urban and UR rural: r = 0.40 over 36 states\n  - LFPR and UR: r = -0.15 over 36 states\nbiggest changes since last release:\n  - state = Delhi: +3.7 points since 2024\n  - state = Nagaland: -2.8 points since 2024\n  - state = Lakshadweep: -2.6 points since 2024\nnot findings (true by definition): UR 15-29 years vs UR 15 years and above r = 0.82, because the age bands overlap (15-29 years, 15 years and above); UR vs WPR r = -0.30, because WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))\neducation figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band\nAcross-state correlations describe states (people's chances there), not causes.",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_f101839f-5457-4c93-b432-fa29018daf20",
+    "name": "profile",
+    "kind": "ok",
+    "content": "result profile-d14e59\nPROFILE unemployment rate (UR), annual, 2025, usual status (PS+SS), ages 15+ unless stated\nheadline (All India, everyone): 3.1%\non the other measure, current weekly status (CWS): 5.3% -- never mix the two\nprevious year (2024): 3.2%\nlargest gaps from the total:\n  - education = 7.graduate: 11.2% vs 3.1% overall (+8.1 points)\n  - state = Andaman & Nicobar Islands: 10% vs 3.1% overall (+6.9 points)\n  - education = 8.post graduate & above: 10% vs 3.1% overall (+6.9 points)\ngaps that change most across another field:\n  - The gap youth (15-29) minus all 15+ (+6.8 points overall) varies across state: from +1.6 (Gujarat) to +21.2 (Andaman & Nicobar Islands)\n  - The gap women minus men (+0.0 points overall) varies across education: from -1.1 (3.middle) to +10.6 (8.post graduate & above)\n  - The gap urban minus rural (+2.4 points overall) varies across state: from -0.7 (Punjab) to +7.6 (Rajasthan); set apart as outliers (possibly small, noisy samples): Arunachal Pradesh +10.7; Goa -5.8; Nagaland +8.5\nstrongest correlations across states:\n  - UR female and UR male: r = 0.51 over 36 states\n  - UR urban and UR rural: r = 0.40 over 36 states\n  - LFPR and UR: r = -0.15 over 36 states\nbiggest changes since last release:\n  - state = Delhi: +3.7 points since 2024\n  - state = Nagaland: -2.8 points since 2024\n  - state = Lakshadweep: -2.6 points since 2024\nnot findings (true by definition): UR 15-29 years vs UR 15 years and above r = 0.82, because the age bands overlap (15-29 years, 15 years and above); UR vs WPR r = -0.30, because WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))\neducation figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band\nAcross-state correlations describe states (people's chances there), not causes."
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_ee95e679-4372-4a76-80cf-d54406a87153",
+      "name": "ask_analyst",
+      "arguments": "{\"task\":\"Compare labour force participation rate (LFPR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.\"}",
+      "result": "f1 -- task: Compare labour force participation rate (LFPR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.\nfinding: In 2025, urban young women (age 15-29) had an LFPR of 23.2 %, while rural young women had 29.3 %, a difference of -6.1 percentage points.\nskeptic: holds -- Urban young women’s LFPR is 23.2% and rural is 29.3%, giving an urban‑minus‑rural gap of -6.1 percentage points.\nresults: gap-20dcc9, gap-8c422b",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_ee95e679-4372-4a76-80cf-d54406a87153",
+    "name": "ask_analyst",
+    "kind": "ok",
+    "content": "f1 -- task: Compare labour force participation rate (LFPR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.\nfinding: In 2025, urban young women (age 15-29) had an LFPR of 23.2 %, while rural young women had 29.3 %, a difference of -6.1 percentage points.\nskeptic: holds -- Urban young women’s LFPR is 23.2% and rural is 29.3%, giving an urban‑minus‑rural gap of -6.1 percentage points.\nresults: gap-20dcc9, gap-8c422b"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_1055611f-2d21-43e7-aa15-8a06f62abf09",
+      "name": "ask_analyst",
+      "arguments": "{\"task\":\"Compare unemployment rate (UR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.\"}",
+      "result": "f2 -- task: Compare unemployment rate (UR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.\nfinding: In 2025, the unemployment rate for urban young women was 18.9% and for rural young women 8.6%, a difference of 10.3 percentage points higher in urban areas.\nskeptic: not checked (the skeptic could not finish: reached its token budget of 10,000)\nresults: gap-2881f3",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_1055611f-2d21-43e7-aa15-8a06f62abf09",
+    "name": "ask_analyst",
+    "kind": "ok",
+    "content": "f2 -- task: Compare unemployment rate (UR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.\nfinding: In 2025, the unemployment rate for urban young women was 18.9% and for rural young women 8.6%, a difference of 10.3 percentage points higher in urban areas.\nskeptic: not checked (the skeptic could not finish: reached its token budget of 10,000)\nresults: gap-2881f3"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_a4368996-2529-40aa-a5b1-f2946c256d5d",
+      "name": "submit",
+      "arguments": "{\"answer\":\"Young women in urban areas have markedly lower labour force participation and higher unemployment than their rural peers. In 2025, the LFPR for urban women aged 15-29 was 23.2 % versus 29.3 % in rural areas (‑6.1 pp), while the unemployment rate was 18.9 % in urban areas compared with 8.6 % in rural areas (+10.3 pp).\",\"cannot_tell\":\"The figures show the extent of participation and unemployment gaps but cannot explain why these gaps exist, such as skill mismatches, discrimination, or sectoral composition.\",\"findings\":[\"f1\",\"f2\"]}",
+      "result": "Submitted.",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   }
+  ],
+  "analyst f1": [
+   {
+    "role": "user",
+    "content": "result tables-bf21a9\nrelease: annual 2025 (and 2024); monthly to 2026-09\nlfpr_annual: labour force participation rate (LFPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nlfpr_monthly: labour force participation rate (LFPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nur_annual: unemployment rate (UR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nur_monthly: unemployment rate (UR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nwpr_annual: worker population ratio (WPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nwpr_monthly: worker population ratio (WPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nprofiles: LFPR_annual_2025, LFPR_monthly_2026-09, UR_annual_2025, UR_monthly_2026-09, WPR_annual_2025, WPR_monthly_2026-09\nfields left out of `where` are at their total (person, rural + urban, All India, all); age is 15 years and above, measure PS+SS, period the latest, unless set\nmeasure values: CWS, PS+SS\nstate values: All India, Andaman & Nicobar Islands, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra & Nagar Haveli & Daman & Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal\ngender values: female, male, person\nsector values: rural, rural + urban, urban\nage values: 15 years and above, 15-29 years, 15-59 years, All ages\neducation values: 1.not literate, 2.literate & upto primary, 3.middle, 4.secondary, 5.higher secondary, 6.diploma/ certificate course, 7.graduate, 8.post graduate & above, 9.secondary & above, all\nreligion values: Christianity, Hinduism, Islam, Sikhism, all\nsocial values: all, other backward class, others, scheduled caste, scheduled tribe"
+   },
+   {
+    "role": "user",
+    "content": "Task from the lead: Compare labour force participation rate (LFPR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference."
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_4b43170d-e3e3-45b1-a1a3-df3e294cdfff",
+      "name": "gap",
+      "arguments": "{\"a\":\"urban\",\"b\":\"rural\",\"field\":\"sector\",\"table\":\"lfpr_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\",\"period\":\"2025\"}}",
+      "result": "result gap-20dcc9\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_4b43170d-e3e3-45b1-a1a3-df3e294cdfff",
+    "name": "gap",
+    "kind": "ok",
+    "content": "result gap-20dcc9\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_b0dfdf54-08ad-41bb-83c7-a640aa273c22",
+      "name": "submit",
+      "arguments": "{\"caveats\":\"\",\"results\":[\"gap-20dcc9\"],\"summary\":\"In 2025, urban young women (age 15-29) had an LFPR of 23.2 %, while rural young women had 29.3 %, a difference of -6.1 percentage points.\"}",
+      "result": "Submitted.",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   }
+  ],
+  "skeptic f1": [
+   {
+    "role": "user",
+    "content": "result tables-bf21a9\nrelease: annual 2025 (and 2024); monthly to 2026-09\nlfpr_annual: labour force participation rate (LFPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nlfpr_monthly: labour force participation rate (LFPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nur_annual: unemployment rate (UR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nur_monthly: unemployment rate (UR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nwpr_annual: worker population ratio (WPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nwpr_monthly: worker population ratio (WPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nprofiles: LFPR_annual_2025, LFPR_monthly_2026-09, UR_annual_2025, UR_monthly_2026-09, WPR_annual_2025, WPR_monthly_2026-09\nfields left out of `where` are at their total (person, rural + urban, All India, all); age is 15 years and above, measure PS+SS, period the latest, unless set\nmeasure values: CWS, PS+SS\nstate values: All India, Andaman & Nicobar Islands, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra & Nagar Haveli & Daman & Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal\ngender values: female, male, person\nsector values: rural, rural + urban, urban\nage values: 15 years and above, 15-29 years, 15-59 years, All ages\neducation values: 1.not literate, 2.literate & upto primary, 3.middle, 4.secondary, 5.higher secondary, 6.diploma/ certificate course, 7.graduate, 8.post graduate & above, 9.secondary & above, all\nreligion values: Christianity, Hinduism, Islam, Sikhism, all\nsocial values: all, other backward class, others, scheduled caste, scheduled tribe"
+   },
+   {
+    "role": "user",
+    "content": "The analyst's task: Compare labour force participation rate (LFPR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.\nFinding: In 2025, urban young women (age 15-29) had an LFPR of 23.2 %, while rural young women had 29.3 %, a difference of -6.1 percentage points.\n\nThe results it cites:\nresult gap-20dcc9\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_14f7913a-b62c-461c-ad90-02893cd21977",
+      "name": "gap",
+      "arguments": "{\"a\":\"urban\",\"b\":\"rural\",\"field\":\"sector\",\"table\":\"lfpr_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\",\"measure\":\"PS+SS\",\"period\":\"2025\"}}",
+      "result": "result gap-8c422b\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_14f7913a-b62c-461c-ad90-02893cd21977",
+    "name": "gap",
+    "kind": "ok",
+    "content": "result gap-8c422b\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_20a0a4db-1bda-453c-82b6-bf7ac93ea1da",
+      "name": "submit",
+      "arguments": "{\"reason\":\"Urban young women’s LFPR is 23.2% and rural is 29.3%, giving an urban‑minus‑rural gap of -6.1 percentage points.\",\"results\":[\"gap-8c422b\"],\"verdict\":\"holds\"}",
+      "result": "Submitted.",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   }
+  ],
+  "analyst f2": [
+   {
+    "role": "user",
+    "content": "result tables-bf21a9\nrelease: annual 2025 (and 2024); monthly to 2026-09\nlfpr_annual: labour force participation rate (LFPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nlfpr_monthly: labour force participation rate (LFPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nur_annual: unemployment rate (UR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nur_monthly: unemployment rate (UR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nwpr_annual: worker population ratio (WPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nwpr_monthly: worker population ratio (WPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nprofiles: LFPR_annual_2025, LFPR_monthly_2026-09, UR_annual_2025, UR_monthly_2026-09, WPR_annual_2025, WPR_monthly_2026-09\nfields left out of `where` are at their total (person, rural + urban, All India, all); age is 15 years and above, measure PS+SS, period the latest, unless set\nmeasure values: CWS, PS+SS\nstate values: All India, Andaman & Nicobar Islands, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra & Nagar Haveli & Daman & Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal\ngender values: female, male, person\nsector values: rural, rural + urban, urban\nage values: 15 years and above, 15-29 years, 15-59 years, All ages\neducation values: 1.not literate, 2.literate & upto primary, 3.middle, 4.secondary, 5.higher secondary, 6.diploma/ certificate course, 7.graduate, 8.post graduate & above, 9.secondary & above, all\nreligion values: Christianity, Hinduism, Islam, Sikhism, all\nsocial values: all, other backward class, others, scheduled caste, scheduled tribe"
+   },
+   {
+    "role": "user",
+    "content": "Task from the lead: Compare unemployment rate (UR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference."
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_fc9fcb7d-0b9b-42ec-b3e8-3e6d4ce31600",
+      "name": "gap",
+      "arguments": "{\"a\":\"urban\",\"b\":\"rural\",\"field\":\"sector\",\"table\":\"ur_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\",\"period\":\"2025\"}}",
+      "result": "result gap-2881f3\nunemployment rate (UR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 18.9, rural 8.6; urban minus rural = +10.3 points",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_fc9fcb7d-0b9b-42ec-b3e8-3e6d4ce31600",
+    "name": "gap",
+    "kind": "ok",
+    "content": "result gap-2881f3\nunemployment rate (UR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 18.9, rural 8.6; urban minus rural = +10.3 points"
+   },
+   {
+    "role": "decision",
+    "type": "respond",
+    "content": "{\n  \"summary\": \"In 2025, the unemployment rate for urban young women was 18.9% and for rural young women 8.6%, a difference of 10.3 percentage points higher in urban areas.\",\n  \"results\": [\"gap-2881f3\"],\n  \"caveats\": \"\"\n}",
+    "applied": true
+   },
+   {
+    "role": "assistant",
+    "content": "{\n  \"summary\": \"In 2025, the unemployment rate for urban young women was 18.9% and for rural young women 8.6%, a difference of 10.3 percentage points higher in urban areas.\",\n  \"results\": [\"gap-2881f3\"],\n  \"caveats\": \"\"\n}"
+   },
+   {
+    "role": "user",
+    "content": "Call `submit` now with that result. Do not reply in text."
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_88a3980c-47b0-4a7b-bb2b-105f625df317",
+      "name": "submit",
+      "arguments": "{\"caveats\":\"\",\"results\":[\"gap-2881f3\"],\"summary\":\"In 2025, the unemployment rate for urban young women was 18.9% and for rural young women 8.6%, a difference of 10.3 percentage points higher in urban areas.\"}",
+      "result": "Submitted.",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   }
+  ],
+  "skeptic f2": [
+   {
+    "role": "user",
+    "content": "result tables-bf21a9\nrelease: annual 2025 (and 2024); monthly to 2026-09\nlfpr_annual: labour force participation rate (LFPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nlfpr_monthly: labour force participation rate (LFPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nur_annual: unemployment rate (UR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nur_monthly: unemployment rate (UR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nwpr_annual: worker population ratio (WPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nwpr_monthly: worker population ratio (WPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nprofiles: LFPR_annual_2025, LFPR_monthly_2026-09, UR_annual_2025, UR_monthly_2026-09, WPR_annual_2025, WPR_monthly_2026-09\nfields left out of `where` are at their total (person, rural + urban, All India, all); age is 15 years and above, measure PS+SS, period the latest, unless set\nmeasure values: CWS, PS+SS\nstate values: All India, Andaman & Nicobar Islands, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra & Nagar Haveli & Daman & Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal\ngender values: female, male, person\nsector values: rural, rural + urban, urban\nage values: 15 years and above, 15-29 years, 15-59 years, All ages\neducation values: 1.not literate, 2.literate & upto primary, 3.middle, 4.secondary, 5.higher secondary, 6.diploma/ certificate course, 7.graduate, 8.post graduate & above, 9.secondary & above, all\nreligion values: Christianity, Hinduism, Islam, Sikhism, all\nsocial values: all, other backward class, others, scheduled caste, scheduled tribe"
+   },
+   {
+    "role": "user",
+    "content": "The analyst's task: Compare unemployment rate (UR) for young women (age 15-29) in urban areas vs rural areas, 2025, usual status, All India. Provide the percentage points difference.\nFinding: In 2025, the unemployment rate for urban young women was 18.9% and for rural young women 8.6%, a difference of 10.3 percentage points higher in urban areas.\n\nThe results it cites:\nresult gap-2881f3\nunemployment rate (UR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 18.9, rural 8.6; urban minus rural = +10.3 points"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_92aa84c8-8e5b-487d-b79d-54fc87226d9e",
+      "name": "gap",
+      "arguments": "{\"a\":\"urban\",\"b\":\"rural\",\"field\":\"sector\",\"table\":\"ur_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\",\"measure\":\"PS+SS\",\"period\":\"2025\"}}",
+      "result": "result gap-11c731\nunemployment rate (UR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 18.9, rural 8.6; urban minus rural = +10.3 points",
+      "kind": "ok"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_92aa84c8-8e5b-487d-b79d-54fc87226d9e",
+    "name": "gap",
+    "kind": "ok",
+    "content": "result gap-11c731\nunemployment rate (UR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 18.9, rural 8.6; urban minus rural = +10.3 points"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_9c2ec22a-9c24-4428-951a-9ecb42c3562f",
+      "name": "gap",
+      "arguments": "{\"a\":\"urban\",\"b\":\"rural\",\"field\":\"sector\",\"table\":\"ur_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\",\"measure\":\"CWS\",\"period\":\"2025\"}}",
+      "result": "ur_annual: this split is published only for age 15 years and above, All ages",
+      "kind": "refused"
+     }
+    ],
+    "applied": true
+   },
+   {
+    "role": "tool",
+    "tool_call_id": "fc_9c2ec22a-9c24-4428-951a-9ecb42c3562f",
+    "name": "gap",
+    "kind": "refused",
+    "content": "ur_annual: this split is published only for age 15 years and above, All ages"
+   },
+   {
+    "role": "decision",
+    "type": "tool_calls",
+    "reasoning": "",
+    "calls": [
+     {
+      "id": "fc_14d36688-95cd-400d-ba5f-c75ab919a60e",
+      "name": "submit",
+      "arguments": "{\"reason\":\"The annual 2025 unemployment rate for urban women aged 15‑29 (usual status) is 18.9% and for rural women it is 8.6%, a difference of +10.3 percentage points.\",\"results\":[\"gap-11c731\"],\"verdict\":\"holds\"}"
+     }
+    ]
+   },
+   {
+    "role": "assistant",
+    "stopped": "reached its token budget of 10,000",
+    "content": "Stopping: reached its token budget of 10,000. This is partial progress, not an answer."
+   }
+  ]
+ },
+ "results": {
+  "tables-bf21a9": "result tables-bf21a9\nrelease: annual 2025 (and 2024); monthly to 2026-09\nlfpr_annual: labour force participation rate (LFPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nlfpr_monthly: labour force participation rate (LFPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nur_annual: unemployment rate (UR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nur_monthly: unemployment rate (UR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nwpr_annual: worker population ratio (WPR), annual; periods 2024 to 2025; measure CWS or PS+SS; fields state, gender, sector, age, education, religion, social\nwpr_monthly: worker population ratio (WPR), monthly; periods 2025-04 to 2026-09; measure CWS; fields age, gender, sector\nprofiles: LFPR_annual_2025, LFPR_monthly_2026-09, UR_annual_2025, UR_monthly_2026-09, WPR_annual_2025, WPR_monthly_2026-09\nfields left out of `where` are at their total (person, rural + urban, All India, all); age is 15 years and above, measure PS+SS, period the latest, unless set\nmeasure values: CWS, PS+SS\nstate values: All India, Andaman & Nicobar Islands, Andhra Pradesh, Arunachal Pradesh, Assam, Bihar, Chandigarh, Chhattisgarh, Dadra & Nagar Haveli & Daman & Diu, Delhi, Goa, Gujarat, Haryana, Himachal Pradesh, Jammu & Kashmir, Jharkhand, Karnataka, Kerala, Ladakh, Lakshadweep, Madhya Pradesh, Maharashtra, Manipur, Meghalaya, Mizoram, Nagaland, Odisha, Puducherry, Punjab, Rajasthan, Sikkim, Tamil Nadu, Telangana, Tripura, Uttar Pradesh, Uttarakhand, West Bengal\ngender values: female, male, person\nsector values: rural, rural + urban, urban\nage values: 15 years and above, 15-29 years, 15-59 years, All ages\neducation values: 1.not literate, 2.literate & upto primary, 3.middle, 4.secondary, 5.higher secondary, 6.diploma/ certificate course, 7.graduate, 8.post graduate & above, 9.secondary & above, all\nreligion values: Christianity, Hinduism, Islam, Sikhism, all\nsocial values: all, other backward class, others, scheduled caste, scheduled tribe",
+  "profile-816577": "result profile-816577\nPROFILE labour force participation rate (LFPR), annual, 2025, usual status (PS+SS), ages 15+ unless stated\nheadline (All India, everyone): 59.3%\non the other measure, current weekly status (CWS): 55.7% -- never mix the two\nprevious year (2024): 59.6%\nlargest gaps from the total:\n  - gender = male: 79.1% vs 59.3% overall (+19.8 points)\n  - gender = female: 40% vs 59.3% overall (-19.3 points)\n  - education = 6.diploma/ certificate course: 78.6% vs 59.3% overall (+19.3 points)\ngaps that change most across another field:\n  - The gap women minus men (-39.1 points overall) varies across state: from -58.4 (Delhi) to -9.9 (Ladakh)\n  - The gap youth (15-29) minus all 15+ (-13.3 points overall) varies across state: from -27.5 (Mizoram) to +3.5 (Goa); set apart as outliers (possibly small, noisy samples): Ladakh -34.2\n  - The gap urban minus rural (-10.6 points overall) varies across state: from -23.5 (Sikkim) to +2.2 (Goa); set apart as outliers (possibly small, noisy samples): Chandigarh +56.1\nstrongest correlations across states:\n  - LFPR female and LFPR male: r = 0.41 over 36 states\n  - LFPR urban and LFPR rural: r = 0.38 over 36 states -- rank correlation 0.67 disagrees; driven by Chandigarh\n  - LFPR and UR: r = -0.15 over 36 states\nbiggest changes since last release:\n  - state = Andaman & Nicobar Islands: +6.5 points since 2024\n  - state = Ladakh: +6.1 points since 2024\n  - state = Uttarakhand: -5.6 points since 2024\nnot findings (true by definition): LFPR 15-29 years vs LFPR 15 years and above r = 0.66, because the age bands overlap (15-29 years, 15 years and above); LFPR vs WPR r = 0.99, because WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))\neducation figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band\nAcross-state correlations describe states (people's chances there), not causes.",
+  "profile-d14e59": "result profile-d14e59\nPROFILE unemployment rate (UR), annual, 2025, usual status (PS+SS), ages 15+ unless stated\nheadline (All India, everyone): 3.1%\non the other measure, current weekly status (CWS): 5.3% -- never mix the two\nprevious year (2024): 3.2%\nlargest gaps from the total:\n  - education = 7.graduate: 11.2% vs 3.1% overall (+8.1 points)\n  - state = Andaman & Nicobar Islands: 10% vs 3.1% overall (+6.9 points)\n  - education = 8.post graduate & above: 10% vs 3.1% overall (+6.9 points)\ngaps that change most across another field:\n  - The gap youth (15-29) minus all 15+ (+6.8 points overall) varies across state: from +1.6 (Gujarat) to +21.2 (Andaman & Nicobar Islands)\n  - The gap women minus men (+0.0 points overall) varies across education: from -1.1 (3.middle) to +10.6 (8.post graduate & above)\n  - The gap urban minus rural (+2.4 points overall) varies across state: from -0.7 (Punjab) to +7.6 (Rajasthan); set apart as outliers (possibly small, noisy samples): Arunachal Pradesh +10.7; Goa -5.8; Nagaland +8.5\nstrongest correlations across states:\n  - UR female and UR male: r = 0.51 over 36 states\n  - UR urban and UR rural: r = 0.40 over 36 states\n  - LFPR and UR: r = -0.15 over 36 states\nbiggest changes since last release:\n  - state = Delhi: +3.7 points since 2024\n  - state = Nagaland: -2.8 points since 2024\n  - state = Lakshadweep: -2.6 points since 2024\nnot findings (true by definition): UR 15-29 years vs UR 15 years and above r = 0.82, because the age bands overlap (15-29 years, 15 years and above); UR vs WPR r = -0.30, because WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))\neducation figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band\nAcross-state correlations describe states (people's chances there), not causes.",
+  "gap-20dcc9": "result gap-20dcc9\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points",
+  "gap-8c422b": "result gap-8c422b\nlabour force participation rate (LFPR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 23.2, rural 29.3; urban minus rural = -6.1 points",
+  "gap-2881f3": "result gap-2881f3\nunemployment rate (UR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 18.9, rural 8.6; urban minus rural = +10.3 points",
+  "gap-11c731": "result gap-11c731\nunemployment rate (UR), annual, 2025 | usual status (PS+SS) | age 15-29 years | gender = female | by sector\noverall: urban 18.9, rural 8.6; urban minus rural = +10.3 points"
+ }
+}
