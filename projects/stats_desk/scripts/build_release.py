@@ -12,7 +12,6 @@ Writes data/release/plfs.duckdb, and data/profiles/plfs/*.md so the profiles can
 diffed in git.
 """
 
-import json
 import sys
 from pathlib import Path
 
@@ -21,24 +20,23 @@ from stats_desk.core.llm import count_tokens
 from stats_desk.release.build import NAMES, SHORT, build_profiles, infer_monthly_measure
 from stats_desk.release.cells import Cells, unstated_age_band
 from stats_desk.release.store import MONTHS, add_profiles, build_release
+from stats_desk.release.update import Stored
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "raw" / "plfs"
 RELEASE = ROOT / "data" / "release" / "plfs.duckdb"
 TEXTS = ROOT / "data" / "profiles" / "plfs"
-YEAR, PREVIOUS = "PLFS 2025", "PLFS 2024"
-MONTHLY_YEARS = ("2025", "2026")
-
-
-def rows(name):
-    return json.loads((DATA / name).read_text(encoding="utf-8"))["rows"]
 
 
 def main():
-    annual_rows = {code: {y: rows(f"{SHORT[code]}_f1_{y.replace(' ', '')}.json") for y in (YEAR, PREVIOUS)}
-                   for code in SHORT}
-    monthly_rows = {code: {y: rows(f"{SHORT[code]}_f3_{y}.json") for y in MONTHLY_YEARS}
-                    for code in SHORT}
+    # the years come from what data/raw holds (the daily job adds new ones), not from this file:
+    # annual, the newest and the one before it; monthly, every year kept, oldest first
+    stored = Stored.read(DATA)
+    YEAR, PREVIOUS = stored.years[1][:2]
+    MONTHLY_YEARS = tuple(reversed(stored.years[3]))
+    print(f"annual {YEAR} (and {PREVIOUS}); monthly {', '.join(MONTHLY_YEARS)}")
+    annual_rows = {code: {y: stored.rows[(code, 1, y)] for y in (YEAR, PREVIOUS)} for code in SHORT}
+    monthly_rows = {code: {y: stored.rows[(code, 3, y)] for y in MONTHLY_YEARS} for code in SHORT}
 
     # 1. checks on the raw download
     band, evidence = unstated_age_band({SHORT[c]: Cells(r[YEAR], pinned={"status": "PS+SS", "year": YEAR})
@@ -47,7 +45,8 @@ def main():
           + "; ".join(f"{k} {v['unstated_total']:g} matches {v['matching']}" for k, v in evidence.items()) + ")")
     monthly, notes = {}, {}
     for code, r in monthly_rows.items():
-        first = MONTHLY_YEARS[0]
+        # the monthly measure is inferred against an annual year both series have
+        first = next(y for y in reversed(MONTHLY_YEARS) if f"PLFS {y}" in annual_rows[code])
         headlines = {m: Cells(r[first], pinned={"year": first, "month": m}).get() for m in MONTHS}
         annual = {m: Cells(annual_rows[code][f"PLFS {first}"], pinned={"status": m, "year": f"PLFS {first}"}).get()
                   for m in MEASURES}

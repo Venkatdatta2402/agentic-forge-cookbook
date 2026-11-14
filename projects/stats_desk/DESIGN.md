@@ -156,13 +156,38 @@ use. A release that changes shape can't produce a quietly wrong profile.
   across education" without its graduate groups (+8.4, +10.6) and dropped it from the profile.
 - Every figure names its measure; the two weekly-status measures are never mixed.
 
-### 3.6 The release job (to build)
+### 3.6 The release job (built 2026-11-14)
 
-**GitHub Actions, daily, free, no tokens**: compare MoSPI's latest period per indicator with
-the last one stored; if newer, fetch (through MoSPI's MCP server), build the release tables,
-table cards and profiles, commit them, build the image, push it to GitHub Container Registry
-and point the Azure Container App at it. The app only answers questions, so nothing runs in the
-background there (the host scales an idle app away). Still to check: MoSPI's data licence.
+**GitHub Actions, daily at 19:00 India time, free, no tokens**
+(`.github/workflows/stats-desk-release.yml`, `scripts/update_release.py`, `release/update.py`):
+
+- **The raw downloads live in the repository** (`data/raw/plfs`, 11.4 MB; user's choice
+  2026-11-14), so the job fetches only what's new and builds from the rest. A new month changes
+  three ~50 KB monthly files; a new annual year adds ~6 MB once a year.
+- **The check: three small requests**, measured 2026-11-14: the annual years and the monthly
+  years MoSPI lists in its metadata (newest first: a year newer than ours is new, whatever
+  MoSPI calls it), and the row count of our newest monthly year (more rows = a new month;
+  the metadata's months are pooled across years, so they can't show it). "No Data Found" means
+  not published; an outage raises, never reads as "nothing new".
+- **What's new is fetched for all three indicators**: a new month = that year's monthly table
+  again (MoSPI serves a year as one table); a new year = its tables for the first time.
+- **Revisions: MoSPI's figure wins, and it's logged** (user, 2026-11-14: MoSPI's figures are
+  the official ones). MoSPI publishes no revision policy we could find; re-downloading the 2025
+  and 2026 monthly unemployment tables on 2026-11-14 matched all 459 rows saved on 11-09
+  (nothing had been released in between, so that proves little). A re-fetched table replaces
+  ours whole; every figure it changed or dropped goes to `data/raw/REVISIONS.md` (date, table,
+  row, old -> new) and is counted in the commit message. The release label now ends with a
+  fingerprint of every figure ("... monthly to 2026-09 · data 311908"; the same on every build
+  of the same figures), so a correction changes it even with no new period, and a follow-up to
+  an older brief gets the "re-released, don't mix" warning. Revisions are seen when a table is
+  fetched again: a year's monthly table with each new month; annual tables only when their year
+  first appears.
+- Then: rebuild (the build reads its years from `data/raw`, so a new year needs no code
+  change; same profiles byte for byte when nothing changed), offline tests, commit the data as
+  github-actions[bot], and start the deploy workflow (a GITHUB_TOKEN push doesn't trigger it).
+- GitHub pauses scheduled workflows in a repository with no activity for 60 days.
+
+Still to check: MoSPI's data licence.
 
 ---
 

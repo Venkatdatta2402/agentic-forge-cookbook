@@ -65,7 +65,8 @@ def test_the_card_says_what_a_table_holds_from_the_table_itself(release):
     assert "state x religion (NOT published)" in card
     assert "stored as '15 years and above', the band their totals match" in card
     assert "each total lies between its parts (2025, usual status): gender " in card
-    assert release.execute("SELECT released FROM _release").fetchone() == ("annual 2025 (and 2024)",)
+    label, = release.execute("SELECT released FROM _release").fetchone()
+    assert label.startswith("annual 2025 (and 2024) · data ") and len(label.split("data ")[1]) == 6
     assert release.execute("SELECT profile FROM _profiles WHERE name = 'UR_annual'").fetchone() == ("PROFILE ...",)
 
 

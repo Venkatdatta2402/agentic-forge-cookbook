@@ -177,6 +177,20 @@ class Mospi:
                     raise
                 await self.sleep(wait)
 
+    async def years(self, dataset, **filters) -> list[str]:
+        """The years MoSPI lists for a table, newest first ("PLFS 2025", "PLFS 2024", ... or "2026",
+        "2025"): read from its metadata, so a new year is seen whatever it is called."""
+        body = await self._call("get_metadata", {"dataset": dataset, **filters})
+        return [y["year"] for y in ((body.get("filter_values") or {}).get("data") or {}).get("year") or []]
+
+    async def count(self, dataset, filters: dict) -> int:
+        """How many rows MoSPI has for these filters, from one page's meta data; 0 when it says
+        "No Data Found" (not published yet). An outage raises: it must never read as "nothing new"."""
+        body = await self._page(dataset, filters, 1)
+        if not body.get("data") and "no data" in str(body.get("msg", "")).lower():
+            return 0
+        return int((body.get("meta_data") or {}).get("totalRecords") or len(body.get("data") or []))
+
     async def data(self, dataset, filters: dict, max_rows=20_000, pace=0.4) -> list[dict]:
         """Every row matching `filters`, one page at a time with `pace` seconds between pages."""
         filters = {k: v for k, v in filters.items() if k not in ("limit", "page", "user_query")}
