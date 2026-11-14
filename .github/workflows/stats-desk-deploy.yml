@@ -1,0 +1,93 @@
+# Stats Desk: test, build the image, publish it, and put it live on Azure Container Apps.
+#
+# Runs when anything under projects/stats_desk changes on main, or by hand (Actions tab -> this
+# workflow -> Run workflow). No stored passwords:
+#   - the image goes to GitHub Container Registry with the workflow's own GITHUB_TOKEN (the
+#     package must grant this repository Write: package settings -> Manage Actions access);
+#   - Azure is reached by OpenID Connect: Azure trusts GitHub's short-lived token for this
+#     repository's main branch only (identity "github-deploy-stats-desk": Contributor on the app,
+#     Reader on its resource group). Its ids are repository variables, not secrets:
+#     AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID.
+
+name: Stats Desk deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "projects/stats_desk/**"
+      - ".github/workflows/stats-desk-deploy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write      # push the image to ghcr.io
+  id-token: write      # sign in to Azure without a password
+
+concurrency:
+  group: stats-desk-deploy
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/venkatdatta2402/stats-desk
+  APP_URL: https://stats-desk.kindrock-535a71d1.centralindia.azurecontainerapps.io
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/stats_desk
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.12.19"
+
+      - name: Offline tests (no tokens, no Azure)
+        run: |
+          uv sync --locked
+          uv run pytest -q
+
+      - name: Sign in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the image
+        uses: docker/build-push-action@v6
+        with:
+          context: projects/stats_desk
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Sign in to Azure (no password)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Put the new image live
+        run: |
+          az config set extension.use_dynamic_install=yes_without_prompt
+          az containerapp update -n stats-desk -g stats-desk \
+            --image "${IMAGE}:${GITHUB_SHA}" --only-show-errors \
+            --query "properties.latestRevisionName" -o tsv
+
+      - name: Check the live site answers
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 60 "${APP_URL}/health"; then echo; exit 0; fi
+            sleep 20
+          done
+          echo "the live site did not answer /health" >&2
+          exit 1
