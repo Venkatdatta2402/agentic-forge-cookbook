@@ -3,7 +3,10 @@
     uv run uvicorn stats_desk.api.app:app --port 8080
 
 Endpoints
-    POST /questions        {question, follow_up_of?}; the user's Groq key in the X-Groq-Key
+    GET  /                 the page (web/index.html): ask, watch the agents work, read the brief;
+                           /?brief=<id> opens a saved brief
+    GET  /free             the visitor's free questions left today
+    POST /questions       {question, follow_up_of?}; the user's Groq key in the X-Groq-Key
                            header, or none for a free question on the desk's keys -> a stream of
                            server-sent events:
                                started   {id, link, free}  the brief's link, at once
@@ -30,9 +33,10 @@ import asyncio
 import hashlib
 import json
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, Header, HTTPException, Request
-from fastapi.responses import StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 
 from .. import config
 from ..agents.record import Record
@@ -43,6 +47,7 @@ from .desk import MAX_RUNNING, Ask, Desk, check_groq_key
 from .store import Store, from_env
 
 PING = 15.0          # seconds between keep-alive comments on a quiet stream
+PAGE = Path(__file__).parent / "web" / "index.html"     # the one page: ask, watch, read the brief
 
 
 def sse(event: str, data) -> str:
@@ -114,6 +119,16 @@ def create_app(store: Store | None = None, connect=None, check_key=check_groq_ke
                   description="Questions about India's official labour statistics (MoSPI's PLFS), "
                               "answered by agents from published figures, every number checked.")
     app.state.desk = desk
+
+    @app.get("/", include_in_schema=False)
+    async def page():
+        return HTMLResponse(PAGE.read_text(encoding="utf-8"))
+
+    @app.get("/free")
+    async def free(request: Request):
+        """The visitor's free questions left today, and the release, for the page's header."""
+        return {"left": await desk.free_left(visitor_of(request)), "per_day": desk.free_per_visitor,
+                "release": released}
 
     @app.get("/health")
     async def health():

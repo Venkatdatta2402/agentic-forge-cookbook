@@ -1,0 +1,1461 @@
+[
+ {
+  "id": "Q1",
+  "run": 1,
+  "question": "Why do young women in cities struggle to find work?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1",
+    "P3"
+   ],
+   "of": 3,
+   "measure named": true,
+   "checks": {
+    "no cause read in": true
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": null,
+    "S2": 4
+   },
+   "recall": 0.5,
+   "missed": [
+    "S1"
+   ],
+   "analyses chosen": 6,
+   "precision": 0.17,
+   "wasted": 0,
+   "refused": 0,
+   "single figures chained": [
+    "f1",
+    "f2",
+    "f3"
+   ],
+   "tasks": {
+    "call 3": [
+     "Find the LFPR for age 15-29 by gender in urban sector (national level) for 2025.",
+     "Find the UR for age 15-29 by gender in urban sector (national level) for 2025.",
+     "Find the WPR for age 15-29 by gender in urban sector (national level) for 2025."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"lfpr_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\",\"period\":\"2025\",\"sector\":\"urban\"}}",
+     "kind": "ok",
+     "result": "value-c2aecf",
+     "said": null,
+     "covered": [
+      "S2"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\",\"period\":\"2025\",\"sector\":\"urban\"}}",
+     "kind": "ok",
+     "result": "value-26b7e1",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 6,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f3",
+     "tool": "value",
+     "args": "{\"table\":\"wpr_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\",\"period\":\"2025\",\"sector\":\"urban\"}}",
+     "kind": "ok",
+     "result": "value-def696",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 7,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"lfpr_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"male\",\"period\":\"2025\",\"sector\":\"urban\"}}",
+     "kind": "ok",
+     "result": "value-6b7b58",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 8,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"male\",\"period\":\"2025\",\"sector\":\"urban\"}}",
+     "kind": "ok",
+     "result": "value-50b45e",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 9,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f3",
+     "tool": "value",
+     "args": "{\"table\":\"wpr_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"male\",\"period\":\"2025\",\"sector\":\"urban\"}}",
+     "kind": "ok",
+     "result": "value-3d136c",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 11,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "lfpr_annual",
+       "where": {
+        "age": "15-29 years",
+        "gender": "female",
+        "period": "2025",
+        "sector": "urban"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-3ae72b",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 12,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "lfpr_annual",
+       "where": {
+        "age": "15-29 years",
+        "gender": "male",
+        "period": "2025",
+        "sector": "urban"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-34e980",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 14,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "ur_annual",
+       "where": {
+        "age": "15-29 years",
+        "gender": "female",
+        "period": "2025",
+        "sector": "urban"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-d77409",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 15,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "ur_annual",
+       "where": {
+        "age": "15-29 years",
+        "gender": "male",
+        "period": "2025",
+        "sector": "urban"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-be7008",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 17,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "wpr_annual",
+       "where": {
+        "age": "15-29 years",
+        "gender": "female",
+        "period": "2025",
+        "sector": "urban"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-56850a",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 18,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "wpr_annual",
+       "where": {
+        "age": "15-29 years",
+        "gender": "male",
+        "period": "2025",
+        "sector": "urban"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-3608a3",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 40579,
+   "by agent": {
+    "lead": 14468,
+    "analyst": 26111
+   },
+   "model calls": 13,
+   "seconds": 254.9,
+   "waited": 553.7,
+   "cost if paid": 0.006945,
+   "groq errors": [
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"claim\": \"In 2025, the urban LFPR for ages 15‑29 was 23.2% for females and 60.9% for males at the national level.\",\n  \"results\": [\"value-c2aecf\", \"value-6b7b58\"]\n}",
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n    \"claim\": \"In 2025, urban unemployment for ages 15‑29 was 18.9% for females and 11.8% for males.\",\n    \"results\": [\"value-26b7e1\", \"value-50b45e\"]\n}",
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"answer\": \"In 2025, the labour force participation rate for young women (age 15‑29) in urban areas was 23.2% (female, urban, age 15‑29, LF rate, 2025) while for young men it was 60.9% (male, urban, age 15‑29, LF rate, 2025). The unemployment rate for the same group of women was 18.9% (female, ur"
+   ],
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "In 2025, the labour force participation rate for young women (age 15‑29) in urban areas was 23.2% (female, urban, age 15‑29, LF rate, 2025) while for young men it was 60.9% (male, urban, age 15‑29, LF rate, 2025). The unemployment rate for the same group of women was 18.9% (female, urban, age 15‑29, unemployment, 2025) compared with 11.8% for men (male, urban, age 15‑29, unemployment, 2025). The worker population ratio was 18.9% for women (female, urban, age 15‑29, WPR, 2025) and 53.8% for men (male, urban, age 15‑29, WPR, 2025). These figures show that young women in cities have far lower labour force participation and employment and higher unemployment than their male counterparts, indicating they face greater difficulty finding work."
+ },
+ {
+  "id": "Q2",
+  "run": 1,
+  "question": "Is unemployment rising in 2026?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1"
+   ],
+   "of": 2,
+   "measure named": true,
+   "checks": {
+    "says March 2026 is not published": false
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 4,
+    "S2": 4
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 2,
+   "precision": 0.5,
+   "wasted": 0,
+   "refused": 0,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Find the overall All India unemployment rate (CWS) monthly series from 2025-04 to 2026-09 and report the linear trend (slope) and overall change.",
+     "Compare the unemployment rate in September 2026 to September 2025 for All India and report the point change.",
+     "Find the trend for the youth age group (15-29 years) over the same monthly series and report its slope and change."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "series",
+     "args": "{\"table\":\"ur_monthly\",\"where\":{}}",
+     "kind": "ok",
+     "result": "series-e62483",
+     "said": null,
+     "covered": [
+      "S1",
+      "S2"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "change",
+     "args": "{\"table\":\"ur_monthly\",\"where\":{}}",
+     "kind": "ok",
+     "result": "change-e62483",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 9,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "change",
+      "args": {
+       "table": "ur_monthly",
+       "where": {}
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-f3ac59",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 11,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "trend",
+      "args": {
+       "by": null,
+       "end": null,
+       "start": null,
+       "table": "lfpr_monthly",
+       "where": {
+        "age": "15-29 years"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-c69cbc",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 13,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "trend",
+      "args": {
+       "table": "ur_monthly",
+       "by": null,
+       "where": {}
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-0a808a",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 35796,
+   "by agent": {
+    "lead": 13533,
+    "analyst": 22263
+   },
+   "model calls": 11,
+   "seconds": 219.1,
+   "waited": 473.6,
+   "cost if paid": 0.006204,
+   "groq errors": [
+    "400 | tool_use_failed | Tool call validation failed: tool call validation failed: attempted to call tool 'json' which does not match request.tool_choice: 'ask_analysts' | generated: {\"name\": \"json\", \"arguments\": {\n  \"answer\": \"Unemployment is not rising overall in 2026. The all‑India unemployment rate (CWS) stayed at 5 % in September 2026, the same as in August 2026, and the monthly series from April 2025 to September 2026 shows no clear upward trend (overall change –0.2 points",
+    "400 | tool_use_failed | Tool call validation failed: tool call validation failed: parameters for tool trend did not match schema: errors: [`/by`: expected string, but got null, `/end`: expected string, but got null, `/start`: expected string, but got null] | generated: {\"name\": \"trend\", \"arguments\": {\n  \"by\": null,\n  \"end\": null,\n  \"start\": null,\n  \"table\": \"lfpr_monthly\",\n  \"where\": {\"age\": \"15-29 years\"}\n}}",
+    "400 | tool_use_failed | Tool call validation failed: tool call validation failed: parameters for tool trend did not match schema: errors: [`/by`: expected string, but got null] | generated: {\"name\": \"trend\", \"arguments\": {\n  \"table\": \"ur_monthly\",\n  \"by\": null,\n  \"where\": {}\n}}",
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"claim\": \"The unemployment rate fell by 0.2 points from September 2025 to September 2026 for All India.\",\n  \"results\": [\"change-e62483\"]\n}"
+   ],
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "Unemployment is not rising in 2026. The monthly All‑India unemployment rate (CWS) fell by 0.2 percentage points from April 2025 to September 2026, with a linear trend of –0.01 points per month. Moreover, the rate in September 2026 was 0.2 percentage points lower than in September 2025 (5.0 % vs 5.2 %)."
+ },
+ {
+  "id": "Q3",
+  "run": 1,
+  "question": "Where in India are women least likely to be in the labour force?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1"
+   ],
+   "of": 3,
+   "measure named": true,
+   "checks": {},
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 4
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 1,
+   "precision": 1.0,
+   "wasted": 0,
+   "refused": 0,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Report female LFPR (CWS) for each state in the 2025 annual table and identify the state with the lowest value."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "compare",
+     "args": "{\"by\":\"state\",\"table\":\"lfpr_annual\",\"where\":{\"gender\":\"female\",\"period\":\"2025\"}}",
+     "kind": "ok",
+     "result": "compare-55a40f",
+     "said": null,
+     "covered": [
+      "S1"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 6,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "compare",
+      "args": {
+       "by": "state",
+       "table": "lfpr_annual",
+       "where": {
+        "gender": "female",
+        "period": "2025"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-9d068c",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 14783,
+   "by agent": {
+    "lead": 8476,
+    "analyst": 6307
+   },
+   "model calls": 5,
+   "seconds": 106.2,
+   "waited": 100.7,
+   "cost if paid": 0.002574,
+   "groq errors": [
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"claim\": \"In the 2025 annual table, female LFPR (CWS) ranges from a low of 13.1 % in Delhi to a high of 66.7 % in Sikkim, with Delhi having the lowest value.\",\n  \"results\": [\"compare-55a40f\"]\n}",
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"answer\": \"According to the 2025 annual labour force participation rate (LFPR) data (usual status, PS+SS), the state where women are least likely to be in the labour force is Delhi, with a female LFPR of 13.1 %. This is the lowest value among all 36 states and union territories.\",\n  \"cannot_tell"
+   ],
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "According to the 2025 annual labour force participation rate (LFPR) data (usual status, PS+SS), the state where women are least likely to be in the labour force is Delhi, with a female LFPR of 13.1 %. This is the lowest value among all 36 states and union territories."
+ },
+ {
+  "id": "Q4",
+  "run": 1,
+  "question": "What is the unemployment rate of Muslim women in Kerala?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1",
+    "P2"
+   ],
+   "of": 2,
+   "measure named": true,
+   "checks": {
+    "says it is not published": true
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 12,
+    "S2": 5
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 5,
+   "precision": 0.4,
+   "wasted": 1,
+   "refused": 2,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Retrieve the annual unemployment rate (UR) for women in Kerala for 2025 (measure PS+SS).",
+     "Retrieve the annual unemployment rate (UR) for Muslim women nationwide for 2025 (measure PS+SS)."
+    ],
+    "call 11": [
+     "Retrieve the annual unemployment rate (UR) for Muslim women in Kerala for 2025 (measure PS+SS), if such a figure is published."
+    ],
+    "call 14": [
+     "Check the UR_annual_2025 table metadata to see if a combination of gender, religion, and state is published for 2025."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"gender\":\"female\",\"measure\":\"PS+SS\",\"period\":\"2025\",\"state\":\"Kerala\"}}",
+     "kind": "ok",
+     "result": "value-50fd51",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"gender\":\"female\",\"period\":\"2025\",\"religion\":\"Islam\"}}",
+     "kind": "ok",
+     "result": "value-41d8e2",
+     "said": null,
+     "covered": [
+      "S2"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 7,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "ur_annual",
+       "where": {
+        "gender": "female",
+        "measure": "PS+SS",
+        "period": "2025",
+        "state": "Kerala"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-b59952",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 9,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "ur_annual",
+       "where": {
+        "gender": "female",
+        "period": "2025",
+        "religion": "Islam"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-ff1859",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 12,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f3",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"gender\":\"female\",\"period\":\"2025\",\"religion\":\"Islam\",\"state\":\"Kerala\"}}",
+     "kind": "refused",
+     "result": null,
+     "said": "ur_annual: gender x religion x state is not published together. Published together: education x gender x sector x state; gender x religion x sector; gender x sector x social",
+     "covered": [
+      "S1"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 13,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f3",
+     "tool": "drill",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"gender\":\"female\",\"period\":\"2025\",\"religion\":\"Islam\",\"state\":\"Kerala\"}}",
+     "kind": "refused",
+     "result": null,
+     "said": "ur_annual: gender x religion x state is not published together. Published together: education x gender x sector x state; gender x religion x sector; gender x sector x social",
+     "covered": [],
+     "repeated": false,
+     "wasted": true
+    },
+    {
+     "n": 15,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f4",
+     "tool": "tables",
+     "args": "{\"name\":\"ur_annual\"}",
+     "kind": "ok",
+     "result": "tables-d55fac",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 17,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "tables",
+      "args": {
+       "name": "ur_annual"
+      }
+     },
+     "kind": "refused",
+     "result": null,
+     "said": "can't recheck tables; only value, compare, gap, change, series, average, trend, relate, drill",
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 46361,
+   "by agent": {
+    "lead": 23667,
+    "analyst": 22694
+   },
+   "model calls": 15,
+   "seconds": 344.6,
+   "waited": 397.1,
+   "cost if paid": 0.007849,
+   "groq errors": [
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"answer\": \"The annual unemployment rate for women in Kerala in 2025 (usual status) is 6.4%. State‑level data by religion are not published, so the closest available figure is the nationwide unemployment rate for Muslim women in 2025, which is 3.6%. These are the most specific published rates tha",
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: The annual unemployment rate for women in Kerala in 2025 (usual status) is 6.4 % (UR, PS+SS). State‑level unemployment rates by religion are not published, so the closest available figure is the nationwide unemployment rate for Muslim women in 2025, which is 3.6 % (UR, PS+SS).  \n\n**What cannot be to",
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"answer\": \"The annual unemployment rate for women in Kerala in 2025 (usual status) is 6.4 %. The UR table does not publish a separate rate for Muslim women by state, so the most specific available figure is the nationwide unemployment rate for Muslim women in 2025, which is 3.6 %. These are the "
+   ],
+   "tasks stopped": [
+    "the same error repeated"
+   ],
+   "tasks refused": 0
+  },
+  "answer": "The annual unemployment rate for women in Kerala in 2025 (usual status) is 6.4 %. The UR table does not publish a separate rate for Muslim women by state, so the most specific available figure is the nationwide unemployment rate for Muslim women in 2025, which is 3.6 %. These are the only published rates that approximate the requested value."
+ },
+ {
+  "id": "Q5",
+  "run": 1,
+  "question": "Do states where more people are in the labour force also have more people in work?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [],
+   "of": 1,
+   "measure named": true,
+   "checks": {
+    "says it is true by definition": false
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 4
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 3,
+   "precision": 0.33,
+   "wasted": 0,
+   "refused": 0,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Find the correlation coefficient across states between LFPR (overall, PS+SS) and WPR (overall, PS+SS) for 2025.",
+     "List the top three states by LFPR and give their WPR values; likewise list the bottom three states by LFPR and give their WPR values."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "relate",
+     "args": "{\"by\": null, \"x_table\": \"lfpr_annual\", \"x_where\": {\"period\": \"2025\"}, \"y_table\": \"wpr_annual\", \"y_where\": {\"period\": \"2025\"}}",
+     "kind": "ok",
+     "result": "relate-7854d6",
+     "said": null,
+     "covered": [
+      "S1"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "compare",
+     "args": "{\"by\":\"state\",\"table\":\"lfpr_annual\",\"where\":{}}",
+     "kind": "ok",
+     "result": "compare-a1f724",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 7,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "relate",
+      "args": {
+       "by": null,
+       "x_table": "lfpr_annual",
+       "x_where": {
+        "period": "2025"
+       },
+       "y_table": "wpr_annual",
+       "y_where": {
+        "period": "2025"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-66d5d5",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 8,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "compare",
+     "args": "{\"by\":\"state\",\"table\":\"wpr_annual\",\"where\":{}}",
+     "kind": "ok",
+     "result": "compare-76dd39",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 10,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "compare",
+      "args": {
+       "by": "state",
+       "table": "lfpr_annual",
+       "where": {}
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-d6ee9b",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 11,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "compare",
+      "args": {
+       "by": "state",
+       "table": "wpr_annual",
+       "where": {}
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-01227f",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 26603,
+   "by agent": {
+    "lead": 9840,
+    "analyst": 16763
+   },
+   "model calls": 8,
+   "seconds": 199.4,
+   "waited": 270.1,
+   "cost if paid": 0.004573,
+   "groq errors": [
+    "400 | tool_use_failed | Tool call validation failed: tool call validation failed: parameters for tool relate did not match schema: errors: [`/by`: expected string, but got null] | generated: {\"name\": \"relate\", \"arguments\": {\n  \"by\": null,\n  \"x_table\": \"lfpr_annual\",\n  \"x_where\": {\"period\": \"2025\"},\n  \"y_table\": \"wpr_annual\",\n  \"y_where\": {\"period\": \"2025\"}\n}}"
+   ],
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "Yes. States with higher labour‑force participation also have higher worker‑population ratios. In 2025 the three states with the highest LFPR – Sikkim (74.7 %), Himachal Pradesh (73.2 %) and Meghalaya (72.3 %) – have correspondingly high WPRs of 72.3 %, 69.9 % and 68.9 %. Conversely, the three states with the lowest LFPR – Delhi (44.2 %), Lakshadweep (46.3 %) and Bihar (49.3 %) – show low WPRs of 41.6 %, 43.1 % and 47.4 %. This parallel ranking shows that states where more people are in the labour force also have more people in work."
+ },
+ {
+  "id": "Q6",
+  "run": 1,
+  "question": "In Nagaland, are women more likely than men to be unemployed?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1",
+    "P2"
+   ],
+   "of": 2,
+   "measure named": true,
+   "checks": {
+    "says it reversed in 2024": true
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 5,
+    "S2": 5
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 3,
+   "precision": 0.33,
+   "wasted": 1,
+   "refused": 1,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Find the unemployment rate (UR) for women and for men in Nagaland for 2025 (measure PS+SS), and the difference (women minus men) in percentage points.",
+     "Find the unemployment rate for women and men in Nagaland for 2024, and the change in the gender gap between 2024 and 2025."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "gap",
+     "args": "{\"a\":\"female\",\"b\":\"male\",\"field\":\"state\",\"table\":\"ur_annual\",\"where\":{\"measure\":\"PS+SS\",\"period\":\"2025\",\"state\":\"Nagaland\"}}",
+     "kind": "refused",
+     "result": null,
+     "said": "'state' is the field of the gap and also set in where; leave it out of where",
+     "covered": [],
+     "repeated": false,
+     "wasted": true
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "gap",
+     "args": "{\"a\":\"female\",\"b\":\"male\",\"field\":\"gender\",\"table\":\"ur_annual\",\"where\":{\"state\":\"Nagaland\"}}",
+     "kind": "ok",
+     "result": "gap-256cab",
+     "said": null,
+     "covered": [
+      "S1",
+      "S2"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 6,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "gap",
+     "args": "{\"a\":\"female\",\"b\":\"male\",\"field\":\"gender\",\"table\":\"ur_annual\",\"where\":{\"measure\":\"PS+SS\",\"period\":\"2025\",\"state\":\"Nagaland\"}}",
+     "kind": "ok",
+     "result": "gap-56dfb0",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 8,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "gap",
+      "args": {
+       "a": "female",
+       "b": "male",
+       "field": "gender",
+       "table": "ur_annual",
+       "where": {
+        "state": "Nagaland"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-246fb6",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 10,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "gap",
+      "args": {
+       "a": "female",
+       "b": "male",
+       "field": "gender",
+       "table": "ur_annual",
+       "where": {
+        "measure": "PS+SS",
+        "period": "2025",
+        "state": "Nagaland"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-fc9447",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 22918,
+   "by agent": {
+    "lead": 8759,
+    "analyst": 14159
+   },
+   "model calls": 8,
+   "seconds": 170.0,
+   "waited": 253.8,
+   "cost if paid": 0.004012,
+   "groq errors": [],
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "In Nagaland, the unemployment rate for women was 8.4 % in 2025 versus 5.3 % for men, giving a women‑minus‑men gap of +3.1 percentage points (PS+SS measure). This marks a reversal from 2024, when women’s rate was 8.6 % and men’s 10.3 % (gap –1.7 points). Thus, women were more likely than men to be unemployed in 2025, although the gender gap is smaller on the current weekly‑status measure (women 9.2 %, men 8.7 %, gap +0.5 points)."
+ },
+ {
+  "id": "Q7",
+  "run": 1,
+  "question": "Which state has the highest unemployment among women?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1"
+   ],
+   "of": 2,
+   "measure named": true,
+   "checks": {
+    "flags the outlier": false
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 4
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 1,
+   "precision": 1.0,
+   "wasted": 0,
+   "refused": 0,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Find the unemployment rate (UR) for women by state for 2025 (measure PS+SS) and report the highest value and its state."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "compare",
+     "args": "{\"by\":\"state\",\"table\":\"ur_annual\",\"where\":{\"gender\":\"female\",\"measure\":\"PS+SS\",\"period\":\"2025\"}}",
+     "kind": "ok",
+     "result": "compare-3a5ffe",
+     "said": null,
+     "covered": [
+      "S1"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 6,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "compare",
+      "args": {
+       "by": "state",
+       "table": "ur_annual",
+       "where": {
+        "gender": "female",
+        "measure": "PS+SS",
+        "period": "2025"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-c90223",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 14298,
+   "by agent": {
+    "lead": 8513,
+    "analyst": 5785
+   },
+   "model calls": 5,
+   "seconds": 102.6,
+   "waited": 97.5,
+   "cost if paid": 0.002453,
+   "groq errors": [
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"answer\": \"In the 2025 annual release, the highest unemployment rate among women is in the Andaman & Nicobar Islands at 16.4 % (PS+SS measure, age 15+).\",\n  \"cannot_tell\": \"The figures show the level of unemployment for women by state, but they cannot explain why Andaman & Nicobar Islands has th"
+   ],
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "In the 2025 annual release, the highest unemployment rate among women is in the Andaman & Nicobar Islands at 16.4 % (PS+SS measure, age 15+)."
+ },
+ {
+  "id": "Q8",
+  "run": 1,
+  "question": "Does getting a degree make people more likely to be unemployed?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1"
+   ],
+   "of": 1,
+   "measure named": true,
+   "checks": {
+    "no cause read in": true,
+    "no bare yes or no to a cause": true,
+    "says the figures can't show cause": true
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 4
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 4,
+   "precision": 0.25,
+   "wasted": 0,
+   "refused": 0,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Find the unemployment rate (UR) for each education level (no schooling, primary, secondary, graduate, post graduate & above) for All India, 2025, using PS+SS measure.",
+     "Find the unemployment rate for each education level split by gender for All India, 2025, using PS+SS measure.",
+     "Find the change in unemployment rate from 2024 to 2025 for each education level for All India, using PS+SS measure."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "compare",
+     "args": "{\"by\":\"education\",\"table\":\"ur_annual\",\"where\":{\"measure\":\"PS+SS\",\"period\":\"2025\",\"state\":\"All India\"}}",
+     "kind": "ok",
+     "result": "compare-6050a6",
+     "said": null,
+     "covered": [
+      "S1"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "compare",
+     "args": "{\"by\":\"education\",\"table\":\"ur_annual\",\"where\":{\"gender\":\"female\",\"measure\":\"PS+SS\",\"period\":\"2025\"}}",
+     "kind": "ok",
+     "result": "compare-40d9fa",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 7,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "compare",
+      "args": {
+       "by": "education",
+       "table": "ur_annual",
+       "where": {
+        "measure": "PS+SS",
+        "period": "2025",
+        "state": "All India"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-c72678",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 8,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f3",
+     "tool": "change",
+     "args": "{\"by\":\"education\",\"table\":\"ur_annual\",\"where\":{\"measure\":\"PS+SS\",\"state\":\"All India\"}}",
+     "kind": "ok",
+     "result": "change-55149d",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 9,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "compare",
+     "args": "{\"by\":\"education\",\"table\":\"ur_annual\",\"where\":{\"gender\":\"male\",\"measure\":\"PS+SS\",\"period\":\"2025\"}}",
+     "kind": "ok",
+     "result": "compare-f209ec",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 11,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "change",
+      "args": {
+       "by": "education",
+       "table": "ur_annual",
+       "where": {
+        "measure": "PS+SS",
+        "state": "All India"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-04bc31",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 13,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "compare",
+      "args": {
+       "by": "education",
+       "table": "ur_annual",
+       "where": {
+        "gender": "female",
+        "measure": "PS+SS",
+        "period": "2025"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-412a58",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 14,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "compare",
+      "args": {
+       "by": "education",
+       "table": "ur_annual",
+       "where": {
+        "gender": "male",
+        "measure": "PS+SS",
+        "period": "2025"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-836eaf",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 29553,
+   "by agent": {
+    "lead": 9237,
+    "analyst": 20316
+   },
+   "model calls": 10,
+   "seconds": 221.7,
+   "waited": 412.1,
+   "cost if paid": 0.005124,
+   "groq errors": [],
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "In 2025 the unemployment rate for graduates was 11.2 % (PS+SS) compared with 3.1 % overall, and 0.3 % for those with no schooling. Post‑graduate & above had a rate of 10 %. This pattern holds for both sexes: female graduates faced 17.4 % unemployment versus 0.2 % for those not literate, while male graduates faced 9 % versus 0.4 % for the same low‑education group. Thus, people with a degree had markedly higher unemployment rates than those with lower education levels, although the data cannot establish a causal relationship."
+ }
+]

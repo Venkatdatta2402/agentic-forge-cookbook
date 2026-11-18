@@ -16,7 +16,7 @@ Two stores with the same methods (tests/test_store_contract.py runs the same che
     MemoryStore      tests and local runs (gone on restart; one machine)
     CosmosStore      Azure; picked with STATS_DESK_STORE=cosmos and STATS_DESK_COSMOS_URL
 
-Who sees what (decided 2026-11-10): a few chosen briefs are public examples (`public: True`, set
+Who sees what: a few chosen briefs are public examples (`public: True`, set
 by scripts/publish_brief.py); every other brief opens only by its link. Ids are random and
 unguessable, so a link is the permission.
 """
@@ -52,6 +52,7 @@ class Store(Protocol):
     async def set_public(self, brief_id: str, public: bool) -> bool: ...
     async def claim(self, name: str, holder: str) -> str | None: ...
     async def release(self, name: str, holder: str) -> None: ...
+    async def holder(self, name: str) -> str | None: ...
     async def count(self, name: str) -> int: ...
     async def add(self, name: str, n: int = 1) -> None: ...
     async def block(self, name: str, seconds: float) -> None: ...
@@ -112,6 +113,11 @@ class MemoryStore:
         if self.leases.get(name, ("",))[0] == holder:
             del self.leases[name]
 
+    async def holder(self, name):
+        """Who holds `name` now, or None."""
+        current = self.leases.get(name)
+        return current[0] if current and current[1] > self.clock() else None
+
     async def count(self, name):
         return self.counters.get(name, 0)
 
@@ -121,7 +127,7 @@ class MemoryStore:
 
 class CosmosStore:
     """Azure Cosmos DB (NoSQL), free tier: one database at a fixed 1,000 RU/s shared by its five
-    containers, each partitioned by `id` (decided 2026-11-14, after Google Cloud refused billing
+    containers, each partitioned by `id` (after Google Cloud refused billing
     sign-up with OR_BACR2_59). Signs in by identity, never a password (DefaultAzureCredential):
     on Azure the app's own managed identity, locally the developer's `az login`. Each needs the
     "Cosmos DB Built-in Data Contributor" role on the account.
@@ -238,6 +244,11 @@ class CosmosStore:
                                                          match_condition=MatchConditions.IfNotModified)
             except CosmosHttpResponseError:            # taken over or gone meanwhile: not ours to delete
                 pass
+
+    async def holder(self, name):
+        """Who holds `name` now, or None: one point read (1 RU)."""
+        item = await self._read(LEASES, name)
+        return item["holder"] if item and item["until"] > time.time() else None
 
     # ---- counts
 

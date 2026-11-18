@@ -1,7 +1,7 @@
 """The daily release check: is anything newer at MoSPI than the raw tables we keep, and if so,
 fetch just that -- never changing a figure we already published without a person looking.
 
-The raw downloads live in the repository (data/raw/plfs, decided 2026-11-14), so a day with
+The raw downloads live in the repository (data/raw/plfs), so a day with
 nothing new costs MoSPI three small requests, measured that day:
 
   1. the annual years MoSPI lists (its metadata, newest first: "PLFS 2025", "PLFS 2024", ...);
@@ -17,7 +17,7 @@ What's new is fetched for all three indicators (LFPR, WPR, UR), one table per (i
 frequency, year): a new month means its year's monthly table again (MoSPI serves a year as one
 table), a new year its tables for the first time. The 1.9 MB annual tables are fetched once.
 
-**Revisions: MoSPI's figure wins, and it's logged** (user, 2026-11-14). MoSPI publishes no
+**Revisions: MoSPI's figure wins, and it's logged**. MoSPI publishes no
 revision policy we could find; re-downloading the 2025 and 2026 monthly unemployment tables on
 2026-11-14 matched all 459 rows saved on 11-09 (nothing had been released in between, so that
 proves little). A re-fetched table replaces ours whole -- MoSPI's figures are the official

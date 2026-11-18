@@ -7,7 +7,7 @@ averaged or added ACROSS GROUPS: women's and men's rates don't average to everyo
 groups differ in size (MoSPI's own total rows are the totals). Over months, for one and the same
 group, the labour force barely changes size from month to month, so an average of the monthly
 rates is close and standard for smoothing; it is always labelled as such, never as a published
-figure (decided 2026-11-12).
+figure.
 """
 
 from dataclasses import dataclass
@@ -182,7 +182,7 @@ def against_history(values: dict) -> str | None:
 def strength(r, n):
     """How strong a correlation over n states is, in words. Below 2 / sqrt(n) (0.33 for 36
     states) a correlation this size often appears by chance, so it is no clear link at all: a
-    span test (2026-11-12) had an analyst call r = -0.19 "associated"."""
+    span test had an analyst call r = -0.19 "associated"."""
     if abs(r) < 2 / n ** 0.5:
         return f"no clear link: a correlation this small (under {2 / n ** 0.5:.2f} for {n} states) often appears by chance"
     way = "the same way" if r > 0 else "opposite ways"

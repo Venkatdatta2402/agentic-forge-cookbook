@@ -5,10 +5,10 @@ and a step can be run several times to see whether it behaves the same way.
 
     pick       the lead's first call: which profiles it asks for, given the question and the
                list of profiles. Checked: the needed ones, not all six
-    tasks      the lead's next call: the tasks it hands out, given the profiles it needed.
-               Checked: it hands out tasks, within the limit, each naming an indicator, none
-               pointing the analyst at a profile (which it can't see); each listed for marking by
-               hand as a hypothesis or a lookup
+    tasks      the lead's next call: its plan (agents/plan.py), given the profiles it needed.
+               Checked: it hands out tasks, at most FIRST_ROUND now, none pointing the analyst at
+               a profile; how many later tasks it planned; each listed for marking by hand as a
+               hypothesis or a lookup
     analyst    one analyst on one task, in full. Checked: it handed in, used an analysis that
                fits the task, didn't chain single figures, how many analyses and refusals
     brief      the lead from the point its findings came back, given fixed findings with code's
@@ -66,7 +66,7 @@ async def _lead_turn(analyses, question, history):
     holder = []
     form = form_tool(BriefForm, holder, build=lead.form_build)
     think = Think(Registry([*lead.tools, form]), lead.model, lead.max_tokens, lead.reasoning_effort,
-                  shorten=lead.shorten, keep_recent=lead.keep_recent)
+                  shorten=lead.shorten, keep_recent=lead.keep_recent, require_tool=True, choose=lead.choose)
     conversation = Conversation(system=system(lead.persona), messages=[
         {"role": "user", "content": run.context()}, {"role": "user", "content": question}, *history])
     with trace.span("lead"):
@@ -86,17 +86,19 @@ async def pick(analyses, case, question):
 
 
 async def tasks(analyses, case, question):
-    from stats_desk.agents.analyst import INDICATORS
-    from stats_desk.agents.lead import MAX_ANALYSTS
+    from stats_desk.agents.lead import FIRST_ROUND
     profiles = await analyses.call("profile", names=case["needed"])
     decision, _, _ = await _lead_turn(analyses, question, _call("profile", {"names": case["needed"]}, profiles))
     calls = _decision_calls(decision)
-    given = [t for name, args in calls if name == "ask_analysts" for t in args.get("tasks", [])]
+    asked = [args for name, args in calls if name == "ask_analysts"]
+    given = [str(t) for args in asked for t in args.get("tasks", [])]
+    later = [str(t) for args in asked for t in args.get("later", [])]
+    named = {"names groups as published": any(n in t for n in case["names"] for t in given)} if case.get("names") else {}
     return {"decided": [name for name, _ in calls] or ["wrote text"], "said": decision.get("content"), "tasks": given,
+            "approach": [args.get("approach") for args in asked], "later": later,
             "checks": {"handed out tasks": bool(given),
-                       "within the limit": 0 < len(given) <= MAX_ANALYSTS,
-                       "each names an indicator": all(any(re.search(p, t, re.I) for p in INDICATORS.values())
-                                                      for t in given),
+                       "within the first round": 0 < len(given) <= FIRST_ROUND, **named,
+                       "planned later tasks": len(later),
                        "none points at a profile": not any("profile" in t.lower() for t in given)}}
 
 
@@ -138,7 +140,8 @@ async def brief(analyses, case, question):
     needed = next(p for p in cases()["pick"] if p["id"] == case["id"])["needed"]
     profiles = await analyses.call("profile", names=needed)
     history = (_call("profile", {"names": needed}, profiles)
-               + _call("ask_analysts", {"tasks": [f.task for f in findings]}, "\n\n".join(f.text() for f in findings)))
+               + _call("ask_analysts", {"approach": "Test what the question asks.", "tasks": [f.task for f in findings]},
+                       "\n\n".join(f.text() for f in findings)))
     # the lead's real hand-in loop from here: refusals handed back, a brief written as text read
     # as one, up to 3 tries. Its tasks are all used, so it can't start analysts in a test.
     run = Investigation(analyses, question)
@@ -223,7 +226,7 @@ def main(argv):
             if only and case["id"] not in only:
                 continue
             for rep in range(1, repeat + 1):
-                question = golden[case["id"]]["question"] if case["id"] in golden else None
+                question = golden[case["id"]]["question"] if case["id"] in golden else case.get("question")
                 try:
                     row = {"span": span, "id": case["id"], "rep": rep,
                            **asyncio.run(run_case(span, case, question))}

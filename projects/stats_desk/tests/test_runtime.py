@@ -163,7 +163,7 @@ def rejected(generated):
 
 
 async def test_a_hand_in_made_under_the_wrong_name_is_made_as_the_right_tool(model):
-    # baseline runs, 2026-11-11: gpt-oss called 'json' or 'commentary' 9 times with a full hand-in
+    # baseline runs: gpt-oss called 'json' or 'commentary' 9 times with a full hand-in
     agent = Agent("calc", "You add.", tools=Registry([Tool(add)]), model="m")
     model.steps += [rejected('{"name": "commentary", "arguments": {"total": 4}}')]
     assert await answer(agent, "2+2", Form) == Form(total=4)
@@ -177,6 +177,39 @@ async def test_a_rejected_call_whose_contents_fit_no_tool_gets_the_real_names(mo
     assert await answer(agent, "2+2", Form) == Form(total=4)
     told = model.requests[1]["messages"][-1]["content"]
     assert "Your tools are exactly: `add`, `json`" in told
+
+
+async def test_a_step_named_by_code_is_asked_for_once_then_left_to_the_model(model):
+    """The lead's fixed steps: code names the tool for one try. A model set on
+    another tool is refused by Groq, and that call is not rescued as the other tool (span tests:
+    it was, as the brief); the next try is the model's own choice, told which tool to call."""
+    def must_add(conversation):
+        return None if any(m.get("role") == "tool" for m in conversation.messages) else "add"
+    agent = Agent("calc", "You add.", tools=Registry([Tool(add)]), model="m", choose=must_add)
+    model.steps += [rejected('{"name": "json", "arguments": {"total": 4}}'),          # fits json, not add
+                    call("add", a=2, b=2), call("json", total=4)]
+    assert await answer(agent, "2+2", Form) == Form(total=4)
+    first, second, third = (r.get("tool_choice") for r in model.requests)
+    assert first == {"type": "function", "function": {"name": "add"}} and second == third == "required"
+    assert model.requests[1]["messages"][-1]["content"].endswith("Call `add` now.")
+
+
+async def test_prose_where_a_tool_call_was_required_gets_its_own_words_back_and_the_next_move(model):
+    """Live run: an analyst retried on Groq's "issue the call again" wrote "this
+    cannot be computed with a single tool" three times, and spent its budget on no analysis."""
+    import httpx
+    from openai import BadRequestError
+
+    def prose(request):
+        raise BadRequestError("Tool choice is required, but model did not call a tool", response=httpx.Response(
+            400, request=httpx.Request("POST", "https://api.groq.com/openai/v1/chat/completions")),
+            body={"error": {"code": "tool_use_failed", "message": "Tool choice is required, but model did not call a tool",
+                            "failed_generation": "This cannot be computed with a single tool."}})
+    agent = Agent("calc", "You add.", tools=Registry([Tool(add)]), model="m", when_stuck="Run the closest analysis now.")
+    model.steps += [prose, call("json", total=4)]
+    assert await answer(agent, "2+2", Form) == Form(total=4)
+    told = model.requests[1]["messages"][-1]["content"]
+    assert told == "You wrote this instead of calling a tool:\nThis cannot be computed with a single tool.\n\nRun the closest analysis now."
 
 
 async def test_a_hand_in_written_as_text_is_read_as_the_form_with_the_same_checks(model):

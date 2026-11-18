@@ -2,7 +2,7 @@
 finding. Several run at once when the lead's tasks are independent; each sees only its own task
 (chapter 2: a branch gets its goal, not the parent's conversation).
 
-The hand-in is one sentence and the ids of the results it rests on (decided 2026-11-11). Before,
+The hand-in is one sentence and the ids of the results it rests on. Before,
 it was a free summary, which is where a number got the wrong label, lost its unit, or gained a
 "because". Now the figures the lead reads are written by code from the results themselves
 (`compact`), and only the one sentence is the analyst's own words; code checks every number in it
@@ -25,11 +25,13 @@ BUDGET = 12_000        # tokens for one task
 PERSONA = f"""You are an analyst of India's official labour statistics (MoSPI's PLFS). You carry out ONE task from the lead analyst with the analysis tools, then hand in what you found.
 
 How to work:
-- Pick the analysis whose description fits the task.
+- Pick the analysis whose description fits the task. One analysis that answers it beats several lookups: groups side by side come from one gap, compare, or an analysis with `by`.
 - Compare like with like: groups that differ in one field only. If the task compares groups that differ in several fields, compare like with like instead and say so.
 - The tools compute every difference, change and correlation. Never do arithmetic yourself.
-- If a tool refuses, its message says what is valid or published: fix the call from it. If the data can't answer the task, say so.
+- If a tool refuses, its message says what is valid or published: fix the call from it. If the data can't answer the task, say so in your claim.
+- If no single analysis does all of the task, run the one that gets closest, then the next. Never explain instead of acting.
 - 2-4 analyses are usually enough. Analyses that don't depend on each other can go in the same turn.
+- Every reply is a tool call: an analysis, or {FORM} to hand in. Never reply in prose.
 
 Hand in with {FORM}:
 - claim: one sentence answering the task: what the results show, which way and how much. Quote numbers exactly as a result shows them. The lead also gets the figures themselves from code, so don't list them all.
@@ -54,8 +56,8 @@ class Finding:
     flags: list = field(default_factory=list)          # what code saw wrong or worth a look
 
     def text(self):
-        """The finding as the lead reads it: warnings first, each saying what to do (span tests,
-        2026-11-12: with the warnings last, the lead passed over two of them)."""
+        """The finding as the lead reads it: warnings first, each saying what to do (span tests:
+        with the warnings last, the lead passed over two of them)."""
         lines = [f"{self.id} -- task: {self.task}"]
         lines += [f"WARNING from code: {w}" for w in self.flags]
         lines += [f"claim: {self.claim}", "figures:"]
@@ -123,7 +125,11 @@ def check_numbers(analyses, cited, *texts):
 
 
 async def run_analyst(analyses, finding_id, task, context, transcript=None):
-    """One analyst instance on one task. Returns a Finding, or Stopped."""
+    """One analyst instance on one task. Returns a Finding, or Stopped.
+
+    Two lookups for one comparison (eval: women and men looked up one by one three
+    times over) are headed off in `value`'s description and PERSONA, not refused at hand-in: a
+    refusal there would cost the analyst more calls, not fewer."""
     async def build(report: Report):
         check_numbers(analyses, report.results, report.claim)
         return Finding(finding_id, task, report.claim, report.results,
@@ -133,7 +139,11 @@ async def run_analyst(analyses, finding_id, task, context, transcript=None):
     agent = Agent(f"analyst {finding_id}", PERSONA, tools=Registry([analyses.tool(n) for n in TOOLS]),
                   model=config.ANALYST_MODEL, max_tokens=800, max_tool_calls=8, budget=BUDGET,
                   answer_on_stop=False, shorten=("drill", "tables"), form_build=build,
-                  label=f"analyst {finding_id}: {short}")
+                  label=f"analyst {finding_id}: {short}",
+                  # the backstop for when the rule in PERSONA slips (it says the same, once more)
+                  when_stuck=("Act on it with a tool call. If no single analysis does all of the task, run the one "
+                              "that gets closest now, then the next; then hand in with json what the results show, "
+                              "and say in the claim what you could not get."))
     return await answer(agent, f"Task from the lead: {task}", Report, context=context,
                         transcript=transcript)
 

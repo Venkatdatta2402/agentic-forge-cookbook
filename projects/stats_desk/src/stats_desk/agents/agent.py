@@ -5,7 +5,7 @@ finishes by filling in a form: calling `json` stops its loop through the runtime
 hook, and the program gets the pydantic object, not prose to parse.
 
 The form's tool is called `json` (it was `submit`): handing in, gpt-oss called a tool named
-'json' 6 times in the 5 baseline runs (2026-11-11), and 'commentary' 3 times, with a complete
+'json' 6 times in the 5 baseline runs, and 'commentary' 3 times, with a complete
 hand-in as the arguments each time. The runtime recovers a call made under a wrong name
 (Think._recover); naming the tool what the model reaches for avoids most of them.
 """
@@ -41,11 +41,14 @@ class Agent:
     form_build: Callable[[BaseModel], Awaitable[object]] | None = None   # see form_tool
     tool_timeout: float = 60           # seconds per tool call; the lead's ask_analysts runs minutes
     label: str | None = None           # its name in Langfuse, when that should say more ("analyst f1: <task>")
+    choose: Callable | None = None     # conversation -> the tool the next call must use, or None (see Think)
+    when_stuck: str | None = None      # the next move, said to it when it writes prose instead of a call (see Think)
 
     def runtime(self, cancel=None):
         return AsyncRuntime(
             loop=[Think(self.tools, self.model, self.max_tokens, self.reasoning_effort,
-                        shorten=self.shorten, keep_recent=self.keep_recent),
+                        shorten=self.shorten, keep_recent=self.keep_recent, require_tool=True,
+                        choose=self.choose, when_stuck=self.when_stuck),
                   Act(self.tools, timeout=self.tool_timeout), Observe()],
             max_iterations=self.max_iterations, max_tool_calls=self.max_tool_calls,
             max_tokens=self.budget, cancel=cancel, answer_on_stop=self.answer_on_stop)
@@ -81,7 +84,7 @@ async def _read_as_form(text, form, conversation, tools):
     """A reply written as text: if it is the form's fields, hand it in through the same checks.
     Returns True if that worked; otherwise says what to do -- reply with one of the tools, not
     "hand in now": a lead that writes text before its findings are in still has tasks to give
-    (span tests, 2026-11-12: the lead answered a question in text from the profiles alone)."""
+    (span tests: the lead answered a question in text from the profiles alone)."""
     parsed = parse_call(text)
     if parsed is not None and fitting([form], parsed[1]):
         result = await invoke(form, parsed[1])

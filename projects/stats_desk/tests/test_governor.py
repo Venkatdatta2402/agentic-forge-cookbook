@@ -27,6 +27,34 @@ async def test_waits_only_as_long_as_the_refill_needs(clock, small_limits):
     assert sum(clock.slept) == pytest.approx(24, abs=0.5)
 
 
+async def test_a_wait_is_told_once_with_its_length_for_the_page(clock, small_limits):
+    g, told = gov(clock, small_limits), []
+    await g.reserve("m", 700, on_wait=told.append)          # room: nothing to tell
+    await g.reserve("m", 700, on_wait=told.append)          # 24 s, however many sleeps it takes
+    assert told == [24]
+
+
+def test_one_governor_serves_one_event_loop_after_another(small_limits):
+    """The eval runs each question in its own asyncio.run with the same governor (the
+    second question's analysts, waiting in line, got "bound to a different event loop")."""
+    class Clock:                         # time passes when slept, and a sleep lets the other in line run
+        t = 1000.0
+
+        def __call__(self):
+            return self.t
+
+        async def sleep(self, seconds):
+            self.t += seconds
+            await asyncio.sleep(0)
+    c = Clock()
+    g = Governor(limits={"m": small_limits}, clock=c, wall=c, sleep=c.sleep)
+
+    async def two_in_line():
+        await asyncio.gather(g.reserve("m", 600), g.reserve("m", 600))      # the second waits its turn
+    asyncio.run(two_in_line())
+    asyncio.run(two_in_line())                                               # a new loop, the same governor
+
+
 async def test_refuses_a_request_over_the_per_request_cap_before_sending(clock, small_limits):
     with pytest.raises(TooLarge):
         await gov(clock, small_limits).reserve("m", 801)
@@ -80,7 +108,7 @@ async def test_concurrent_requests_are_admitted_in_turn(clock, small_limits):
     assert sum(clock.slept) == pytest.approx(48, abs=1)
 
 
-# ---- one bucket per user's key (the API, 2026-11-12)
+# ---- one bucket per user's key (the API)
 
 async def test_each_users_key_draws_on_its_own_bucket(clock, small_limits):
     g = gov(clock, small_limits)

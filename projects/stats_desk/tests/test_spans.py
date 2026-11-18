@@ -3,7 +3,7 @@ investigation would run it, and checked. No tokens."""
 
 import json
 
-from stubs import call, calls
+from stubs import call, calls, plan
 
 from evals import spans as SP
 from stats_desk.analysis.client import connect
@@ -22,12 +22,14 @@ async def test_the_pick_step_is_the_leads_first_call_and_is_checked(release_path
 
 
 async def test_the_tasks_step_starts_from_the_profiles_read(release_path, model):
-    model.steps += [calls(("ask_analysts", {"tasks": ["Find unemployment of graduates in the UR_annual_2025 profile",
-                                                       "How does unemployment differ by education?"]}))]
+    model.steps += [calls(("ask_analysts", plan(
+        "Find unemployment of graduates in the UR_annual_2025 profile", "How does unemployment differ by education?",
+        later=["Check the highest group by gender (waits for: which education group is highest)"])))]
     async with connect(server=create(release_path)) as analyses:
         out = await SP.tasks(analyses, {"id": "Q8", "needed": ["UR_annual_2025"]}, Q8)
     assert out["tasks"][1] == "How does unemployment differ by education?"
     assert out["checks"]["handed out tasks"] and out["checks"]["none points at a profile"] is False
+    assert out["checks"]["planned later tasks"] == 1
     assert any(m["role"] == "tool" and "PROFILE unemployment rate" in m["content"]
                for m in model.requests[0]["messages"])
 
@@ -71,5 +73,7 @@ def test_the_span_cases_name_real_eval_questions_and_their_figures_hold():
     from evals import score as S
     _, golden = S.golden()
     data = SP.cases()
-    assert {c["id"] for c in data["pick"]} == set(golden) == {c["id"] for c in data["brief"]}
+    # a case that brings its own question (from a live run, not the eval) is the exception
+    assert {c["id"] for c in data["pick"] if "question" not in c} == set(golden) == {c["id"] for c in data["brief"]}
+    assert all(c["question"].endswith("?") for c in data["pick"] if "question" in c)
     assert json.dumps(data)                                          # plain JSON

@@ -22,6 +22,23 @@ def listening(callback):
         _listeners.reset(token)
 
 
+def label(analysis: str, args) -> str:
+    """An analysis call as a reader knows it: "change on ur_monthly by gender (2026-09)"."""
+    args = args if isinstance(args, dict) else {}
+    table = args.get("table") or args.get("x_table")
+    out = analysis + (f" on {table}" if isinstance(table, str) and table else "")
+    if isinstance(args.get("y_table"), str) and args["y_table"] != table:
+        out += f" against {args['y_table']}"
+    if args.get("by"):
+        out += f" by {args['by']}"
+    if args.get("field") and args.get("a") and args.get("b"):
+        out += f", {args['a']} against {args['b']}"
+    where = args.get("where") or args.get("x_where")
+    if isinstance(where, dict) and where:
+        out += f" ({', '.join(str(v) for v in where.values())})"
+    return out
+
+
 def emit(kind: str, **data):
     event = {"kind": kind, "agent": meter._agent.get(), **data}
     for callback in _listeners.get():

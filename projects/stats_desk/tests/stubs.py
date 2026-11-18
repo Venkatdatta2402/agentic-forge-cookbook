@@ -20,6 +20,11 @@ def calls(*pairs):
                  "tool_calls", 300, 60)
 
 
+def plan(*tasks, later=(), approach="Test what the question asks, then follow up."):
+    """ask_analysts' arguments (agents/plan.py)."""
+    return {"approach": approach, "tasks": list(tasks), **({"later": list(later)} if later else {})}
+
+
 def say(text):
     return Reply(text, [], "stop", 300, 40)
 

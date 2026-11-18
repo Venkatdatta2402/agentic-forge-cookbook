@@ -4,8 +4,8 @@ code's checks on their findings.
     python -m stats_desk.analysis.server [path/to/release.duckdb]               stdio (scripts, evals)
     python -m stats_desk.analysis.server [path] --http 8765                     HTTP (the API)
 
-The API runs ONE of these for all its questions, over HTTP on the container's loopback (decided
-2026-11-13): the usual shape for a server many requests share, where the first version started a
+The API runs ONE of these for all its questions, over HTTP on the container's loopback:
+the usual shape for a server many requests share, where the first version started a
 stdio copy per question (the desktop-app pattern), which cost a Python and DuckDB process each.
 Sharing is safe: the server only reads, every query gets its own cursor, and each question keeps
 its own results on its side (client.py). Stateless HTTP: no session to keep between calls.

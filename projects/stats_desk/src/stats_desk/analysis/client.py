@@ -20,6 +20,14 @@ from .server import KIND
 
 NUMBER = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?")
 RESULT_ID = re.compile(r"\b[a-z]+-[0-9a-f]{6}\b")
+# an age group names people, it isn't a figure: "ages 15-29", "15‑29 year olds", "aged 15 and
+# above", "15+" (a live run: the lead's brief was refused three times for "29")
+DASH = r"\s*[-‐‑–—]\s*"
+AGE = re.compile(
+    rf"\b(?:ages?|aged)\s+\d{{1,2}}(?:{DASH}\d{{1,2}}|\s*\+|\s+(?:years?\s+)?(?:and|&)\s+(?:above|over|older))?"
+    rf"|\b\d{{1,2}}(?:{DASH}\d{{1,2}}|\s*\+)?\s*(?:years?|yrs|year[-‑ ]olds?)(?:\s+(?:and|&)\s+(?:above|over|older))?"
+    rf"|\b\d{{1,2}}{DASH}\d{{1,2}}(?=\s*(?:age|year|yr))"
+    rf"|\b\d{{1,2}}\+", re.I)
 
 
 @asynccontextmanager
@@ -79,4 +87,4 @@ class Analyses:
             raise ToolError(f"no result {', '.join(unknown)}; cite the ids your results start with")
         shown = {abs(float(n)) for i in cited
                  for n in NUMBER.findall(self.results[i].partition("\n")[2])}
-        return [n for n in NUMBER.findall(RESULT_ID.sub("", summary)) if abs(float(n)) not in shown]
+        return [n for n in NUMBER.findall(AGE.sub("", RESULT_ID.sub("", summary))) if abs(float(n)) not in shown]

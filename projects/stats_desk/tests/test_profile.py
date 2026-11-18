@@ -123,7 +123,7 @@ def test_the_monthly_measure_is_inferred_from_the_numbers_not_assumed():
 
 
 def test_the_monthly_profile_says_how_the_series_moves_with_the_trend_tools_own_verdict(release):
-    """2026-11-13: the profile had the series but not whether it was rising, so a lead could miss
+    """The profile had the series but not whether it was rising, so a lead could miss
     a steady rise unless the question asked. Same rule as the trend tool, so they never disagree."""
     from stats_desk.analysis.analyses import trend
     t = release.table("ur_monthly")

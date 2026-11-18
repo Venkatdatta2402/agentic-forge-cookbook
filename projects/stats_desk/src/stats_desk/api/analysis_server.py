@@ -1,6 +1,6 @@
 """The machine's one analysis server: analysis/server.py as a child process serving MCP over HTTP
 on the loopback, started with the app and restarted if it dies. Each question opens its own
-connection to it and keeps its own results (decided 2026-11-13: the usual shape for a server
+connection to it and keeps its own results (the usual shape for a server
 many requests share; one stdio child per question, the desktop-app pattern, cost a Python and
 DuckDB process each)."""
 

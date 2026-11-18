@@ -10,8 +10,9 @@ import json
 import re
 
 import pytest
-from stubs import call, calls
+from stubs import call, calls, plan
 
+from stats_desk.agents.agent import Stopped
 from stats_desk.agents.lead import MAX_ANALYSTS, Investigation, investigate, profile_list
 from stats_desk.analysis.client import connect
 from stats_desk.analysis.server import create
@@ -81,7 +82,7 @@ async def test_an_investigation_runs_from_question_to_checked_brief(release_path
 
     model = routed({
         "lead": [calls(("profile", {"names": ["UR_annual_2025"]})),
-                 calls(("ask_analysts", {"tasks": [GAP, CHANGE]})), brief],
+                 calls(("ask_analysts", plan(GAP, CHANGE))), brief],
         f"analyst {GAP}": [
             call("gap", table="ur_annual", field="gender", a="female", b="male", across="sector",
                  where={"age": "15-29 years"}),
@@ -98,6 +99,11 @@ async def test_an_investigation_runs_from_question_to_checked_brief(release_path
 
     assert brief_.stopped is None, brief_.stopped
     assert "18.9%" in brief_.answer and [f.task for f in brief_.findings] == [GAP]
+    # every turn must be a tool call: a live run lost its brief to a lead writing it as text;
+    # the lead's first two are fixed: read profiles, then hand out tasks (span tests)
+    lead_choices = [r.get("tool_choice") for key, r in model.asked if key == "lead"]
+    assert [c if isinstance(c, str) else c["function"]["name"] for c in lead_choices] == ["profile", "ask_analysts", "required"]
+    assert {r.get("tool_choice") for key, r in model.asked if key != "lead"} == {"required"}
     # the analyst's invented 3.0 was refused, with the number named, and fixed
     change_id = next(k for k, f in run.findings.items() if f.task == CHANGE)
     assert "These numbers are not in the results you cited: 3.0" in json.dumps(run.transcripts[f"analyst {change_id}"])
@@ -131,12 +137,118 @@ async def test_the_lead_cannot_ask_for_more_tasks_than_the_limit_or_the_budget(r
         run.findings = {f"f{i}": None for i in range(1, MAX_ANALYSTS + 1)}
         with meter.metered() as run.usage:
             with pytest.raises(ToolError, match=f"All {MAX_ANALYSTS} analyst tasks are used"):
-                await run.ask_analysts(["one more"])
+                await run.ask_analysts(**plan("one more"))
         run.findings = {}
         with meter.metered() as run.usage:
             meter.record("m", 35_000, 0, 1.0)                        # 35k spent: 60k - 6k - 35k pays for 1
             with pytest.raises(ToolError, match="Send at most 1 task now"):
-                await run.ask_analysts(["a", "b", "c"])
+                await run.ask_analysts(**plan("a", "b", "c"))
+        # the first call keeps a task back, to follow up on what the first round finds
+        with meter.metered() as run.usage:
+            with pytest.raises(ToolError, match="Send at most 3 tasks now \\(in your first call, keeping room"):
+                await run.ask_analysts(**plan("a", "b", "c", "d"))
+
+
+async def test_the_plan_is_kept_and_its_later_tasks_come_back_with_the_findings(release_path, routed):
+    """The lead plans like an analyst: what first, what next depending on it."""
+    routed({"lead": [calls(("profile", {"names": ["UR_annual_2025"]})),
+                     calls(("ask_analysts", plan(GAP, later=["Check the gap by state, if it is large (waits for: the gap)"]))),
+                     call("json", answer="I could not establish it.", findings=[], cannot_tell="Why.")],
+            f"analyst {GAP}": [call("gap", table="ur_annual", field="gender", a="female", b="male"),
+                               lambda r: call("json", claim="Women's unemployment is above men's.",
+                                              results=[result_id(r, "gap")])]})
+    async with connect(server=create(release_path)) as analyses:
+        _, run = await investigate(analyses, "Do women find work harder than men?")
+    assert run.record.plan == [{"approach": "Test what the question asks, then follow up.", "tasks": {"f1": GAP},
+                                "later": ["Check the gap by state, if it is large (waits for: the gap)"]}]
+    came_back = next(m["content"] for m in run.transcripts["lead"] if m["role"] == "tool" and "-- task:" in m["content"])
+    assert came_back.endswith("Or hand in the brief if the question is answered.") and "Your plan's later tasks:" in came_back
+
+
+async def test_the_lead_plans_from_what_is_published_together(release_path):
+    """The list of profiles says which fields MoSPI splits together (span tests:
+    without it 2 of 3 plans asked for young people by education, which isn't published), and
+    what the groups mean (live run: "cities" taken to be unpublished)."""
+    async with connect(server=create(release_path)) as analyses:
+        listed = profile_list(await analyses.call("tables"))
+    assert "published together: " in listed and "education: only by" in listed
+    assert "sector urban = towns and cities" in listed
+
+
+async def test_the_eval_weak_spots_are_caught_by_code(release_path):
+    """The eval's misses, each now a check: a link true by definition said even when
+    the brief cites another finding (Q5); an outlier named with an odd space (Q7); a month MoSPI
+    skipped (Q2); "fell" against a trend's "no clear trend" (Q2). (Q1's two lookups for one
+    comparison are headed off in `value`'s description instead.)"""
+    from stats_desk.agents.analyst import Finding
+    from stats_desk.agents.checks import flags, outliers_in
+    from stats_desk.agents.lead import BriefForm, Rewrite
+    async with connect(server=create(release_path)) as analyses:
+        run = Investigation(analyses, "q")
+        rel = await analyses.call("relate", x_table="ur_annual", y_table="wpr_annual")
+        cmp = await analyses.call("compare", table="ur_annual", by="state")
+        ser = await analyses.call("series", table="ur_monthly")
+        trd = await analyses.call("trend", table="ur_monthly")
+        rid = lambda text: text.split("\n")[0].removeprefix("result ")
+        linked = Finding("f1", "t", "They go together.", [rid(rel)])
+        linked.flags = flags(analyses, linked)
+        ranks = Finding("f2", "t", "Top and bottom states match.", [rid(cmp)])
+        run.findings = {"f1": linked, "f2": ranks}
+        with pytest.raises(Rewrite, match="true by definition: WPR is computed from LFPR and UR"):
+            run._check_brief(BriefForm(answer="Yes: states rank the same on both.", findings=["f2"], cannot_tell="Why."))
+        analyses.results["compare-0a0a0a"] = ("result compare-0a0a0a\n36 groups; statistical outliers (possibly "
+                                              "small samples): Andaman & Nicobar Islands 16.4")
+        assert outliers_in(analyses.results["compare-0a0a0a"]) == ["Andaman & Nicobar Islands"]
+        odd = "Andaman & Nicobar Islands"                       # gpt-oss's narrow no-break space
+        ranks = Finding("f2", "t", "Top and bottom states match.", [rid(cmp), "compare-0a0a0a"])
+        run.findings = {"f2": ranks}
+        with pytest.raises(Rewrite, match="statistical outlier"):
+            run._check_brief(BriefForm(answer=f"It is highest in {odd}.", findings=["f2"], cannot_tell="Why."))
+        monthly = Finding("f3", "t", "It fell over the months.", [rid(ser), rid(trd)])
+        run.findings = {"f3": monthly}
+        with pytest.raises(Rewrite, match="The monthly figures skip July 2025, August 2025"):
+            run._check_brief(BriefForm(answer="It stayed about the same.", findings=["f3"], cannot_tell="Why."))
+        assert any("no clear trend" in w and "'fell'" in w for w in flags(analyses, monthly)) == \
+            ("no clear trend" in trd)
+
+
+async def test_a_brief_saying_something_isnt_published_needs_a_refusal_behind_it(release_path):
+    """Live run: "the published tables do not provide unemployment by gender for
+    urban areas" -- they do; nobody had asked."""
+    from stats_desk.agents.analyst import Finding
+    from stats_desk.agents.lead import BriefForm
+    async with connect(server=create(release_path)) as analyses:
+        text = await analyses.call("value", table="ur_annual")
+        rid = text.split("\n")[0].removeprefix("result ")
+        run = Investigation(analyses, "q")
+        run.findings = {"f1": Finding("f1", "t", "c", [rid])}
+        run.transcripts["analyst f1"] = [{"role": "tool", "kind": "ok", "content": text}]
+        brief = BriefForm(answer="It is published overall; the tables do not provide it by gender for cities.",
+                          findings=["f1"], cannot_tell="Why.")
+        with pytest.raises(ToolError, match="no analysis was refused as unpublished.*Give it to an analyst"):
+            run._check_brief(brief)
+        # once a request was refused as not published, saying so is backed
+        run.transcripts["analyst f1"].append({"role": "tool", "kind": "refused",
+                                              "content": "ur_annual: gender x religion x state is not published together"})
+        assert run._check_brief(brief) is brief
+        # so is a result listing what wasn't published (the eval's Q2: "March 2026 is not published")
+        run.transcripts["analyst f1"].pop()
+        series = await analyses.call("series", table="ur_monthly")
+        assert "not published: " in series and run._check_brief(brief) is brief
+
+
+async def test_a_task_that_came_back_empty_says_nothing_about_what_is_published(release_path):
+    """Live run: three analysts stopped, and the lead wrote that unemployment by
+    education isn't published -- its own profile showed 11.2% for graduates."""
+    async with connect(server=create(release_path)) as analyses:
+        run = Investigation(analyses, "q")
+        run.transcripts["analyst f1"] = [
+            {"role": "tool", "kind": "refused", "content": "ur_annual: this split is published only for age 15 years and above"},
+            {"role": "tool", "kind": "ok", "content": "result value-123456\n..."}]
+        said = run._unfinished("f1", Stopped(agent="analyst f1", reason="reached its token budget of 12,000"))
+    assert "says nothing about whether the figures are published" in said
+    assert "- ur_annual: this split is published only for age 15 years and above" in said and "value-123456" not in said
+    assert "give the task again" in said
 
 
 async def test_a_brief_number_from_nowhere_and_an_empty_answer_are_refused(release_path, routed):
@@ -263,7 +375,7 @@ def test_a_correlation_says_how_strong_it_is_and_a_small_one_is_no_link():
 
 def test_cause_words_that_deny_a_cause_or_give_a_statistical_reason_are_not_claims():
     from stats_desk.agents.checks import cause_claims
-    # the four sentences of the span tests' briefs (2026-11-12) the word match flagged
+    # the four sentences of the span tests' briefs the word match flagged
     assert cause_claims("These figures show the gap, but the data cannot explain why this is the case.") == []
     assert cause_claims("They move together by definition, not because higher participation causes more work.") == []
     assert cause_claims("This state is flagged as a statistical outlier due to its small sample size;") == []
@@ -326,7 +438,7 @@ async def test_a_repair_that_still_fails_goes_back_to_the_lead(release_path, mod
 
 
 async def test_a_brief_mixing_measures_or_annual_with_monthly_says_so_in_its_answer(release_path):
-    """2026-11-14, the first live question: "fell 0.4 (annual, usual status)... However, the
+    """The first live question: "fell 0.4 (annual, usual status)... However, the
     monthly series shows a rising trend (weekly status)", as if they disagreed. Code adds the
     note; same-measure annual findings get none."""
     from stats_desk.agents.analyst import Finding

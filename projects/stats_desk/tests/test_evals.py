@@ -35,9 +35,14 @@ def test_every_number_in_the_answer_keys_is_what_the_release_file_says():
 
 
 def test_no_eval_question_or_answer_is_in_what_the_agents_are_told():
-    from stats_desk.agents import analyst, lead
-    from stats_desk.analysis.analyses import ANALYSES
+    import json as _json
+
+    from stats_desk.agents import analyst, lead, plan
+    from stats_desk.analysis.analyses import ANALYSES, DEFAULTS_RULE, MEANINGS
+    # everything an agent reads that isn't the data: prompts, tool descriptions, the plan's field
+    # descriptions, the groups' meanings and defaults in the tables list
     told = " ".join([lead.PERSONA, analyst.PERSONA, lead.Investigation.ask_analysts.__doc__,
+                     _json.dumps(plan.Plan.model_json_schema()), MEANINGS, DEFAULTS_RULE,
                      *(f.__doc__ for f in ANALYSES)]).lower()
     for q in DATA["questions"]:
         assert q["question"].lower() not in told, q["id"]

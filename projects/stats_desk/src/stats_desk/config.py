@@ -21,15 +21,15 @@ ANALYST_MODEL = os.environ.get("STATS_DESK_ANALYST_MODEL", "openai/gpt-oss-120b"
 # set only for load tests, which point the app at a stand-in for Groq
 GROQ_BASE_URL = os.environ.get("STATS_DESK_GROQ_BASE_URL", "https://api.groq.com/openai/v1")
 
-# Free questions, on the desk's own keys, for visitors without one (decided 2026-11-13). Each key
+# Free questions, on the desk's own keys, for visitors without one. Each key
 # should be on a different Groq organisation: Groq's limits are per organisation, so two keys of
 # one organisation share one daily allowance.
 FREE_KEYS = [k.strip() for k in os.environ.get("STATS_DESK_FREE_GROQ_KEYS", "").split(",") if k.strip()]
-# No fixed count per key (user, 2026-11-13): a key is used until Groq says its day is spent. The
+# No fixed count per key: a key is used until Groq says its day is spent. The
 # only count is per visitor (by a hash of their internet address): 3 a day, new questions and
-# follow-ups together (user, 2026-11-13).
+# follow-ups together.
 FREE_PER_VISITOR_PER_DAY = int(os.environ.get("STATS_DESK_FREE_PER_VISITOR_PER_DAY", 3))
-# The free keys are used by the desk alone (user, 2026-11-13), so the desk can count each key's
+# The free keys are used by the desk alone, so the desk can count each key's
 # last 24 hours itself: a question starts on the key with the most left, and not on a key with
 # less than FREE_MIN_LEFT (it would run dry almost at once). Groq's own "daily limit" refusal
 # stays the backstop when the count is off.

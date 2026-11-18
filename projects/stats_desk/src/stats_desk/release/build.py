@@ -15,7 +15,7 @@ r = 0.41 and a 6.5-point change share no scale, and the first version's single r
 correlation true by definition (LFPR vs WPR, r = 0.99) at the top.
 
 Monthly profile: the series, months not published, its trend, latest streak and latest month
-against its own history (the trend and series tools' rules: 2026-11-13, so the lead sees a steady
+against its own history (the trend and series tools' rules, so the lead sees a steady
 rise without being asked); groups with a clear trend or a streak of 3+ months; changes vs the
 previous month and a year earlier, the groups now, the widest interactions, the widest ranges
 over the series.

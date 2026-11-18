@@ -4,7 +4,7 @@ choice (chapter 6: agents skip optional steps).
 This was the skeptic's job. On live runs 1-2 a skeptic with tools re-fetched figures it had been
 shown or re-ran the analyst's own analysis in other words, caught nothing, and cost ~45% of a
 question's tokens; with code gathering its evidence it judged in one call, but the lead reads
-every finding and decides what to do next anyway. So (decided 2026-11-11) code gathers the
+every finding and decides what to do next anyway. So code gathers the
 evidence and the lead judges it:
   - every cited analysis rerun in the other period and on the other measure (`recheck`)
   - warnings: figures compared that differ in more than one field, a state set apart as an
@@ -15,6 +15,7 @@ evidence and the lead judges it:
 import re
 from itertools import combinations
 
+from ..core import events
 from ..core.tools import ToolError
 from .analyst import Finding, compact
 
@@ -22,13 +23,20 @@ CAUSE_WORDS = re.compile(r"\b(because|due to|caus\w*|leads? to|led to|results? i
                          r"owing to|explains?|drives?)\b", re.I)
 NEGATION = re.compile(r"\b(not|no|cannot|can't|don't|doesn't|do not|does not|nor|without)\b", re.I)
 STATISTICAL = re.compile(r"\b(sample|definition|defined|rounding|computed|calculated)\b", re.I)
+MOVE_WORDS = re.compile(r"\b(fell|falls?|falling|rose|rises?|rising|declin\w*|increas\w*|decreas\w*|drop\w*|"
+                        r"grew|grow\w*|widen\w*|narrow\w*|upward|downward)\b", re.I)
+
+
+def _spaced(text):
+    """Every kind of space as one: gpt-oss writes "Andaman &" + a narrow no-break space + "Nicobar"."""
+    return re.sub(r"\s+", " ", text or "")
 
 
 def cause_claims(text):
     """The cause words a text uses to claim a cause: not those it denies ("cannot explain why",
     "not because ...", "not a causal effect") nor those giving a statistical reason ("due to its
     small sample"). Matched word by word, these four sentences of the span tests' briefs
-    (2026-11-12) were all flagged."""
+    were all flagged."""
     found = set()
     for clause in re.split(r"[.;:,]\s+|\bbut\b", text or ""):
         for m in CAUSE_WORDS.finditer(clause):
@@ -57,10 +65,16 @@ def flags(analyses, finding: Finding) -> list[str]:
             out.append(f"{i} is a correlation TRUE BY DEFINITION ("
                        + result.split("BUILT IN, not a finding: ")[1].split("\n")[0]
                        + "): it is not a finding; say so instead")
-        named = [s for s in outliers_in(result) if s in finding.claim]
+        named = [s for s in outliers_in(result) if _spaced(s) in _spaced(finding.claim)]
         if named:
             out.append(f"the claim names {', '.join(named)}, set apart in {i} as a statistical outlier: "
                        "if you name it, say it may rest on a small sample")
+        # eval: the trend said "no clear trend", the claim and the brief "fell by 0.2"
+        moved = MOVE_WORDS.findall(finding.claim)
+        if moved and re.search(r"(^|: )no clear trend", result, re.M):
+            out.append(f"{i} finds no clear trend (the change along its straight line is within the usual "
+                       f"scatter), but the claim says {', '.join(repr(w) for w in dict.fromkeys(moved))}: say "
+                       "there is no clear trend; a change between two months is not a trend")
     words = cause_claims(finding.claim)
     if words:
         out.append(f"the claim says {', '.join(repr(w) for w in words)}: the figures show what, not why; "
@@ -124,6 +138,7 @@ async def check(analyses, finding: Finding) -> Finding:
         analysis, args = analyses.calls.get(i, (None, None))
         if analysis is None:
             continue
+        events.emit("check", finding=finding.id, analysis=analysis, arguments=args)
         try:
             text = await analyses.call("recheck", analysis=analysis, args=args)
         except ToolError:

@@ -22,7 +22,7 @@ import tiktoken
 from openai import APIStatusError, AsyncOpenAI, AuthenticationError, BadRequestError
 
 from .. import config
-from . import meter, trace
+from . import events, meter, trace
 from .governor import DailyLimitReached, TooLarge, account_of
 from .governor import governor as default_governor
 
@@ -135,30 +135,71 @@ def backend() -> Backend:
 
 class QuestionKeys:
     """The Groq key one question runs on, and -- for a free question -- how to get another when
-    Groq says this one's day is spent (decided 2026-11-13: a free question that runs a key dry
+    Groq says this one's day is spent (a free question that runs a key dry
     carries on on the desk's other free key, if one has room and is free).
 
     `spare(spent_key, retry_after)` returns the next key, or None. Several analysts may hit the
     limit at once: the first switches, the others see the switch has happened (`generation`)
     and simply retry on the new key. `on_usage(key, tokens)`, if given, hears what every call
-    used, on which key (the desk counts its free keys' last 24 hours with it)."""
+    used, on which key (the desk counts its free keys' last 24 hours with it).
 
-    def __init__(self, key: str, spare=None, on_usage=None):
+    Borrowing (so analysts don't wait on one key's minute while the other free key sits idle): `borrow(key)` returns the other keys this question may use right now
+    -- for the desk, free keys no other question holds -- asked again every BORROW_CHECK
+    seconds, so a key another question takes is handed back within that. Each call goes out on
+    whichever key has the most room in its minute (`pick`); ties stay on the question's own key.
+    A borrowed key Groq says is spent for the day is dropped (`spent(key, retry_after)`), and
+    the question carries on without it."""
+
+    BORROW_CHECK = 20.0          # seconds
+
+    def __init__(self, key: str, spare=None, on_usage=None, borrow=None, spent=None, clock=time.monotonic):
         self.spare, self.on_usage, self.generation = spare, on_usage, 0
-        self._lock = asyncio.Lock()
-        self._clients: list[GroqBackend] = []
+        self.borrow, self.spent, self.clock = borrow, spent, clock
+        self._lock, self._borrow_lock = asyncio.Lock(), asyncio.Lock()
+        self._clients: dict[str, GroqBackend] = {}
+        self.borrowed: list[str] = []
+        self._checked = None
         self._use(key)
+
+    def _client(self, key):
+        if key not in self._clients:
+            self._clients[key] = GroqBackend(api_key=key)
+        return self._clients[key]
 
     def _use(self, key):
         self.key, self.account = key, account_of(key)
-        self.client = GroqBackend(api_key=key)
-        self._clients.append(self.client)
+        self.client = self._client(key)
 
-    async def create(self, **kwargs):
-        key = self.key
+    async def pick(self, model) -> str:
+        """The key this call goes out on: the question's own, or a borrowed one with more room."""
+        if self.borrow is not None:
+            async with self._borrow_lock:
+                if self._checked is None or self.clock() - self._checked >= self.BORROW_CHECK:
+                    self._checked = self.clock()
+                    try:
+                        self.borrowed = [k for k in await self.borrow(self.key) if k != self.key]
+                    except Exception:  # noqa: BLE001 -- can't tell what's free: use our own key only
+                        self.borrowed = []
+        keys = [self.key, *self.borrowed]
+        if len(keys) == 1:
+            return self.key
+        return max(keys, key=lambda k: (_governor.room(model, account_of(k)), k == self.key))
+
+    async def drop(self, key, retry_after):
+        """A borrowed key's day is spent: no more calls on it from this question."""
+        if key in self.borrowed:
+            self.borrowed.remove(key)
+        if self.spent is not None:
+            try:
+                await self.spent(key, retry_after)
+            except Exception:  # noqa: BLE001
+                pass
+
+    async def create(self, key=None, **kwargs):
+        key = key or self.key
         try:
-            reply, headers = await self.client.create(**kwargs)
-        except APIStatusError as e:
+            reply, headers = await self._client(key).create(**kwargs)
+        except (APIStatusError, DailyLimitReached) as e:
             e.stats_desk_key = key                 # whose count a rejected call's estimate goes to
             raise
         await self.note_usage(key, reply.prompt_tokens + reply.completion_tokens)
@@ -180,21 +221,23 @@ class QuestionKeys:
             if new is None:
                 return False
             self._use(new)                 # the old client may still be finishing calls: closed at the end
+            if new in self.borrowed:
+                self.borrowed.remove(new)
             self.generation += 1
             return True
 
     async def close(self):
-        for client in self._clients:
+        for client in self._clients.values():
             await client.close()
 
 
 @asynccontextmanager
-async def using_key(key: str, spare=None, on_usage=None):
+async def using_key(key: str, spare=None, on_usage=None, borrow=None, spent=None):
     """Every model call made inside this block -- the question's agents, in every task they
-    start -- goes out on `key` (then on what `spare` gives, see QuestionKeys) and draws on that
-    key's own bucket in the governor. Keys live in this block's clients only, and are gone when
-    the block ends: never stored, never logged."""
-    keys = QuestionKeys(key, spare, on_usage)
+    start -- goes out on `key` (then on what `spare` gives, or a key `borrow` lends, see
+    QuestionKeys) and draws on that key's own bucket in the governor. Keys live in this block's
+    clients only, and are gone when the block ends: never stored, never logged."""
+    keys = QuestionKeys(key, spare, on_usage, borrow, spent)
     token = _question.set(keys)
     try:
         yield keys
@@ -212,6 +255,10 @@ async def complete(model, messages, tools=None, max_tokens=800, **kwargs) -> Rep
         try:
             return await _complete(used, model, messages, tools, max_tokens, **kwargs)
         except DailyLimitReached as e:
+            spent = getattr(e, "stats_desk_key", None)
+            if spent is not None and spent in getattr(used, "borrowed", ()):
+                await used.drop(spent, e.retry_after)          # a borrowed key: carry on without it
+                continue
             if not hasattr(used, "switch") or not await used.switch(generation, e.retry_after):
                 raise
 
@@ -219,18 +266,24 @@ async def complete(model, messages, tools=None, max_tokens=800, **kwargs) -> Rep
 async def _complete(used, model, messages, tools, max_tokens, **kwargs) -> Reply:
     asked = time.monotonic()
     estimated = estimate(messages, tools)
+    # a question with more than one key: this call goes on whichever has the most room now
+    key = await used.pick(model) if hasattr(used, "pick") else None
+    account = account_of(key) if key else getattr(used, "account", None)
     # The per-request cap counts max_tokens; the minute's bucket doesn't need to. Measured: Groq
     # charges what a call uses (max_tokens 100 and 4,000 left the same 7,906 remaining), and
     # reserving the whole cap made every analyst call wait for room it rarely used.
+    # the page shows each call (events: "waiting" for Groq's minute, "thinking", "thought")
     ticket = await _governor.reserve(model, estimated + min(max_tokens, TYPICAL_REPLY),
-                                     request=estimated + max_tokens, account=getattr(used, "account", None))
+                                     request=estimated + max_tokens, account=account,
+                                     on_wait=lambda seconds: events.emit("waiting", seconds=seconds))
+    events.emit("thinking")
     started = time.monotonic()
     request = {"model": model, "messages": messages, "max_tokens": max_tokens, **kwargs}
     if tools:
         request["tools"] = tools
     observed = trace.generation(model, messages, tools, max_tokens)
     try:
-        reply, headers = await used.create(**request)
+        reply, headers = await (used.create(key=key, **request) if key else used.create(**request))
     except APIStatusError as e:
         headers = getattr(e.response, "headers", {}) or {}
         remaining = _remaining(headers)
@@ -243,17 +296,22 @@ async def _complete(used, model, messages, tools, max_tokens, **kwargs) -> Reply
         meter.record(model, estimated, wrote, time.monotonic() - started, started - asked, remaining,
                      error=_describe(e))
         observed.finish(estimated, wrote, error=_describe(e), waited=started - asked)
+        events.emit("thought", tokens=estimated + wrote if wrote else 0, error=True)
         if wrote and hasattr(used, "note_usage"):
             await used.note_usage(getattr(e, "stats_desk_key", None) or used.key, estimated + wrote)
         if e.status_code == 413:
             raise TooLarge(f"Groq refused the request as too large: {e}") from e
         if e.status_code == 429 and "per day" in str(e).lower():
-            raise DailyLimitReached(f"Groq's daily limit for {model}: {e}",
-                                    retry_after=_header_int(headers, "retry-after") or 3600) from e
+            spent = DailyLimitReached(f"Groq's daily limit for {model}: {e}",
+                                      retry_after=_header_int(headers, "retry-after") or 3600)
+            spent.stats_desk_key = getattr(e, "stats_desk_key", None)
+            raise spent from e
         raise
     except Exception as e:          # a dropped connection, a timeout: recorded, then raised as is
         observed.finish(error=f"{type(e).__name__}: {str(e)[:300]}", waited=started - asked)
+        events.emit("thought", tokens=0, error=True)
         raise
+    events.emit("thought", tokens=reply.prompt_tokens + reply.completion_tokens)
     remaining = _remaining(headers)
     _governor.settle(ticket, reply.prompt_tokens + reply.completion_tokens, remaining,
                      _header_int(headers, "x-ratelimit-limit-tokens"))

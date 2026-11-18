@@ -89,7 +89,7 @@ def outcome(record, q, measures):
         elif c["kind"] == "no_cause_words":
             checks[c["id"]] = not cause_claims(brief.get("answer"))
         elif c["kind"] == "no_bare_verdict":
-            # span tests, 2026-11-12: asked whether a degree MAKES people unemployed, the lead
+            # span tests: asked whether a degree MAKES people unemployed, the lead
             # answered "Yes." -- agreeing to a cause without one cause word in it
             checks[c["id"]] = not re.match(r"\s*(yes|no)\b", brief.get("answer") or "", re.I)
         elif c["kind"] == "cannot_tell":
@@ -152,7 +152,8 @@ def path(record, q):
     for t in tools:
         if t["tool"] == "ask_analysts":
             try:
-                tasks[f"call {t['n']}"] = json.loads(t["args"]).get("tasks") if isinstance(t["args"], str) else t["args"]
+                args = json.loads(t["args"]) if isinstance(t["args"], str) else t["args"]
+                tasks[f"call {t['n']}"] = args.get("tasks")
             except ValueError:
                 tasks[f"call {t['n']}"] = t["args"]
     return {"steps": steps, "recall": round(len(found) / len(steps), 2) if steps else None,
@@ -177,6 +178,9 @@ def cost(record):
     return {"tokens": t["tokens"]["total"], "by agent": by_agent, "model calls": len(t["model calls"]),
             "seconds": t["seconds"], "waited": t["waited seconds"], "cost if paid": t["cost if paid"],
             "groq errors": [c["error"] for c in t["model calls"] if c.get("error")],
+            # a rejected call made anyway from what the model wrote: no second call (in one
+            # eval, 10 of 14 errors were tool calls written as text, most of them recovered)
+            "recovered": sum(1 for n in t.get("notes") or [] if n.get("kind") == "recovered call"),
             "tasks stopped": stopped,
             "tasks refused": sum(1 for x in t["tools"] if x["tool"] == "ask_analysts" and x["kind"] != "ok")}
 
@@ -215,13 +219,16 @@ def markdown(rows, name, marks=None):
         lines.append(f"| {key(r)} | {p['recall']} | {', '.join(p['missed']) or '-'} | {p['analyses chosen']} | "
                      f"{p['precision']} | {p['wasted']} | {p['refused']} | {', '.join(p['single figures chained']) or '-'} |")
     lines += ["", "## Cost: what did it take?", "",
+              "Groq errors: calls Groq refused; in brackets, how many of them were made anyway from what the model "
+              "wrote (recovered, no second call).", "",
               "| | tokens | by agent | model calls | s | waiting s | Groq errors | tasks stopped | tasks refused |",
               "|---|---|---|---|---|---|---|---|---|"]
     for r in rows:
         c = r["cost"]
         agents = ", ".join(f"{a} {n:,}" for a, n in sorted(c["by agent"].items(), key=lambda kv: -kv[1]))
         lines.append(f"| {key(r)} | {c['tokens']:,} | {agents} | {c['model calls']} | {c['seconds']} | {c['waited']} | "
-                     f"{len(c['groq errors'])} | {len(c['tasks stopped'])} | {c['tasks refused']} |")
+                     f"{len(c['groq errors'])} ({c.get('recovered', 0)} recovered) | {len(c['tasks stopped'])} | "
+                     f"{c['tasks refused']} |")
     for r in rows:
         hand = (marks or {}).get(key(r), {}).get("tasks", {})
         lines += ["", f"### {key(r)}: {r['question']}", "", f"Answer: {r['answer'] or '(no brief: ' + str(r['outcome']['stopped']) + ')'}",

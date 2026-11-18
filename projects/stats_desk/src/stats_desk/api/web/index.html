@@ -1,0 +1,1064 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stats Desk</title>
+<meta name="description" content="Questions about India's labour statistics (MoSPI PLFS), answered by agents from published figures, every number checked.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Stats Desk's one page (served by api/app.py at /). A control room for one question: ask bar on
+   top; the run board (orchestration map + timeline | live log); then the brief with its findings.
+   Driven by the question's event stream (api/progress.py says what each event carries). */
+:root {
+  --bg: #0c131a; --panel: #121c26; --panel-2: #172431; --line: #22313f; --line-strong: #314557;
+  --fg: #e3e9ee; --muted: #8b9cab; --faint: #5b6c7c; --grid: rgba(116, 174, 234, 0.045);
+  --lead: #ecb357; --analyst: #4fc2b4; --server: #72aceb; --code: #b69bf1; --bad: #ee7a5d; --good: #7cc98a;
+  --display: "Archivo", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #edf1f4; --panel: #ffffff; --panel-2: #f5f8fa; --line: #d4dce3; --line-strong: #b3c0cc;
+    --fg: #13202b; --muted: #556575; --faint: #8695a3; --grid: rgba(33, 103, 174, 0.055);
+    --lead: #a5680b; --analyst: #157d71; --server: #2065ac; --code: #6b4abf; --bad: #bd3e21; --good: #2c7a3c;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #edf1f4; --panel: #ffffff; --panel-2: #f5f8fa; --line: #d4dce3; --line-strong: #b3c0cc;
+  --fg: #13202b; --muted: #556575; --faint: #8695a3; --grid: rgba(33, 103, 174, 0.055);
+  --lead: #a5680b; --analyst: #157d71; --server: #2065ac; --code: #6b4abf; --bad: #bd3e21; --good: #2c7a3c;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px); }
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 28px 28px;
+  color: var(--fg);
+  font: 15px/1.55 var(--body);
+}
+.wrap {
+  max-width: 1280px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+button, input, textarea { font: inherit; color: inherit; }
+button:disabled { opacity: 0.5; cursor: default; }
+a { color: var(--server); }
+:focus-visible { outline: 2px solid var(--server); outline-offset: 2px; }
+.eyebrow { font: 500 11px/1.3 var(--mono); letter-spacing: 0.09em; text-transform: uppercase; color: var(--muted); }
+
+/* header */
+.top { border-bottom: 1px solid var(--line); background: var(--panel); }
+.top-in { display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; justify-content: space-between; padding-block: 12px; }
+.brand { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.wordmark { font: 800 22px/1 var(--display); font-stretch: 72%; letter-spacing: 0.04em; text-transform: uppercase; color: var(--fg); text-decoration: none; }
+.wordmark span { color: var(--lead); }
+.tagline { color: var(--muted); font-size: 13px; }
+.release { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; font: 12px/1.3 var(--mono); color: var(--muted); }
+.release b { color: var(--fg); font-weight: 500; }
+.dot-live { width: 7px; height: 7px; border-radius: 50%; background: var(--good); display: inline-block; }
+
+/* ask */
+.ask { padding-block: 28px 22px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); gap: 20px 40px; align-items: start; }
+.ask h1 { font: 760 clamp(30px, 4.2vw, 46px)/1.02 var(--display); font-stretch: 78%; margin: 6px 0 12px; text-wrap: balance; }
+.ask p.intro { color: var(--muted); margin: 0; max-width: 46ch; }
+.how { margin: 16px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 13.5px; color: var(--muted); }
+.how li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; }
+.how b { font: 500 12px/1.6 var(--mono); }
+.how li:nth-child(1) b { color: var(--lead); }
+.how li:nth-child(2) b { color: var(--analyst); }
+.how li:nth-child(3) b { color: var(--code); }
+.saved { margin-top: 18px; display: grid; gap: 6px; }
+.saved a { font-size: 13.5px; }
+
+form.q { background: var(--panel); border: 1px solid var(--line-strong); border-radius: 10px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+form.q label.lbl { display: block; margin-bottom: 6px; }
+textarea#question {
+  width: 100%; min-height: 76px; resize: vertical; padding: 10px 12px;
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; font-size: 16px; line-height: 1.45;
+}
+.examples { display: flex; flex-wrap: wrap; gap: 6px; }
+.examples button {
+  border: 1px dashed var(--line-strong); background: transparent; border-radius: 4px; padding: 4px 9px;
+  font-size: 12.5px; color: var(--muted); cursor: pointer; text-align: left;
+}
+.examples button:hover { color: var(--fg); border-style: solid; }
+.keyrow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 6px; overflow: hidden; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label { padding: 7px 12px; font-size: 13.5px; cursor: pointer; color: var(--muted); }
+.seg input:checked + label { background: var(--panel-2); color: var(--fg); box-shadow: inset 0 -2px 0 var(--lead); }
+.seg input:focus-visible + label { outline: 2px solid var(--server); outline-offset: -2px; }
+.seg label small { font-family: var(--mono); font-size: 11.5px; color: var(--muted); margin-left: 4px; }
+.ask-btn { border: 0; border-radius: 6px; padding: 9px 22px; cursor: pointer; background: var(--lead); color: #1a1205; font-weight: 600; font-size: 15px; }
+.ask-btn:hover:not(:disabled) { filter: brightness(1.06); }
+.keybox { display: grid; gap: 4px; }
+.keybox input { width: 100%; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; font-family: var(--mono); font-size: 13px; }
+.hint { font-size: 12.5px; color: var(--muted); }
+.err { font-size: 13px; color: var(--bad); }
+
+/* run */
+.run { display: grid; gap: 14px; padding-block: 6px 26px; }
+.run-head { display: flex; flex-wrap: wrap; gap: 10px 20px; justify-content: space-between; align-items: end; }
+.run-q { font: 650 clamp(20px, 2.4vw, 26px)/1.15 var(--display); font-stretch: 85%; margin: 4px 0 0; text-wrap: balance; }
+.run-q.idle { color: var(--faint); }
+.notice { font-size: 13.5px; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--panel); display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.notice.bad { border-color: var(--bad); }
+.notice.pause { border-color: var(--lead); }
+.notice button { border: 1px solid var(--lead); color: var(--lead); background: transparent; border-radius: 6px; padding: 6px 12px; cursor: pointer; font-weight: 600; }
+
+.phases { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; counter-reset: ph; }
+.phases li { counter-increment: ph; display: inline-flex; gap: 8px; align-items: center; font: 12.5px/1 var(--mono); padding: 7px 10px; border: 1px solid var(--line); border-radius: 4px; color: var(--faint); background: var(--panel); }
+.phases li::before { content: counter(ph); font-size: 11px; opacity: 0.8; }
+.phases li[data-s="active"] { color: var(--fg); border-color: var(--lead); }
+.phases li[data-s="active"]::after { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--lead); animation: blink 1s infinite; }
+.phases li[data-s="done"] { color: var(--muted); }
+.phases li[data-s="done"]::before { content: "\2713"; color: var(--good); }
+
+.counters { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.counter { padding: 10px 14px; border-left: 1px solid var(--line); min-width: 0; }
+.counter:first-child { border-left: 0; }
+.counter .v { font: 650 26px/1.15 var(--display); font-stretch: 85%; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.counter .v small { font: 12px var(--mono); color: var(--muted); margin-left: 4px; }
+
+.board { display: grid; grid-template-columns: minmax(0, 1.8fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.panel-h { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; padding: 10px 14px; border-bottom: 1px solid var(--line); }
+.panel-h .sub { font-size: 12px; color: var(--faint); }
+.map-panel { grid-column: 1; grid-row: 1; }
+.lanes-panel { grid-column: 1; grid-row: 2; }
+.log-panel { grid-column: 2; grid-row: 1 / span 2; display: flex; flex-direction: column; }
+
+/* map */
+.map { position: relative; padding: 18px; display: grid; gap: 30px; }
+.map svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+#wires { z-index: 0; }
+#pulses { z-index: 3; }
+.tier { position: relative; z-index: 1; min-width: 0; }
+.tier-lead { display: flex; justify-content: center; }
+.tier-mid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(180px, 230px); gap: 14px; align-items: start; }
+.analysts { display: flex; flex-wrap: wrap; gap: 12px; min-width: 0; }
+.no-analysts { flex: 1; border: 1px dashed var(--line-strong); border-radius: 8px; padding: 14px; font-size: 13px; color: var(--faint); text-align: center; }
+.node {
+  --role: var(--muted);
+  background: var(--panel-2); border: 1px solid var(--line-strong); border-top: 3px solid var(--role);
+  border-radius: 8px; padding: 9px 12px 10px; min-width: 0; display: grid; gap: 4px; transition: box-shadow 0.25s;
+}
+.node.lead { --role: var(--lead); width: min(340px, 100%); }
+.node.analyst { --role: var(--analyst); flex: 1 1 220px; max-width: 340px; animation: rise 0.35s ease-out; }
+.node.code { --role: var(--code); }
+.node.server { --role: var(--server); }
+.node.busy { box-shadow: 0 0 0 1px var(--role), 0 0 18px color-mix(in srgb, var(--role) 22%, transparent); }
+.node-h { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.node-name { font: 650 15px/1.2 var(--display); font-stretch: 88%; }
+.node-name small { font: 11.5px var(--mono); color: var(--muted); margin-left: 6px; }
+.state { font: 500 10.5px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.07em; padding: 4px 6px; border-radius: 3px; color: var(--muted); background: color-mix(in srgb, var(--muted) 12%, transparent); white-space: nowrap; }
+.state[data-s="thinking"], .state[data-s="calling"], .state[data-s="checking"], .state[data-s="writing"] { color: var(--role); background: color-mix(in srgb, var(--role) 15%, transparent); }
+.state[data-s="refused"], .state[data-s="stopped"] { color: var(--bad); background: color-mix(in srgb, var(--bad) 15%, transparent); }
+.state[data-s="done"] { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.state[data-s="thinking"]::after { content: ""; animation: dots 1.2s steps(4) infinite; }
+.node-task { font-size: 12.5px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.node-act { font-size: 13px; min-height: 1.5em; overflow-wrap: anywhere; }
+.node-plan { font-size: 12.5px; color: var(--muted); border-top: 1px dashed var(--line-strong); padding-top: 6px; display: grid; gap: 3px; overflow-wrap: anywhere; }
+.node-plan b { font: 500 10.5px var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--lead); margin-right: 6px; }
+.node-plan ul { margin: 0; padding-left: 16px; }
+.node-meta { display: flex; gap: 12px; font: 11.5px var(--mono); color: var(--faint); font-variant-numeric: tabular-nums; }
+.server-sub { font-size: 12.5px; color: var(--muted); }
+.tools { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.tool { display: inline-flex; gap: 6px; align-items: center; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--line); font: 12px/1.2 var(--mono); color: var(--muted); background: var(--panel); transition: background 0.5s, border-color 0.5s, color 0.5s; }
+.tool .n { color: var(--faint); font-variant-numeric: tabular-nums; }
+.tool.used { color: var(--fg); border-color: var(--line-strong); }
+.tool.used .n { color: var(--server); }
+.tool.hot { border-color: var(--server); background: color-mix(in srgb, var(--server) 22%, var(--panel)); transition: none; }
+.tool.bad { border-color: var(--bad); background: color-mix(in srgb, var(--bad) 22%, var(--panel)); transition: none; }
+
+/* timeline lanes */
+.lanes-scroll { overflow-x: auto; padding: 10px 14px 12px; }
+.lanes { min-width: 560px; position: relative; }
+.lane { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; height: 28px; }
+.lane-l { font: 12px var(--mono); color: var(--muted); white-space: nowrap; }
+.lane-l i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 6px; }
+.track { position: relative; height: 100%; border-bottom: 1px dashed var(--line); }
+.axis { display: grid; grid-template-columns: 92px minmax(0, 1fr); height: 18px; }
+.ticks { position: relative; }
+.ticks span { position: absolute; transform: translateX(-50%); font: 10.5px var(--mono); color: var(--faint); top: 3px; }
+.ticks span:first-child { transform: none; }
+.cursor-wrap { position: absolute; left: 92px; right: 0; top: 0; bottom: 18px; pointer-events: none; }
+.cursor { position: absolute; top: -4px; bottom: 0; width: 1px; background: var(--fg); opacity: 0.55; }
+.cursor::before { content: ""; position: absolute; top: 0; left: -3px; width: 7px; height: 7px; background: var(--fg); transform: rotate(45deg); }
+.m { position: absolute; top: 50%; }
+.m-think { height: 10px; margin-top: -5px; border-radius: 2px; background: color-mix(in srgb, var(--c) 40%, transparent); border: 1px solid var(--c); min-width: 2px; }
+.m-wait { height: 10px; margin-top: -5px; border-radius: 2px; border: 1px solid var(--line-strong); min-width: 2px; background: repeating-linear-gradient(135deg, var(--line-strong) 0 2px, transparent 2px 6px); }
+.m-call { width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px; border-radius: 50%; background: var(--c); border: 2px solid var(--panel); }
+.m-call.refused { background: var(--bad); }
+.m-task { width: 0; height: 0; margin: -6px 0 0 -5px; border-left: 5px solid transparent; border-right: 5px solid transparent; border-top: 10px solid var(--c); }
+.m-done { width: 10px; height: 10px; margin: -5px 0 0 -5px; background: var(--c); transform: rotate(45deg); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; padding: 0 14px 12px; font-size: 12px; color: var(--muted); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend .m { position: static; margin: 0; --c: var(--muted); display: inline-block; }
+
+/* log */
+.log { list-style: none; margin: 0; padding: 8px 0; overflow-y: auto; max-height: 640px; min-height: 240px; flex: 1; }
+.log li { display: grid; grid-template-columns: 40px 78px minmax(0, 1fr); gap: 8px; padding: 5px 14px; font: 12.5px/1.45 var(--mono); animation: fadein 0.3s ease-out; }
+.log li:nth-child(odd) { background: color-mix(in srgb, var(--panel-2) 60%, transparent); }
+.log time { color: var(--faint); font-variant-numeric: tabular-nums; }
+.log .tg { font-weight: 500; white-space: nowrap; }
+.log .tx { overflow-wrap: anywhere; }
+.log .tx.bad { color: var(--bad); }
+.log .empty { display: block; color: var(--faint); font-family: var(--body); }
+.c-lead { color: var(--lead); } .c-analyst { color: var(--analyst); } .c-code { color: var(--code); } .c-server { color: var(--server); } .c-desk { color: var(--muted); }
+
+/* brief */
+.brief { padding-block: 8px 48px; display: grid; gap: 18px; }
+.brief-h { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline; justify-content: space-between; border-top: 2px solid var(--fg); padding-top: 14px; }
+.brief-h h2 { font: 760 30px/1 var(--display); font-stretch: 78%; margin: 0; }
+.pill { font: 500 11.5px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.07em; padding: 6px 8px; border-radius: 4px; border: 1px solid var(--line-strong); color: var(--muted); }
+.pill.ok { color: var(--good); border-color: var(--good); }
+.pill.run { color: var(--lead); border-color: var(--lead); }
+.pill.bad { color: var(--bad); border-color: var(--bad); }
+.thread { font-size: 13px; color: var(--muted); }
+.answer { display: grid; gap: 10px; max-width: 72ch; }
+.answer .q { font: 650 20px/1.25 var(--display); font-stretch: 88%; margin: 0; }
+.answer p.a { font-size: 19px; line-height: 1.55; margin: 0; }
+.answer .from { font: 12.5px/1.5 var(--mono); color: var(--muted); margin: 0; }
+.sec-h { display: flex; gap: 10px; align-items: baseline; margin: 6px 0 -6px; flex-wrap: wrap; }
+.sec-h h3 { font: 650 18px/1.2 var(--display); font-stretch: 88%; margin: 0; }
+.findings { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.findings .placeholder { border: 1px dashed var(--line-strong); border-radius: 8px; padding: 16px; color: var(--faint); font-size: 13.5px; }
+.finding { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 10px; align-content: start; min-width: 0; animation: rise 0.35s ease-out; }
+.finding.unused { opacity: 0.7; }
+.finding header { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+.finding .fid { font: 650 14px/1 var(--display); font-stretch: 88%; color: var(--analyst); }
+.check { font: 500 11.5px/1.3 var(--mono); padding: 4px 7px; border-radius: 4px; color: var(--muted); border: 1px solid var(--line-strong); }
+.check.ok { color: var(--good); border-color: color-mix(in srgb, var(--good) 60%, transparent); }
+.check.bad { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 60%, transparent); }
+.finding .claim { margin: 0; font-size: 15.5px; }
+.finding .task { margin: 0; font-size: 12.5px; color: var(--muted); }
+.warn { margin: 0; font-size: 13px; padding: 8px 10px; border-radius: 6px; background: color-mix(in srgb, var(--lead) 11%, transparent); border: 1px solid color-mix(in srgb, var(--lead) 40%, transparent); overflow-wrap: anywhere; }
+.warn b { font: 500 11px var(--mono); text-transform: uppercase; letter-spacing: 0.07em; color: var(--lead); margin-right: 6px; }
+/* a card's parts may not grow past it: long result lines scroll inside their own box */
+.finding > *, .ev-item { min-width: 0; max-width: 100%; }
+details.ev { border-top: 1px solid var(--line); padding-top: 8px; min-width: 0; }
+details.ev summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+details.ev summary:hover { color: var(--fg); }
+.ev-item { margin-top: 10px; }
+.ev-item .t { font: 500 12px var(--mono); color: var(--server); overflow-wrap: anywhere; }
+.ev-item .t.code { color: var(--code); }
+.ev-item pre { max-width: 100%; margin: 4px 0 0; padding: 9px 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; font: 12px/1.5 var(--mono); overflow-x: auto; white-space: pre; }
+.limits { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 12px; }
+.limit { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--panel); }
+.limit p { margin: 6px 0 0; font-size: 14.5px; }
+.foot { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; align-items: start; }
+.followup { background: var(--panel); border: 1px solid var(--line-strong); border-radius: 10px; padding: 12px; display: grid; gap: 8px; }
+.followup .row { display: flex; gap: 8px; }
+.followup input { flex: 1; min-width: 0; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; }
+.followup button { border: 1px solid var(--lead); color: var(--lead); background: transparent; border-radius: 6px; padding: 8px 14px; cursor: pointer; font-weight: 600; }
+.usage { font: 12.5px/1.7 var(--mono); color: var(--muted); }
+.usage b { color: var(--fg); font-weight: 500; }
+.linkrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+.linkrow code { font: 12px var(--mono); padding: 5px 8px; background: var(--panel-2); border: 1px solid var(--line); border-radius: 4px; overflow-wrap: anywhere; }
+.linkrow button { border: 1px solid var(--line-strong); background: var(--panel); border-radius: 4px; padding: 5px 10px; cursor: pointer; font-size: 12.5px; }
+
+@keyframes blink { 50% { opacity: 0.25; } }
+@keyframes dots { 0% { content: ""; } 25% { content: "."; } 50% { content: ".."; } 75% { content: "..."; } }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } }
+@keyframes fadein { from { opacity: 0; } }
+
+@media (max-width: 980px) {
+  .ask { grid-template-columns: minmax(0, 1fr); }
+  .board { grid-template-columns: minmax(0, 1fr); }
+  .map-panel, .lanes-panel, .log-panel { grid-column: 1; grid-row: auto; }
+  .log { max-height: 320px; }
+  .counters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .counter:nth-child(4) { border-left: 0; }
+  .counter:nth-child(n+4) { border-top: 1px solid var(--line); }
+  .foot { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 560px) {
+  .tier-mid { grid-template-columns: minmax(0, 1fr); }
+  .counters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .counter:nth-child(odd) { border-left: 0; }
+  .counter:nth-child(4) { border-left: 1px solid var(--line); }
+  .counter:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .log li { grid-template-columns: 36px 66px minmax(0, 1fr); padding: 5px 10px; }
+  .map { padding: 12px; gap: 26px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap top-in">
+    <div class="brand">
+      <a class="wordmark" href="/">Stats <span>Desk</span></a>
+      <div class="tagline">India's labour statistics, answered by agents</div>
+    </div>
+    <div class="release"><span class="dot-live" aria-hidden="true"></span> MoSPI PLFS <b id="release">…</b></div>
+  </div>
+</header>
+
+<main>
+  <section class="wrap ask" aria-labelledby="ask-h">
+    <div>
+      <div class="eyebrow">Periodic Labour Force Survey</div>
+      <h1 id="ask-h">Ask about jobs and work in India.</h1>
+      <p class="intro">Every number in the answer comes from MoSPI's published tables, and you can open the figures behind each one.</p>
+      <ul class="how">
+        <li><b>1</b><span>A lead agent reads what's published and splits your question into tasks.</span></li>
+        <li><b>2</b><span>Analysts run each task as analyses on the published figures.</span></li>
+        <li><b>3</b><span>Code reruns each finding in another period before the lead writes the brief.</span></li>
+      </ul>
+      <div class="saved" id="saved" hidden><div class="eyebrow">Example briefs</div></div>
+    </div>
+
+    <form class="q" id="ask-form" novalidate>
+      <div>
+        <label class="lbl eyebrow" for="question">Your question</label>
+        <textarea id="question" name="question" rows="2" maxlength="500" placeholder="e.g. Is unemployment rising in 2026?"></textarea>
+      </div>
+      <div class="examples" aria-label="Example questions">
+        <button type="button">Is unemployment rising in 2026?</button>
+        <button type="button">Where in India are women least likely to be in the labour force?</button>
+        <button type="button">How does unemployment differ between young men and women in cities?</button>
+      </div>
+      <div class="keyrow">
+        <div class="seg" role="radiogroup" aria-label="Which Groq key pays for the question">
+          <input type="radio" name="keymode" id="mode-free" value="free" checked><label for="mode-free">Free question <small id="free-left"></small></label>
+          <input type="radio" name="keymode" id="mode-own" value="own"><label for="mode-own">My Groq key</label>
+        </div>
+        <button class="ask-btn" id="ask-btn" type="submit">Ask</button>
+      </div>
+      <div class="keybox" id="keybox" hidden>
+        <input type="password" id="groq-key" autocomplete="off" spellcheck="false" placeholder="gsk_…" aria-label="Your Groq API key">
+        <span class="hint">Used for this question only. It is never stored or logged. Get one free at <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a>.</span>
+      </div>
+      <span class="err" id="ask-err" role="alert" hidden></span>
+      <span class="hint" id="free-hint">Free questions run on the desk's own Groq keys: <span id="per-day">3</span> a day, follow-ups included.</span>
+    </form>
+  </section>
+
+  <section class="wrap run" id="run" aria-labelledby="run-q">
+    <div class="run-head">
+      <div>
+        <div class="eyebrow" id="run-status">Ready</div>
+        <h2 class="run-q idle" id="run-q">Your question runs here, step by step.</h2>
+      </div>
+      <span class="hint" id="keep-open" hidden>Keep this page open until the brief is ready. Closing it stops the question; what it found is saved.</span>
+    </div>
+    <div class="notice" id="notice" hidden></div>
+
+    <ol class="phases" id="phases">
+      <li data-s="pending">Read profiles</li>
+      <li data-s="pending">Hand out tasks</li>
+      <li data-s="pending">Analysts work</li>
+      <li data-s="pending">Code checks</li>
+      <li data-s="pending">Write the brief</li>
+      <li data-s="pending">Brief ready</li>
+    </ol>
+
+    <div class="counters">
+      <div class="counter"><div class="eyebrow">Elapsed</div><div class="v" id="c-time">0:00</div></div>
+      <div class="counter"><div class="eyebrow">Model calls</div><div class="v" id="c-calls">0</div></div>
+      <div class="counter"><div class="eyebrow">Analyses run</div><div class="v" id="c-analyses">0</div></div>
+      <div class="counter"><div class="eyebrow">Tokens</div><div class="v" id="c-tokens">0</div></div>
+      <div class="counter"><div class="eyebrow">Findings</div><div class="v" id="c-findings">0</div></div>
+      <div class="counter"><div class="eyebrow">Paid by</div><div class="v" id="c-key">–</div></div>
+    </div>
+
+    <div class="board">
+      <div class="panel map-panel">
+        <div class="panel-h"><span class="eyebrow">Orchestration</span><span class="sub">who is doing what, now</span></div>
+        <div class="map" id="map">
+          <svg id="wires" aria-hidden="true"></svg>
+          <div class="tier tier-lead">
+            <div class="node lead" id="n-lead">
+              <div class="node-h"><span class="node-name">Lead <small>gpt-oss-120b</small></span><span class="state" data-s="idle">idle</span></div>
+              <div class="node-act">Waiting for a question</div>
+              <div class="node-plan" id="lead-plan" hidden></div>
+              <div class="node-meta"><span class="calls">0 calls</span><span class="tok">0 tokens</span></div>
+            </div>
+          </div>
+          <div class="tier tier-mid">
+            <div class="analysts" id="analysts">
+              <div class="no-analysts" id="no-analysts">Analysts appear here when the lead hands out tasks.</div>
+            </div>
+            <div class="node code" id="n-code">
+              <div class="node-h"><span class="node-name">Code checks</span><span class="state" data-s="idle">idle</span></div>
+              <div class="node-act">Reruns each finding in another period</div>
+              <div class="node-meta"><span class="calls">0 checks</span><span>no tokens</span></div>
+            </div>
+          </div>
+          <div class="tier tier-server">
+            <div class="node server" id="n-server">
+              <div class="node-h"><span class="node-name">Analysis server <small>MCP · read-only</small></span><span class="state" data-s="idle">idle</span></div>
+              <div class="server-sub">12 analyses over the release file. Each answer is a published row, never an estimate.</div>
+              <div class="tools" id="tools"></div>
+            </div>
+          </div>
+          <svg id="pulses" aria-hidden="true"></svg>
+        </div>
+      </div>
+
+      <div class="panel lanes-panel">
+        <div class="panel-h"><span class="eyebrow">Timeline</span><span class="sub">where the run is</span></div>
+        <div class="lanes-scroll">
+          <div class="lanes" id="lanes">
+            <div id="lane-rows"></div>
+            <div class="axis"><span></span><div class="ticks" id="ticks"></div></div>
+            <div class="cursor-wrap"><div class="cursor" id="cursor" style="left:0%"></div></div>
+          </div>
+        </div>
+        <div class="legend">
+          <span><i class="m m-think" style="width:18px"></i>thinking (a model call)</span>
+          <span><i class="m m-call"></i>an analysis</span>
+          <span><i class="m m-call refused"></i>refused</span>
+          <span><i class="m m-task"></i>task handed out</span>
+          <span><i class="m m-done"></i>finding in</span>
+          <span><i class="m m-wait" style="width:18px"></i>waiting on Groq</span>
+        </div>
+      </div>
+
+      <div class="panel log-panel">
+        <div class="panel-h"><span class="eyebrow">Live log</span><span class="sub">every step, as it happens</span></div>
+        <ol class="log" id="log" aria-live="polite"><li><span class="empty">Steps appear here as the agents work.</span></li></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap brief" aria-labelledby="brief-h">
+    <div class="brief-h">
+      <h2 id="brief-h">Brief</h2>
+      <span class="pill" id="brief-pill">No question yet</span>
+    </div>
+    <div class="answer" id="answer" hidden>
+      <div class="thread" id="thread" hidden></div>
+      <p class="q" id="answer-q"></p>
+      <p class="a" id="answer-text"></p>
+      <p class="from" id="answer-from"></p>
+    </div>
+    <div class="sec-h"><h3>Findings</h3><span class="hint">each one with the figures it rests on</span></div>
+    <div class="findings" id="findings">
+      <div class="placeholder" id="no-findings">Findings appear here as each analyst finishes, before the brief is written.</div>
+    </div>
+    <div class="limits" id="limits" hidden>
+      <div class="limit"><div class="eyebrow">What these figures cannot tell</div><p id="cannot"></p></div>
+      <div class="limit" id="ruled-box"><div class="eyebrow">Ruled out</div><p id="ruled"></p></div>
+    </div>
+    <div class="foot" id="foot" hidden>
+      <form class="followup" id="followup">
+        <label class="eyebrow" for="fu">Ask a follow-up</label>
+        <div class="row"><input id="fu" maxlength="500" placeholder="e.g. Is it the same in rural areas?"><button type="submit">Ask</button></div>
+        <span class="hint">A follow-up starts from this brief's findings. On a free question it counts as one of your free questions.</span>
+      </form>
+      <div class="usage">
+        <div><b id="u-calls">0</b> model calls · <b id="u-tokens">0</b> tokens · <b id="u-time">0:00</b></div>
+        <div id="u-meta"></div>
+        <div class="linkrow"><code id="brief-link"></code><button type="button" id="copy">Copy link</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  "use strict";
+  const TOOLS = ["tables", "profile", "value", "compare", "gap", "change", "series", "average", "trend", "relate", "drill", "recheck"];
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const el = (tag, cls, text) => { const e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; };
+  const fmtTime = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+  const fmtNum = n => Number(n || 0).toLocaleString("en-IN");
+  const num = id => String(id || "").replace(/^[a-z]/, "");
+  const nameOf = who => who === "lead" ? "Lead" : who === "code" ? "Code" : who === "desk" ? "Desk" : `Analyst ${num(who)}`;
+  const roleOf = who => ["lead", "code", "desk", "server"].includes(who) ? who : "analyst";
+  const cssVar = role => `var(--${role === "desk" ? "muted" : role})`;
+  const map = $("#map"), wires = $("#wires"), pulsesSvg = $("#pulses");
+
+  let run = null;          // the question on screen
+  let freeLeft = null;
+
+  // ------------------------------------------------------------------ the board
+  function nodeOf(who) { return who === "lead" ? $("#n-lead") : who === "code" ? $("#n-code") : who === "server" ? $("#n-server") : $(`#n-${CSS.escape(who)}`); }
+  function setState(who, s, act) {
+    const n = nodeOf(who); if (!n) return;
+    const st = $(".state", n); st.dataset.s = s; st.textContent = s;
+    n.classList.toggle("busy", ["thinking", "calling", "checking", "writing"].includes(s));
+    if (act != null) $(".node-act", n).textContent = act;
+    run.state[who] = s;
+  }
+  function meta(who) { return run.meta[who] || (run.meta[who] = { calls: 0, tokens: 0, checks: 0 }); }
+  function showMeta(who) {
+    const n = nodeOf(who); if (!n) return;
+    const m = meta(who);
+    if (who === "code") { $(".calls", n).textContent = `${m.checks} check${m.checks === 1 ? "" : "s"}`; return; }
+    $(".calls", n).textContent = `${m.calls} call${m.calls === 1 ? "" : "s"}`;
+    $(".tok", n).textContent = `${fmtNum(m.tokens)} tokens`;
+  }
+  function addAnalyst(id, task) {
+    if (nodeOf(id)) return;
+    $("#no-analysts").hidden = true;
+    const n = el("div", "node analyst"); n.id = `n-${id}`;
+    n.innerHTML = `<div class="node-h"><span class="node-name"></span><span class="state" data-s="idle">idle</span></div>
+      <div class="node-task"></div><div class="node-act">Task received</div>
+      <div class="node-meta"><span class="calls">0 calls</span><span class="tok">0 tokens</span></div>`;
+    $(".node-name", n).textContent = nameOf(id);
+    $(".node-task", n).textContent = task;
+    $("#analysts").append(n);
+    addLane(id);
+    drawWires();
+  }
+  function buildTools() {
+    const box = $("#tools"); box.innerHTML = "";
+    for (const t of TOOLS) { const c = el("span", "tool"); c.id = `tool-${t}`; c.append(el("span", null, t), el("span", "n", "0")); box.append(c); }
+  }
+  function flashTool(tool, bad) {
+    const c = $(`#tool-${tool}`); if (!c) return;
+    c.classList.remove("hot", "bad"); void c.offsetWidth;
+    c.classList.add(bad ? "bad" : "hot", "used");
+    clearTimeout(c._t); c._t = setTimeout(() => c.classList.remove("hot", "bad"), 700);
+  }
+
+  // wires and the dots that travel along them
+  function pt(node, side) {
+    const r = node.getBoundingClientRect(), m = map.getBoundingClientRect();
+    return { x: r.left - m.left + r.width / 2, y: (side === "top" ? r.top : r.bottom) - m.top };
+  }
+  const curve = (a, b) => { const dy = (b.y - a.y) / 2; return [a, { x: a.x, y: a.y + dy }, { x: b.x, y: b.y - dy }, b]; };
+  const d = c => `M${c[0].x},${c[0].y} C${c[1].x},${c[1].y} ${c[2].x},${c[2].y} ${c[3].x},${c[3].y}`;
+  function drawWires() {
+    const m = map.getBoundingClientRect();
+    for (const s of [wires, pulsesSvg]) s.setAttribute("viewBox", `0 0 ${m.width} ${m.height}`);
+    const lead = $("#n-lead"), server = $("#n-server"), sr = server.getBoundingClientRect(), sTop = pt(server, "top");
+    const toServer = from => { const a = pt(from, "bottom"); return curve(a, { x: Math.min(Math.max(a.x, sr.left - m.left + 24), sr.right - m.left - 24), y: sTop.y }); };
+    const paths = [];
+    const analysts = $$(".node.analyst");
+    for (const a of analysts) { paths.push({ c: curve(pt(lead, "bottom"), pt(a, "top")) }); paths.push({ c: toServer(a) }); }
+    paths.push({ c: toServer($("#n-code")) });
+    if (!analysts.length) paths.push({ c: toServer(lead), dash: true });
+    wires.innerHTML = paths.map(p => `<path d="${d(p.c)}" fill="none" stroke="var(--line-strong)" stroke-width="1.5"${p.dash ? ' stroke-dasharray="4 5"' : ""}/>`).join("");
+  }
+  const bez = (c, k) => { const u = 1 - k; return {
+    x: u * u * u * c[0].x + 3 * u * u * k * c[1].x + 3 * u * k * k * c[2].x + k * k * k * c[3].x,
+    y: u * u * u * c[0].y + 3 * u * u * k * c[1].y + 3 * u * k * k * c[2].y + k * k * k * c[3].y }; };
+  let pulses = [];
+  function pulse(fromEl, toEl, color, onArrive) {
+    if (!fromEl || !toEl || reduce || document.hidden) { onArrive && onArrive(); return; }
+    const fr = fromEl.getBoundingClientRect(), tr = toEl.getBoundingClientRect();
+    const down = fr.top + fr.height / 2 < tr.top + tr.height / 2;
+    const c = curve(pt(fromEl, down ? "bottom" : "top"), pt(toEl, down ? "top" : "bottom"));
+    const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    dot.setAttribute("r", "4.5"); dot.setAttribute("fill", color); dot.setAttribute("stroke", "var(--panel)"); dot.setAttribute("stroke-width", "2");
+    pulsesSvg.append(dot);
+    pulses.push({ c, dot, t0: performance.now(), dur: 650, onArrive });
+  }
+  function stepPulses(now) {
+    pulses = pulses.filter(p => {
+      const k = Math.min(1, (now - p.t0) / p.dur), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2, q = bez(p.c, e);
+      p.dot.setAttribute("cx", q.x); p.dot.setAttribute("cy", q.y);
+      if (k >= 1) { p.dot.remove(); p.onArrive && p.onArrive(); return false; }
+      return true;
+    });
+  }
+
+  // timeline: its scale grows with the run
+  let scale = 120;
+  function buildAxis() {
+    const t = $("#ticks"); t.innerHTML = "";
+    const step = scale <= 180 ? 15 : scale <= 420 ? 30 : 60;
+    for (let s = 0; s <= scale; s += step) { const sp = el("span", null, fmtTime(s)); sp.style.left = `${(s / scale) * 100}%`; t.append(sp); }
+  }
+  function addLane(who) {
+    if ($(`#lane-${CSS.escape(who)}`)) return;
+    const row = el("div", "lane"); row.id = `lane-${who}`;
+    const l = el("div", "lane-l"); const sw = el("i"); sw.style.background = cssVar(roleOf(who));
+    l.append(sw, document.createTextNode(who === "server" ? "MCP server" : who === "code" ? "Code checks" : nameOf(who)));
+    row.append(l, el("div", "track"));
+    const before = roleOf(who) === "analyst" ? $("#lane-code") : null;
+    before ? $("#lane-rows").insertBefore(row, before) : $("#lane-rows").append(row);
+  }
+  function mark(who, cls, extra = {}) {
+    const tr = $(`#lane-${CSS.escape(who)} .track`); if (!tr) return null;
+    const m = el("i", `m ${cls}`);
+    m.style.setProperty("--c", cssVar(extra.role || roleOf(who)));
+    if (extra.title) m.title = extra.title;
+    tr.append(m);
+    const it = { el: m, t: now(), end: extra.bar ? null : undefined };
+    run.marks.push(it); place(it);
+    return it;
+  }
+  function place(it) {
+    it.el.style.left = `${(it.t / scale) * 100}%`;
+    if (it.end !== undefined) it.el.style.width = `${Math.max(0.2, (((it.end ?? now()) - it.t) / scale) * 100)}%`;
+  }
+  function closeBar(who, kind) {
+    const it = run.open[`${who}:${kind}`]; if (!it) return;
+    it.end = now(); place(it); delete run.open[`${who}:${kind}`];
+  }
+
+  // the log
+  function log(who, text, bad) {
+    if (!text) return;
+    const ol = $("#log"); const empty = $(".empty", ol); if (empty) empty.parentElement.remove();
+    const name = nameOf(who);
+    if (text.startsWith(`${name}: `)) text = text.slice(name.length + 2);
+    const li = el("li");
+    li.append(el("time", null, fmtTime(now())), el("span", `tg c-${roleOf(who)}`, name), el("span", `tx${bad ? " bad" : ""}`, text));
+    const atEnd = ol.scrollHeight - ol.scrollTop - ol.clientHeight < 40;
+    ol.append(li);
+    if (atEnd) ol.scrollTop = ol.scrollHeight;
+  }
+
+  // ------------------------------------------------------------------ findings and the brief
+  function evidence(items) {
+    const det = el("details", "ev");
+    det.append(el("summary", null, `The figures: ${items.length} result${items.length === 1 ? "" : "s"}`));
+    for (const it of items) {
+      const box = el("div", "ev-item");
+      box.append(el("div", `t${it.code ? " code" : ""}`, it.title), el("pre", null, it.text));
+      det.append(box);
+    }
+    return det;
+  }
+  function findingCard(f, items, opts = {}) {
+    const a = el("article", `finding${opts.unused ? " unused" : ""}`); a.id = `f-${f.id}`;
+    const h = el("header");
+    const reruns = items.filter(i => i.code).length;
+    const flags = f.flags || [];
+    let badge;
+    if (opts.stopped) badge = el("span", "check bad", "Could not finish");
+    else if (opts.unused) badge = el("span", "check", "Not used in the brief");
+    else if (reruns) badge = el("span", `check ${flags.length ? "" : "ok"}`, flags.length ? "Rerun by code · see warnings" : "Rerun by code in another period");
+    else badge = el("span", "check", "No rerun possible");
+    h.append(el("span", "fid", `Finding ${num(f.id)}`), badge);
+    a.append(h, el("p", "claim", opts.stopped ? `The analyst stopped: ${opts.stopped}` : f.claim || ""));
+    if (f.task) a.append(el("p", "task", `Task: ${f.task}`));
+    for (const w of flags) { const p = el("p", "warn"); p.append(el("b", null, "Warning from code"), document.createTextNode(w)); a.append(p); }
+    if (items.length) a.append(evidence(items));
+    return a;
+  }
+  function liveFinding(e) {
+    $("#no-findings").hidden = true;
+    $(`#f-${CSS.escape(e.finding)}`)?.remove();
+    const items = [
+      ...Object.entries(e.figures || {}).map(([title, text]) => ({ title, text })),
+      ...Object.entries(e.elsewhere || {}).map(([title, text]) => ({ title, text, code: true })),
+    ];
+    $("#findings").append(findingCard({ id: e.finding, claim: e.claim, task: run.tasks[e.finding], flags: e.flags }, items, { stopped: e.stopped }));
+    const n = $$(".finding").length;
+    $("#brief-pill").textContent = `${n} finding${n === 1 ? "" : "s"} so far`;
+  }
+  function resultItem(id, text, code) {
+    const lines = String(text || "").split("\n");
+    const first = lines[0].startsWith("result ") ? lines.shift() : "";
+    return { title: (code ? "Rerun by code: " : "") + (lines[0] || first || id), text: lines.slice(1).join("\n") || text, code };
+  }
+  function showBrief(b) {
+    const pill = $("#brief-pill");
+    $("#answer").hidden = false;
+    $("#answer-q").textContent = b.question || "";
+    const thread = $("#thread");
+    thread.hidden = !(b.thread && b.thread.length);
+    thread.textContent = b.thread && b.thread.length ? `Follows up: ${b.thread.join(" → ")}` : "";
+    const done = b.status === "done" && b.answer;
+    $("#answer-text").textContent = done ? b.answer : (b.stopped || b.error || (b.status === "running" ? "This question is still running." : "No brief."));
+    $("#answer-from").textContent = done && b.figures_from && b.figures_from.length ? `Figures from: ${b.figures_from.join("; ")}` : "";
+    pill.className = `pill ${done ? "ok" : b.status === "running" ? "run" : "bad"}`;
+    pill.textContent = done ? `Ready · rests on ${b.findings.length} finding${b.findings.length === 1 ? "" : "s"}`
+      : b.status === "running" ? "Still running" : b.status === "paused" ? "Paused" : b.status === "stopped" ? "Stopped" : "No brief";
+    // the findings it rests on, with the full results
+    const used = new Set();
+    const cards = (b.findings || []).map(x => x.finding).filter(Boolean).map(f => {
+      used.add(f.id);
+      const items = [...(f.results || []).map(i => resultItem(i, b.evidence[i])), ...(f.checked_with || []).map(i => resultItem(i, b.evidence[i], true))]
+        .filter(i => i.text);
+      return findingCard(f, items);
+    });
+    if (done) {
+      for (const c of $$(".finding")) { if (!used.has(c.id.slice(2))) { c.classList.add("unused"); const k = $(".check", c); if (k && !k.classList.contains("bad")) { k.className = "check"; k.textContent = "Not used in the brief"; } } else c.remove(); }
+      $("#findings").prepend(...cards);
+    } else if (!$$(".finding").length && cards.length) {
+      $("#findings").append(...cards);
+    }
+    $("#no-findings").hidden = !!$$(".finding").length;
+    $("#cannot").textContent = b.cannot_tell || "";
+    $("#ruled").textContent = b.ruled_out || "";
+    $("#ruled-box").hidden = !b.ruled_out;
+    $("#limits").hidden = !done;
+    $("#foot").hidden = !done;
+    const u = b.usage || {};
+    $("#u-calls").textContent = fmtNum(u.model_calls);
+    $("#u-tokens").textContent = fmtNum(u.tokens);
+    $("#u-time").textContent = fmtTime(u.seconds || 0);
+    $("#u-meta").textContent = `Paid by: ${b.free ? "a free question (the desk's key)" : "your Groq key"} · release: ${b.release || ""}`;
+    const link = `${location.origin}/?brief=${encodeURIComponent(b.id)}`;
+    $("#brief-link").textContent = link;
+    $("#copy").textContent = "Copy link";
+    if (b.resumable) pausedNotice(b.id, b.stopped || "This question stopped partway. What it found is saved.", b.free);
+  }
+
+  // ------------------------------------------------------------------ phases and counters
+  function phases() {
+    const tasks = Object.keys(run.tasks).length, s = [
+      run.tasked ? "done" : run.started ? "active" : "pending",
+      run.tasked ? "done" : run.profiled ? "active" : "pending",
+      tasks && run.found >= tasks ? "done" : run.tasked ? "active" : "pending",
+      tasks && run.found >= tasks ? "done" : run.checking.size ? "active" : "pending",
+      run.briefDone ? "done" : run.briefing ? "active" : "pending",
+      run.briefDone ? "done" : "pending",
+    ];
+    $$("#phases li").forEach((li, i) => li.dataset.s = s[i]);
+  }
+  const now = () => run && run.t0 ? ((run.t1 || performance.now()) - run.t0) / 1000 : 0;
+  function tick(ts) {
+    if (run && run.t0) {
+      const t = now();
+      if (t > scale - 5) { scale = Math.ceil((t + 30) / 60) * 60; buildAxis(); run.marks.forEach(place); }
+      else for (const k in run.open) place(run.open[k]);
+      $("#c-time").textContent = fmtTime(t);
+      $("#cursor").style.left = `${(t / scale) * 100}%`;
+    }
+    stepPulses(ts);
+    requestAnimationFrame(tick);
+  }
+  function counters() {
+    $("#c-calls").textContent = run.calls;
+    $("#c-analyses").textContent = run.analyses;
+    $("#c-tokens").textContent = fmtNum(run.tokens);
+    $("#c-findings").textContent = run.found;
+    phases();
+  }
+
+  // ------------------------------------------------------------------ the events (api/progress.py)
+  function leadAct() {
+    const tasks = Object.keys(run.tasks).length;
+    if (!tasks) return run.profiled ? "Planning the tasks" : "Reading the question";
+    if (run.found >= tasks) return "Reviewing the findings";
+    return `Waiting for ${tasks - run.found} of ${tasks} analysts`;
+  }
+  function onStep(e) {
+    const who = e.who;
+    switch (e.kind) {
+      case "thinking": {
+        closeBar(who, "wait");
+        const tasks = Object.keys(run.tasks).length;
+        if (who === "lead" && tasks && run.found >= tasks) run.briefing = true;
+        setState(who, "thinking", who === "lead" ? leadAct() : meta(who).calls ? "Reading what came back" : "Choosing an analysis");
+        run.open[`${who}:think`] = mark(who, "m-think", { bar: true, title: "a model call" });
+        break;
+      }
+      case "thought": {
+        closeBar(who, "think");
+        const m = meta(who); m.calls++; m.tokens += e.tokens || 0; showMeta(who);
+        run.calls++; run.tokens += e.tokens || 0;
+        if (run.state[who] === "thinking") setState(who, "idle", who === "lead" ? leadAct() : null);
+        break;
+      }
+      case "waiting":
+        closeBar(who, "wait");
+        setState(who, "waiting", "Waiting for room in Groq's per-minute limit");
+        run.open[`${who}:wait`] = mark(who, "m-wait", { bar: true, title: "waiting on Groq" });
+        log(who, e.step);
+        break;
+      case "call": {
+        if (!e.mcp) {                                   // the lead's brief form, an analyst's finding form
+          if (who === "lead") { run.briefing = true; setState("lead", "writing", "Writing the brief"); }
+          else setState(who, "writing", "Writing the finding");
+          log(who, e.step);
+          break;
+        }
+        run.analyses++;
+        const chip = $(`#tool-${e.tool}`);
+        if (chip) { const n = $(".n", chip); n.textContent = String(+n.textContent + 1); }
+        if (who === "code") {
+          if (e.finding) { run.checking.add(e.finding); meta("code").checks++; showMeta("code"); }
+          setState("code", "checking", e.finding ? `Rerunning finding ${num(e.finding)}` : "Listing the tables");
+          clearTimeout(run.codeIdle);
+          run.codeIdle = setTimeout(() => run && setState("code", "idle", `${meta("code").checks} rerun${meta("code").checks === 1 ? "" : "s"} so far`), 1500);
+        } else {
+          setState(who, "calling", e.label);
+          run.pending[who] = (run.pending[who] || 0) + 1;
+        }
+        setState("server", "calling", null);
+        clearTimeout(run.serverIdle);
+        run.serverIdle = setTimeout(() => run && setState("server", "idle", null), 1200);
+        mark(who, "m-call", { title: e.label });
+        mark("server", "m-call", { role: "server", title: `${nameOf(who)}: ${e.label}` });
+        pulse(nodeOf(who), chip, cssVar(roleOf(who)), () => flashTool(e.tool, false));
+        log(who, e.step || (who === "lead" ? e.label : `${e.label}`));
+        break;
+      }
+      case "result": {
+        if (e.mcp === false) {                          // code sent a finding or the brief back to fix
+          setState(who, "refused", who === "lead" ? "Brief sent back to fix" : "Finding sent back to fix");
+          log(who, e.step, true);
+          break;
+        }
+        const chip = $(`#tool-${e.tool}`);
+        pulse(chip, nodeOf(who), e.refused ? "var(--bad)" : cssVar("server"));
+        if (e.refused) {
+          flashTool(e.tool, true);
+          const ms = $$(`#lane-${CSS.escape(who)} .m-call`); ms[ms.length - 1]?.classList.add("refused");
+          log(who, `${e.tool} was refused${e.message ? `: ${e.message.split("\n")[0].slice(0, 200)}` : ""}. Trying another way.`, true);
+        }
+        if (who === "lead" && e.tool === "profile") run.profiled = true;
+        run.pending[who] = Math.max(0, (run.pending[who] || 0) - 1);
+        if (!run.pending[who] && run.state[who] === "calling") setState(who, e.refused ? "refused" : "idle", e.refused ? `${e.tool} refused` : who === "lead" ? leadAct() : "Read the result");
+        break;
+      }
+      case "plan": {
+        const box = $("#lead-plan"); box.innerHTML = "";
+        const p = el("div"); p.append(el("b", null, "Plan"), document.createTextNode(e.approach || ""));
+        box.append(p);
+        if (e.later && e.later.length) {
+          const l = el("div"); l.append(el("b", null, "Later"));
+          const ul = el("ul"); e.later.forEach(x => ul.append(el("li", null, x))); l.append(ul); box.append(l);
+        }
+        box.hidden = false;
+        log("lead", e.step);
+        drawWires();
+        break;
+      }
+      case "task":
+        run.tasks[e.finding] = e.task;
+        run.tasked = true;
+        run.briefing = false;                           // a further round: the brief isn't being written yet
+        addAnalyst(e.finding, e.task);
+        mark("lead", "m-task", { title: `Task to ${nameOf(e.finding)}` });
+        pulse($("#n-lead"), nodeOf(e.finding), cssVar("lead"));
+        setState("lead", "waiting", leadAct());
+        log("lead", e.step);
+        break;
+      case "finding":
+        run.found++;
+        run.checking.delete(e.finding);
+        setState(e.finding, e.stopped ? "stopped" : "done", e.stopped ? "Could not finish" : "Finding handed to the lead");
+        mark(e.finding, "m-done", { title: "Finding in" });
+        pulse(nodeOf(e.finding), $("#n-lead"), cssVar("analyst"));
+        liveFinding(e);
+        setState("lead", run.state.lead === "thinking" ? "thinking" : "waiting", leadAct());
+        log(e.finding, e.step, !!e.stopped);
+        break;
+      default:
+        log(who, e.step);
+    }
+    counters();
+  }
+
+  // ------------------------------------------------------------------ asking
+  function resetBoard(question) {
+    pulses.forEach(p => p.dot.remove()); pulses = [];
+    run = { t0: 0, t1: 0, id: null, calls: 0, tokens: 0, analyses: 0, found: 0, tasks: {}, checking: new Set(),
+            state: {}, meta: {}, pending: {}, marks: [], open: {}, started: false, profiled: false, tasked: false,
+            briefing: false, briefDone: false };
+    scale = 120; buildAxis();
+    $$(".node.analyst").forEach(n => n.remove());
+    $("#no-analysts").hidden = false;
+    $("#lead-plan").hidden = true; $("#lead-plan").innerHTML = "";
+    buildTools();
+    $("#lane-rows").innerHTML = "";
+    ["lead", "code", "server"].forEach(addLane);
+    $("#log").innerHTML = '<li><span class="empty">Steps appear here as the agents work.</span></li>';
+    $$(".finding").forEach(f => f.remove());
+    $("#no-findings").hidden = false;
+    for (const id of ["answer", "limits", "foot", "notice"]) $(`#${id}`).hidden = true;
+    const pill = $("#brief-pill"); pill.textContent = "Waiting for findings"; pill.className = "pill run";
+    const q = $("#run-q"); q.textContent = question; q.classList.remove("idle");
+    setState("lead", "idle", "Waiting for the desk"); showMeta("lead");
+    setState("code", "idle", "Reruns each finding in another period"); showMeta("code");
+    setState("server", "idle", null);
+    $("#c-time").textContent = "0:00";
+    counters(); drawWires();
+  }
+  function notice(kind, text, button) {
+    const n = $("#notice"); n.innerHTML = ""; n.className = `notice ${kind}`; n.hidden = false;
+    n.append(el("span", null, text));
+    if (button) { const b = el("button", null, button.label); b.type = "button"; b.addEventListener("click", button.onClick); n.append(b); }
+  }
+  function pausedNotice(id, message, free) {
+    notice("pause", message, {
+      label: "Carry it on",
+      onClick: () => {
+        const key = ownKey();
+        if (free && !key) { $("#mode-own").checked = true; keyMode(); $("#groq-key").focus(); err("Paste your Groq key, then press Carry it on again."); return; }
+        start(`/briefs/${encodeURIComponent(id)}/resume`, null, $("#run-q").textContent);
+      },
+    });
+  }
+  const ownKey = () => $("#mode-own").checked ? $("#groq-key").value.trim() : "";
+  function err(text) { const e = $("#ask-err"); e.textContent = text; e.hidden = !text; }
+  function busy(on) { $("#ask-btn").disabled = on; $("#followup button").disabled = on; $("#keep-open").hidden = !on; }
+
+  async function start(url, body, question) {
+    err("");
+    if ($("#mode-own").checked && !ownKey()) { err("Paste your Groq key, or switch to a free question."); return; }
+    const headers = { "Content-Type": "application/json" };
+    if (ownKey()) headers["X-Groq-Key"] = ownKey();
+    busy(true);
+    let resp;
+    try {
+      resp = await fetch(url, { method: "POST", headers, body: body ? JSON.stringify(body) : "{}" });
+    } catch {
+      busy(false); err("Couldn't reach the desk. Check your connection and try again."); return;
+    }
+    if (!resp.ok) {
+      let detail = `The desk said no (${resp.status}).`;
+      try { const j = await resp.json(); detail = typeof j.detail === "string" ? j.detail : (j.detail?.[0]?.msg ? `Your question: ${j.detail[0].msg}` : detail); } catch {}
+      busy(false); err(detail); refreshFree(); return;
+    }
+    resetBoard(question);
+    $("#run").scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" });
+    let ended = false;
+    try {
+      await readEvents(resp, (event, data) => {
+        if (event === "started") {
+          run.id = data.id; run.t0 = performance.now(); run.started = true;
+          $("#run-status").textContent = "Running";
+          $("#c-key").innerHTML = data.free ? "Free <small>desk key</small>" : "Yours <small>Groq key</small>";
+          setState("lead", "idle", "Reading the question");
+          history.replaceState(null, "", `/?brief=${encodeURIComponent(data.id)}`);
+          log("desk", data.free ? "Question received; a free question on the desk's key" : "Question received; on your Groq key");
+          refreshFree();
+        } else if (event === "step") {
+          onStep(data);
+        } else if (event === "brief") {
+          ended = true; finish("Finished");
+          run.briefDone = data.status === "done";
+          if (run.briefDone) { setState("lead", "done", "Brief written"); mark("lead", "m-done", { title: "Brief" }); log("lead", "Brief ready"); }
+          else log("lead", data.stopped || "No brief", true);
+          counters(); showBrief(data);
+        } else if (event === "paused") {
+          ended = true; finish("Paused");
+          log("desk", data.message, true);
+          pausedNotice(data.id, data.message, true);
+        } else if (event === "failed") {
+          ended = true; finish("Stopped");
+          log("desk", data.error, true);
+          notice("bad", data.error);
+        }
+      });
+    } catch {}
+    if (!ended) {
+      finish("Connection lost");
+      const id = run.id;
+      notice("bad", "The connection dropped, which stops the question. What it found is saved.",
+             id ? { label: "Carry it on", onClick: () => start(`/briefs/${encodeURIComponent(id)}/resume`, null, $("#run-q").textContent) } : null);
+    }
+    busy(false);
+  }
+  function finish(status) {
+    run.t1 = performance.now();
+    for (const k of Object.keys(run.open)) { const [who, kind] = k.split(":"); closeBar(who, kind); }
+    $("#run-status").textContent = status;
+    $("#c-time").textContent = fmtTime(now());
+  }
+  async function readEvents(resp, on) {
+    const reader = resp.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += value.replace(/\r\n/g, "\n");
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const block = buf.slice(0, i); buf = buf.slice(i + 2);
+        let event = "message", data = "";
+        for (const line of block.split("\n")) {
+          if (line.startsWith(":")) continue;
+          if (line.startsWith("event:")) event = line.slice(6).trim();
+          else if (line.startsWith("data:")) data += line.slice(5).trimStart();
+        }
+        if (data) { try { on(event, JSON.parse(data)); } catch (e) { console.error(e); } }
+      }
+    }
+  }
+
+  async function refreshFree() {
+    try {
+      const j = await (await fetch("/free")).json();
+      freeLeft = j.left;
+      $("#free-left").textContent = `${j.left} left today`;
+      $("#per-day").textContent = j.per_day;
+      if (j.release) $("#release").textContent = j.release.replace(/ · data \w+$/, "");
+    } catch {}
+  }
+  async function examples() {
+    try {
+      const list = await (await fetch("/examples")).json();
+      if (!list.length) return;
+      const box = $("#saved");
+      for (const b of list.slice(0, 5)) { const a = el("a", null, b.question); a.href = `/?brief=${encodeURIComponent(b.id)}`; box.append(a); }
+      box.hidden = false;
+    } catch {}
+  }
+  async function openBrief(id) {
+    try {
+      const r = await fetch(`/briefs/${encodeURIComponent(id)}`);
+      if (!r.ok) { err("That brief wasn't found."); return; }
+      const b = await r.json();
+      resetBoard(b.question);
+      $("#run-status").textContent = b.status === "running" ? "Running elsewhere" : "Saved brief";
+      $("#c-key").innerHTML = b.free ? "Free <small>desk key</small>" : "Yours <small>Groq key</small>";
+      $("#c-tokens").textContent = fmtNum(b.usage?.tokens); $("#c-calls").textContent = fmtNum(b.usage?.model_calls);
+      $("#c-time").textContent = fmtTime(b.usage?.seconds || 0);
+      $("#c-findings").textContent = (b.findings || []).length;
+      $("#log").innerHTML = '<li><span class="empty">This is a saved brief: its steps were shown live when it ran.</span></li>';
+      showBrief(b);
+      if (b.status === "done") $$("#phases li").forEach(li => li.dataset.s = "done");
+      $(".brief").scrollIntoView({ behavior: "auto", block: "start" });
+    } catch { err("Couldn't load that brief."); }
+  }
+
+  // ------------------------------------------------------------------ controls
+  function keyMode() {
+    const own = $("#mode-own").checked;
+    $("#keybox").hidden = !own; $("#free-hint").hidden = own; err("");
+  }
+  $$('input[name="keymode"]').forEach(r => r.addEventListener("change", keyMode));
+  $$(".examples button").forEach(b => b.addEventListener("click", () => { $("#question").value = b.textContent; $("#question").focus(); }));
+  $("#ask-form").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const q = $("#question").value.trim();
+    if (q.length < 5) { err("Write a question first (at least a few words)."); return; }
+    start("/questions", { question: q }, q);
+  });
+  $("#followup").addEventListener("submit", ev => {
+    ev.preventDefault();
+    const q = $("#fu").value.trim();
+    if (q.length < 5 || !run?.id && !currentBrief()) { return; }
+    const parent = run?.id || currentBrief();
+    $("#fu").value = "";
+    start("/questions", { question: q, follow_up_of: parent }, q);
+  });
+  const currentBrief = () => new URLSearchParams(location.search).get("brief");
+  $("#copy").addEventListener("click", () => {
+    const b = $("#copy"), text = $("#brief-link").textContent;
+    try { navigator.clipboard.writeText(text).then(() => b.textContent = "Copied", () => b.textContent = "Select the link to copy"); }
+    catch { b.textContent = "Select the link to copy"; }
+  });
+
+  new ResizeObserver(() => drawWires()).observe(map);
+  resetBoard("");
+  $("#run-q").textContent = "Your question runs here, step by step."; $("#run-q").classList.add("idle");
+  $("#brief-pill").textContent = "No question yet"; $("#brief-pill").className = "pill";
+  $("#run-status").textContent = "Ready";
+  refreshFree(); examples();
+  if (currentBrief()) openBrief(currentBrief());
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

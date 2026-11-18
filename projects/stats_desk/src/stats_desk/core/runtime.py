@@ -125,7 +125,22 @@ def fitting(tools, args):
 
 class Think:
     def __init__(self, tools: Registry | None = None, model=None, max_tokens=800,
-                 reasoning_effort=None, retries=4, shorten=(), keep_recent=2):
+                 reasoning_effort=None, retries=4, shorten=(), keep_recent=2, require_tool=False, choose=None,
+                 when_stuck=None):
+        """`require_tool`: every reply must call a tool (the API's tool_choice "required"), for
+        agents that only ever finish by handing in a form: a live run lost its brief
+        to a lead writing it as text three times.
+
+        Every tool stays on offer. Tried and dropped (span tests): hiding the lead's
+        brief form until a finding was in. The model called it anyway, from its instructions,
+        Groq refused each call ("not in request.tools"), and after 4 tries the turn failed.
+
+        `choose(conversation)`: the name of the tool this call must use, or None (the API's
+        tool_choice naming a function: the model generates a call to that tool and no other).
+        For a workflow's fixed steps: the lead reads profiles, then plans, before it may hand in
+        (span tests: where a profile already showed the answer, the lead wrote its
+        brief from it instead of planning in 8 of 12 runs, whatever its instructions said)."""
+        self.require_tool, self.choose, self.when_stuck = require_tool, choose, when_stuck
         self.tools = tools or Registry()
         self.model = model
         self.max_tokens = max_tokens
@@ -134,18 +149,21 @@ class Think:
         self.shorten = tuple(shorten)
         self.keep_recent = keep_recent
 
-    def _recover(self, error):
+    def _recover(self, error, forced=None):
         """A rejected call whose arguments fit exactly one of our tools, made as that call.
 
         gpt-oss often gets the name of a call wrong and its contents right: in the 5 baseline
-        runs (2026-11-11) it called 'json' or 'commentary' 9 times, with a complete hand-in as
+        runs it called 'json' or 'commentary' 9 times, with a complete hand-in as
         the arguments, and Groq threw each one away. Exactly one tool must fit, or nothing is
-        guessed; the call then goes through the same checks as any other."""
+        guessed; the call then goes through the same checks as any other. While a tool is
+        named (`forced`), only that one: span tests had the lead, told to call
+        ask_analysts, write a brief instead, Groq refuse it, and this recover it as the brief."""
         parsed = parse_call(llm.failed_generation(error))
         if parsed is None:
             return None
         name, args = parsed
-        candidates = fitting([self.tools[name]] if name in self.tools else list(self.tools), args)
+        pool = [self.tools[forced]] if forced else [self.tools[name]] if name in self.tools else list(self.tools)
+        candidates = fitting(pool, args)
         if len(candidates) != 1:
             return None
         chosen = candidates[0].name
@@ -157,13 +175,26 @@ class Think:
                            "arguments": json.dumps(args, ensure_ascii=False)}]}
 
     def _rejected(self, error):
-        """What goes back to the model after a rejected call: Groq's reason, and the real names."""
+        """What goes back to the model after a rejected call: Groq's reason, and the real names.
+        A model that wrote prose where a tool call was required gets its own words back and the
+        next move that fits (`when_stuck`): live run, an analyst retried on Groq's
+        "issue the call again" wrote "this cannot be computed directly with a single tool" three
+        times and spent its budget without one analysis."""
         names = ", ".join(f"`{n}`" for n in self.tools.names)
+        message = str(getattr(error, "message", "") or error)
+        wrote = (llm.failed_generation(error) or "").strip()
+        if "did not call a tool" in message and wrote:
+            return (f"You wrote this instead of calling a tool:\n{wrote[:800]}\n\n"
+                    + (self.when_stuck or f"Act on it now with one of your tools: {names}."))
         return ((llm.tool_call_failure(error) or "That request could not be processed.")
-                + f"\n\nYour tools are exactly: {names}. Call one of them by that name, or answer in text.")
+                + f"\n\nYour tools are exactly: {names}. Call one of them by that name"
+                + ("." if self.require_tool else ", or answer in text."))
 
-    def _kwargs(self):
-        return {"reasoning_effort": self.reasoning_effort} if self.reasoning_effort else {}
+    def _kwargs(self, with_tools=True):
+        kwargs = {"reasoning_effort": self.reasoning_effort} if self.reasoning_effort else {}
+        if self.require_tool and with_tools and len(self.tools):
+            kwargs["tool_choice"] = "required"
+        return kwargs
 
     def _system(self, conversation):
         budget = conversation.remaining_budget or {}
@@ -180,17 +211,29 @@ class Think:
         base = [self._system(conversation), *history(conversation, self.shorten, self.keep_recent)]
         messages = list(base)
         schemas = self.tools.schemas
-        for _ in range(self.retries):
+        kwargs = self._kwargs()
+        forced = self.choose(conversation) if self.choose else None
+        forced = forced if forced in self.tools else None
+        for attempt in range(self.retries):
+            # one attempt with the tool named: Groq checks the call after it is generated, so a
+            # model set on another tool is refused, not steered; after that, its own choice
+            # (a step done too early is refused by its tool, which costs a call, not the turn)
+            named = forced if attempt == 0 else None
+            if named:
+                kwargs = {**kwargs, "tool_choice": {"type": "function", "function": {"name": named}}}
+            elif forced:
+                kwargs = self._kwargs()
             try:
                 reply = await llm.complete(self.model, messages, tools=schemas or None,
-                                           max_tokens=self.max_tokens, **self._kwargs())
+                                           max_tokens=self.max_tokens, **kwargs)
             except llm.BadRequestError as e:
-                recovered = self._recover(e)
+                recovered = self._recover(e, named)
                 if recovered is not None:
                     return recovered
                 # Groq names what was wrong with a malformed call; hand exactly that back, once,
                 # on top of a clean context rather than a growing stack of failures
-                messages = [*base, {"role": "user", "content": self._rejected(e)}]
+                messages = [*base, {"role": "user", "content": self._rejected(e)
+                                    + (f" Call `{named}` now." if named else "")}]
                 continue
             if reply.tool_calls:
                 return {"role": "decision", "type": "tool_calls", "reasoning": reply.content or "",
@@ -200,7 +243,8 @@ class Think:
                 return {"role": "decision", "type": "respond", "content": reply.content.strip()}
             # gpt-oss can spend its whole output budget reasoning and return nothing
             messages = [*base, {"role": "user", "content":
-                                "Your last reply was empty. Reply now: call a tool, or answer briefly in text."}]
+                                "Your last reply was empty. Reply now: call a tool"
+                                + ("." if self.require_tool else ", or answer briefly in text.")}]
         raise RuntimeError(f"no usable decision from {self.model} after {self.retries} attempts")
 
     async def finish(self, conversation, reason):
@@ -218,7 +262,7 @@ class Think:
         for _ in range(2):
             try:
                 reply = await llm.complete(self.model, messages, max_tokens=self.max_tokens,
-                                           **self._kwargs())
+                                           **self._kwargs(with_tools=False))
             except llm.BadRequestError:
                 messages.append({"role": "user", "content":
                                  "There are no tools. Reply in plain text, from the results above only."})

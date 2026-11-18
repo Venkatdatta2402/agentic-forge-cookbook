@@ -19,7 +19,7 @@ Refused before anything is sent, because waiting can't fix them:
     TooLarge             the request alone is over the per-request cap or the bucket's size
     DailyLimitReached    it would go past the rolling 24-hour budget
 
-**One bucket per Groq account and model** (2026-11-12): on the web each user brings their own key,
+**One bucket per Groq account and model**: on the web each user brings their own key,
 and each key has its own limits at Groq. The caller names the account (`llm.complete` passes the
 key its question is on at that moment, which can change mid-question when a free key runs out),
 so a question's agents all draw on its key's bucket and nobody else's. An account is a hash of
@@ -74,7 +74,20 @@ class _Model:
         self.updated = now
         self.day = deque()        # [wall, tokens]
         self.count_day = count_day
-        self.lock = asyncio.Lock()
+        self._lock, self._loop = None, None
+
+    @property
+    def lock(self) -> asyncio.Lock:
+        """The bucket's line, for the event loop running now. The governor outlives a loop: the
+        eval runs each question in its own asyncio.run, and a lock from the last one refused
+        ("bound to a different event loop"). The bucket's level carries over."""
+        try:
+            loop = asyncio.get_running_loop()
+        except RuntimeError:
+            loop = None
+        if self._lock is None or (loop is not None and loop is not self._loop):
+            self._lock, self._loop = asyncio.Lock(), loop
+        return self._lock
 
     def resize(self, tpm):
         """Groq's header says this key's minute holds `tpm` (a paid plan holds more)."""
@@ -114,10 +127,11 @@ class Governor:
                                        count_day=who is None)
         return self._models[key]
 
-    async def reserve(self, model, tokens, request=None, account=None) -> Ticket:
+    async def reserve(self, model, tokens, request=None, account=None, on_wait=None) -> Ticket:
         """Take `tokens` from the bucket. `request` is the whole request (prompt + max_tokens),
         checked against the per-request cap; it defaults to `tokens`. `account`: whose bucket
-        (account_of(key)); None is the server's own key."""
+        (account_of(key)); None is the server's own key. `on_wait`: called once, with the
+        seconds it expects, if the call has to wait (in line behind another, or for room)."""
         who = account
         m = self._model(model, who)
         lim = m.limits
@@ -128,8 +142,18 @@ class Governor:
         if tokens > lim.tpm:
             raise TooLarge(f"{tokens:,} tokens is over {model}'s {lim.tpm:,} tokens-per-minute limit")
 
+        told = False
+
+        def tell(seconds):
+            nonlocal told
+            if on_wait is not None and not told:
+                told = True
+                on_wait(seconds)
+
         self.waiting += 1
         try:
+            if m.lock.locked():
+                tell(None)                          # in line behind another call
             # one reserver at a time per model, so requests are admitted in the order they asked
             async with m.lock:
                 while True:
@@ -147,10 +171,19 @@ class Governor:
                         m.day.append(day_entry)
                         return Ticket(model, tokens, day_entry, who)
                     pause = max(0.05, (tokens - m.level) / m.rate)
+                    if pause >= 1:
+                        tell(round(pause))
                     self.waited += pause
                     await self.sleep(pause)
         finally:
             self.waiting -= 1
+
+    def room(self, model, account=None) -> float:
+        """Tokens the bucket could give now; a bucket with calls waiting in line counts as a
+        whole minute short (llm.QuestionKeys sends each call to the key with the most)."""
+        m = self._model(model, account)
+        m.refill(self.clock())
+        return m.level - (m.limits.tpm if m.lock.locked() else 0)
 
     def settle(self, ticket: Ticket, used=None, remaining=None, limit=None):
         """Refund what wasn't used, and believe Groq's header when it says there's less left.

@@ -28,10 +28,27 @@ def test_a_request_reads_mospis_published_row_and_states_every_default(release):
 def test_wrong_fields_and_values_are_refused_with_the_valid_ones(release):
     with pytest.raises(Refusal, match="no field 'gendr'. Its fields: measure, state, gender"):
         A.value(release, "ur_annual", {"gendr": "female"})
-    with pytest.raises(Refusal, match="no education 'graduate'. Values: .*7.graduate.*8.post graduate"):
-        A.value(release, "ur_annual", {"education": "graduate"})       # two matches: not guessed
+    with pytest.raises(Refusal, match="education 'grad' could be any of 7.graduate, 8.post graduate"):
+        A.value(release, "ur_annual", {"education": "grad"})           # two matches: not guessed
+    with pytest.raises(Refusal, match="no education 'doctorate'. Values: .*7.graduate"):
+        A.value(release, "ur_annual", {"education": "doctorate"})
     with pytest.raises(Refusal, match="no period 2019. Stored: 2024, 2025"):
         A.value(release, "ur_annual", {"period": "2019"})
+
+
+def test_a_group_asked_for_without_mospis_number_is_the_one_it_names(release):
+    """Live run: two analysts asked for "graduate", were refused (it is also inside
+    "8.post graduate & above"), repeated it, and stopped."""
+    def figures(asked):                       # the result without its id line (the id hashes the request)
+        return A.value(release, "ur_annual", {"education": asked}).split("\n", 1)[1]
+    assert figures("graduate") == figures("7.graduate") and "education = 7.graduate" in figures("graduate")
+    assert figures("Post Graduate") == figures("8.post graduate & above")
+
+
+def test_an_age_group_is_not_a_figure_to_back():
+    from stats_desk.analysis.client import AGE, NUMBER
+    said = "For ages 15‑29 and 15-29 year olds, aged 15 and above or 15+, it was 11.2% in 2025; 5.0-5.2% monthly."
+    assert NUMBER.findall(AGE.sub("", said)) == ["11.2", "2025", "5.0", "5.2"]
 
 
 def test_an_unpublished_combination_says_what_is_published(release):
@@ -83,6 +100,47 @@ def test_a_series_names_the_months_not_published_and_never_averages(release):
     assert "values: 2025-04 5.5, 2025-05 6," in out
     assert "not published: 2025-07, 2025-08" in out and "2026-03" in out
     assert "average" not in out and "mean" not in out
+
+
+def test_two_groups_over_time_come_as_two_lines_and_their_gap(release):
+    """An analyst can ask for two groups' trends at once, like two lines on a
+    chart. (The test release's women sit 0.6 points above its men every month.)"""
+    out = A.series(release, "ur_monthly", by="gender")
+    assert "female: 2025-04 5.5," in out and "male: 2025-04 4.9," in out and "person:" not in out
+    assert "female minus male: 2025-04 +0.6," in out and "not published: 2025-07" in out
+    line = A.trend(release, "ur_monthly", by="gender")
+    assert "one straight line per gender" in line
+    # the gap's direction from the line through every month, never from two months (a live
+    # run); trend judges it, series only describes
+    assert "female minus male from 2025-04 to 2026-04: +0.6 -> +0.6 points (+0.0), but compare the line below" in line
+    gap_line = next(x for x in line.split("\n") if x.startswith("the gap's straight line"))
+    assert gap_line.startswith("the gap's straight line: +0.00 points a month") and gap_line.endswith("no clear trend")
+    assert "straight line" not in A.series(release, "ur_monthly", by="gender")
+    with pytest.raises(Refusal, match="leave it out of where"):
+        A.trend(release, "ur_monthly", where={"gender": "female"}, by="gender")
+
+
+def test_a_gap_that_moves_along_its_line_is_called_widening_or_narrowing():
+    from stats_desk.analysis.analyses import _gap_direction
+    months = ["2025-04", "2025-05", "2025-06", "2025-07", "2025-08", "2025-09"]
+    growing = dict(zip(months, [-2.0, -2.4, -2.9, -3.3, -3.8, -4.2]))            # a minus b, more negative
+    assert _gap_direction("male", "female", growing, "month")[-1].endswith(": widening")
+    shrinking = dict(zip(months, [3.0, 2.6, 2.1, 1.7, 1.2, 0.8]))
+    assert _gap_direction("female", "male", shrinking, "month")[-1].endswith(": narrowing")
+
+
+def test_other_analyses_give_one_answer_per_group_where_it_means_something(release):
+    """Wherever meaningful, an analysis can
+    take `by`. (compare, gap's `across` and change already did; average and relate now do.)"""
+    avg = A.average(release, "ur_monthly", "2025-04", "2025-06", by="gender",
+                    vs_start="2026-01", vs_end="2026-04")
+    assert "female: 2025-04 to 2025-06 5.63" in avg and "male: 2025-04 to 2025-06 5.03" in avg
+    assert "female minus male: 2025-04 to 2025-06 +0.6 points; 2026-01 to 2026-04 +0.6 points" in avg
+    linked = A.relate(release, "ur_annual", "wpr_annual", by="gender")
+    assert "by state x gender" in linked.split("\n")[1] and "gender = female |" not in linked.split("\n")[1]
+    assert "\nfemale: " in linked and "\nmale: " in linked and "BUILT IN" in linked
+    with pytest.raises(Refusal, match="relate compares states already"):
+        A.relate(release, "ur_annual", by="state")
 
 
 def test_correlations_true_by_definition_say_so(release):

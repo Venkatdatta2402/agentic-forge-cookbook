@@ -40,7 +40,7 @@ def done(path):
 
 def _daily_limit(error, kind):
     """The daily-limit error inside `error`, or None. The MCP client's task group wraps an error
-    raised inside it in an ExceptionGroup (live, 2026-11-11: the limit crashed the collection)."""
+    raised inside it in an ExceptionGroup (live: the limit crashed the collection)."""
     if isinstance(error, kind):
         return error
     for inner in getattr(error, "exceptions", ()):

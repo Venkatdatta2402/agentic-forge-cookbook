@@ -7,6 +7,7 @@ get a stated default. So a request always points at MoSPI's own published rows. 
 computes a rate; when a combination isn't published, the answer says what is.
 """
 
+import re
 from dataclasses import dataclass, field
 
 import duckdb
@@ -32,6 +33,13 @@ class Refusal(Exception):
 
 def _period(value):
     return value.strftime("%Y-%m") if hasattr(value, "strftime") else str(value)
+
+
+def _bare(value) -> str:
+    """A value as matched against what was asked: no number in front ("7.graduate" -> "graduate"),
+    any case, hyphens as spaces."""
+    text = re.sub(r"^\s*\d+\s*\.\s*", "", str(value)).lower()
+    return " ".join(re.sub(r"[-‐‑–]", " ", text).split())
 
 
 @dataclass
@@ -97,11 +105,19 @@ class Table:
         return Settings(values, period or self.periods[-1], set(where))
 
     def _check(self, f, value):
+        """A value as published, or the one it plainly means: MoSPI numbers some groups
+        ("7.graduate"), and an analyst asking for "graduate" means that one, not "8.post graduate
+        & above" -- a live run lost two analysts to that refusal, each repeating it."""
         if value in self.values[f]:
             return value
-        close = [v for v in self.values[f] if value.lower() in str(v).lower()]
+        want = _bare(value)
+        exact = [v for v in self.values[f] if _bare(v) == want]
+        close = exact or [v for v in self.values[f] if want and want in _bare(v)]
         if len(close) == 1:
             return close[0]
+        if close:
+            raise Refusal(f"{self.name}: {f} '{value}' could be any of {', '.join(map(str, close))}: "
+                          "give one of them exactly as written here")
         listed = self.values[f] if len(self.values[f]) <= 40 else self.values[f][:40] + ["..."]
         raise Refusal(f"{self.name}: no {f} '{value}'. Values: {', '.join(map(str, listed))}")
 
@@ -149,6 +165,31 @@ class Table:
     def groups(self, s: Settings, f):
         """{group: value} for every group of `f` (the total, if any, left out), in MoSPI's order."""
         return {r[f]: r["value"] for r in self.rows(s, vary=[f]) if r[f] != TOTAL.get(f)}
+
+    def combinations(self) -> str:
+        """Which fields MoSPI splits together, in one line, or "" if every field goes with every
+        other: e.g. "ages 15-29 years, 15-59 years only by gender, sector, state; education only
+        by gender, sector, state, ages 15 years and above only". In the tables list, which the
+        lead plans from (span tests: without it, 2 of 3 plans asked for young people
+        by education, which MoSPI doesn't publish; with it, 1 of 3)."""
+        splits = [(sp, age) for sp, age, _ in self.shapes]
+        fields = {f for sp, _ in splits for f in sp}
+        out = []
+        by_age = {}
+        for age in sorted({a for _, a in splits} - {DEFAULTS["age"]}):
+            partners = frozenset(f for sp, a in splits if a == age for f in sp)
+            by_age.setdefault(partners, []).append(age)
+        for partners, ages in by_age.items():
+            if partners != fields:
+                out.append(f"age group{'s' if len(ages) > 1 else ''} {', '.join(ages)}: only by "
+                           f"{', '.join(sorted(partners)) or 'nothing else (All India totals)'}")
+        for f in sorted(fields):
+            partners = {g for sp, _ in splits if f in sp for g in sp} - {f}
+            ages = sorted({a for sp, a in splits if f in sp})
+            if partners != fields - {f} or ages == [DEFAULTS["age"]]:
+                out.append(f"{f}: only by {', '.join(sorted(partners)) or 'itself'}"
+                           + (f", ages {ages[0]} only" if ages == [DEFAULTS["age"]] else ""))
+        return "; ".join(out)
 
     def missing(self, s: Settings, vary=()):
         """Why nothing is published for these settings, and what is."""

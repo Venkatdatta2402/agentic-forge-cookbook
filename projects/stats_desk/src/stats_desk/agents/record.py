@@ -1,5 +1,5 @@
 """One question's record: everything about it in one object, the single source that every
-agent's context is built from and the thing that is saved (decided 2026-11-13).
+agent's context is built from and the thing that is saved.
 
 The standard shape (LangGraph's state + checkpointer, Google ADK's session, the OpenAI Agents
 SDK's sessions): one record per question, saved as is; each model call's context is a VIEW of it,
@@ -52,6 +52,7 @@ class Record:
     earlier_brief: dict = field(default_factory=dict)   # its question and brief
     earlier_release: str | None = None
     tasks: dict = field(default_factory=dict)           # "f1" -> the lead's task
+    plan: list = field(default_factory=list)            # each ask_analysts call: approach, now, later
     findings: dict = field(default_factory=dict)        # "f1" -> Finding | Stopped | None (running)
     results: dict = field(default_factory=dict)         # result id -> its text
     transcripts: dict = field(default_factory=dict)     # agent -> its messages

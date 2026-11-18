@@ -191,7 +191,7 @@ def build_release(path, annual: dict, monthly: dict, unstated_age):
 def _released(con, annual, monthly):
     """What this release covers, from the tables themselves, and a fingerprint of every figure in
     them, e.g. "annual 2025 (and 2024); monthly to 2026-09 · data 3f2a91". The fingerprint changes
-    when MoSPI corrects a figure even though no new period came (2026-11-14): a follow-up then
+    when MoSPI corrects a figure even though no new period came: a follow-up then
     knows the earlier brief's figures may differ from today's tables."""
     parts = []
     if annual:

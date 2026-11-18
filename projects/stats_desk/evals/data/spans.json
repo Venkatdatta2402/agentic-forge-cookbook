@@ -8,7 +8,10 @@
   {"id": "Q5", "needed": ["LFPR_annual_2025", "WPR_annual_2025"]},
   {"id": "Q6", "needed": ["UR_annual_2025"]},
   {"id": "Q7", "needed": ["UR_annual_2025"]},
-  {"id": "Q8", "needed": ["UR_annual_2025"]}
+  {"id": "Q8", "needed": ["UR_annual_2025"]},
+  {"id": "E1", "question": "Why is unemployment so high among educated young people in India?",
+   "needed": ["UR_annual_2025", "LFPR_annual_2025", "WPR_annual_2025"], "names": ["7.graduate"],
+   "note": "live run 2026-11-14: 4 tasks at once, groups named 'graduate', three analysts stopped"}
  ],
  "analyst": [
   {"id": "A1", "task": "How does women's unemployment compare with men's in rural and in urban areas in 2025?", "fits": ["gap"]},

@@ -309,6 +309,107 @@ The 5 baseline runs ended with no brief 3 times. In order of damage, and what wa
 - The brief's numbers must be in the findings' results or code's reruns, not the profiles.
 - First-call prompts, *estimated*: lead 1,309 tokens (profile list 322), analyst 2,492.
 
+### 4.3c What changed after the first live question on the page (2026-11-17)
+
+"Why is unemployment so high among educated young people in India?" ran on the real app
+(2026-11-14): 49k tokens, 5.5 minutes, no brief. The lead gave 4 tasks at once; two analysts
+asked for education "graduate" (MoSPI writes "7.graduate"), were refused, repeated it and were
+stopped; one ran out of budget looking figures up one by one; the lead then wrote that
+unemployment by education isn't published (its profile showed 11.2% for graduates), as text,
+three times, refused each time for a "29" that was only part of "ages 15-29". Fixed:
+
+- **Group names** (`analysis/data.py`): a value matching a published one without its number
+  ("graduate" -> "7.graduate") is that one; one that could still be several is refused naming them.
+- **Age groups aren't figures** (`analysis/client.py` AGE): "ages 15-29", "15+", "aged 15 and
+  above" are left out of the number check.
+- **A task that came back empty** (`lead._unfinished`): says it proves nothing about what is
+  published, passes on what the server refused (which does), and that the task can be given again.
+- **The lead plans** (`agents/plan.py`, user's request): `ask_analysts(approach, tasks, later)`:
+  its approach in a sentence or two, the tasks that need no other task's answer (at most 3 in
+  the first call, FIRST_ROUND, keeping one to follow up with), and later tasks that wait for an
+  answer, each saying which. The later tasks come back to it with the findings, to give as the
+  findings make them look or drop. How to plan -- explore as an analyst would (where it is high
+  or low and for whom, how it has moved, what moves with it; for a "why", where the problem
+  concentrates first, then what goes with it there; tasks that tell competing explanations
+  apart) -- is in the plan's field descriptions, read while writing it: in the instructions, the
+  same words had the lead skip planning and write its brief from the profiles in 5 of 6 span
+  runs (2026-11-18). From a longer prompt the user brought, the instructions took six short
+  rules: an overall figure can hide the opposite within groups; the nearest published figures
+  stand in for an unpublished combination, they don't answer it; never piece a combination
+  together from two published ones; stop when more tasks are unlikely to change the answer;
+  keep levels apart from changes. Not taken: its length (~2,500 tokens a call against ~900),
+  rules code already enforces, and a JSON-only answer that would break the brief form.
+- **The lead's first steps are fixed by code** (`Investigation._next_step`, the API's
+  `tool_choice` naming the tool): read profiles, then ask_analysts, before it may hand in; free
+  after the first finding, and in a follow-up whose earlier findings can be cited. Where a
+  profile already shows the answer (Q2 always, Q5 mostly), the lead wrote its brief from it in 8
+  of 12 span runs whatever the instructions said. Groq checks a named call after generating it,
+  so a model set on the brief is refused, not steered: the tool is named for one try, the call
+  is never rescued as another tool (it was, as the brief), and the next try is the model's own.
+  Tasks name groups
+  as the profiles write them; the list of profiles says, per table, which fields MoSPI publishes
+  together (`Table.combinations`, by code: age groups 15-29 and 15-59 only by gender, sector,
+  state; education only for ages 15+; religion and social group never by state). Span tests
+  (E1): groups named as published 3/3 (0/3 live); the unpublished combination asked for in 1 of
+  3 (2 of 3 without the list).
+- **Tried and dropped the same day: tasks as structured fields** checked by code against the
+  published combinations, with every allowed group listed in the tool's definition. gpt-oss-120b
+  invented field names ("id", "action", "measure1"); Groq refused 5 calls against the schema
+  (~4k tokens each); a call that fitted wrote the groups in the sentence and left their fields
+  empty, so the check checked nothing. Listing the allowed values in the analysts' own tools was
+  measured, not built: +2,700 to +4,700 tokens on every analyst call (the 10 tools' definitions
+  are 1,711 now), too much for a key with 8,000 a minute. Also tried: hiding the brief form until
+  a finding was in -- the model called it anyway, Groq refused it as "not in request.tools", and
+  after 4 tries the turn failed.
+- **One answer per group** (user: "two lines on a chart" was an example, for every analysis
+  where it means something): `series`, `trend`, `average` and `relate` take `by` -- one line,
+  average or correlation per group of a field side by side, and for two groups their gap and how
+  it moved (or whether the lines crossed). `compare`, `change` and `gap`'s `across` already did;
+  for `value` it would be `compare`.
+- **Every agent turn is a tool call** (Think `require_tool`: the API's `tool_choice: "required"`):
+  told to "just write the answer in plain text", gpt-oss-120b called the tool 3 of 3 times
+  (measured). Reading a text reply as the form stays as the backstop. Brief spans Q1, Q2: handed
+  in at the first try.
+- **Free questions borrow the idle free key** (`llm.QuestionKeys.pick`, user's request): each call
+  goes on whichever free key has more room in its minute, while no other question holds the
+  other key; checked every 20 s, so a key another question takes is given back within that.
+
+**Two full questions on the real app (2026-11-18)**, "In cities, is the gap between women's and
+men's unemployment narrowing or widening?". First run: the lead took "cities" to be unpublished,
+answered for all India and said urban-by-gender isn't published (it is); an analyst wrote prose
+three times and spent its budget on no analysis. Fixed, and the second run asked for urban
+figures, read both profiles, used the two-line `series`, and gave a failed task out again:
+- the tables list says what groups mean (`MEANINGS`: urban = towns and cities; no single city);
+- a brief saying something "isn't published" is refused unless an analysis in this question was
+  refused as unpublished (`_refused_as_unpublished`);
+- both prompts: every reply is a tool call, never prose; an analyst runs the closest analysis
+  when none does all of a task; the lead never hands in before analysts have reported. Prose
+  that slips through gets its own words back with that next move (`when_stuck`), not Groq's
+  "issue the call again", which had the analyst repeat itself;
+- `gap` gives the same gap a period earlier (and a year earlier, monthly): widened, narrowed or
+  reversed, in one analysis;
+- two lines over time (`trend` with `by`) say whether their gap is widening or narrowing from
+  the straight line through every month against its usual scatter, never from two months
+  (`series` describes and gives no verdict, user: series describes, trend judges): the second run's brief called a gap "widening" that swung between 2.1 and 3.8
+  points (its line: +0.01 a month against 0.5 of scatter, no clear trend).
+
+**Eval rerun (2026-11-18, `evals/reports/runs_2026-11-18_after_fixes.md`)** against the 11 Nov
+baseline, Q1-Q5: briefs 5/5 (was 2/5), points 6/11 (2/11), measure named 5/5 (1/5), wasted
+analyses 1 (7), tasks stopped 1 (3), tokens per delivered brief ~33k (~78k); Groq errors 13 (7),
+mostly tool calls written as text and recovered (the report now counts those apart). Q6-Q8: 3/3
+briefs. Its misses, each traced in the saved runs and fixed:
+- Q5 (true by definition): barred from citing the flagged correlation, the lead cited state
+  rankings showing the same link. Now any finding flagged true by definition must be said.
+- Q7 (outlier): gpt-oss wrote "Andaman &" + a narrow no-break space + "Nicobar"; checks now
+  compare text with every kind of space as one (`plain`, checks `_spaced`).
+- Q2 (a skipped month, and "fell"): a brief resting on monthly figures that skip a month must
+  say so; a claim of rising or falling against a trend's "no clear trend" is flagged to the lead.
+- Q1 (six single lookups instead of `gap`): headed off in the tool descriptions, not refused at
+  hand-in (that would cost more calls, user). All descriptions were rewritten to one shape: the
+  question the tool answers, what it returns, what each setting does, and what to use instead
+  (series: the path month by month; trend: the direction; change: two points in time). 1,888
+  tokens for the analysts' 10 tools (1,829 before).
+
 ### 4.4 Handing in findings
 
 Day 1 showed a nested form (a list of findings, each with six fields) failing as a tool call
@@ -439,9 +540,23 @@ with that design; their measurements are in the archive.
 
 - **API** (built 2026-11-12, `src/stats_desk/api/`): FastAPI, all async.
   - `POST /questions` {question, follow_up_of?} with the key in the `X-Groq-Key` header streams
-    server-sent events: `started` (the brief's link, at once), `step` (one plain line per agent
-    step: "f1 started: ...", "f1: gap on ur_annual", "The lead is writing the brief"), then
-    `brief` or `failed` (said in plain words: e.g. the key's daily allowance is used up).
+    server-sent events: `started` (the brief's link, at once), `step` (one per agent event, from
+    `api/progress.py`: who (lead, f1..., code, desk), what (thinking / thought with its tokens /
+    waiting on Groq's minute / an analysis call and its result, refused or not / a task handed
+    out / a finding in, with its figures and code's reruns / code's recheck), and a plain line
+    for a reader or none: "Analyst 1 started: ...", "Analyst 1: gap on ur_annual, female against
+    male (15-29 years)", "The lead is writing the brief"; finding ids stay out of the lines (user,
+    2026-11-14)), then `brief`, `paused` or `failed` (said in plain words).
+  - **The page** (built 2026-11-14, `api/web/index.html`, served at `/`; `/?brief=<id>` opens a
+    saved brief): a question box with a short intro and the free/own-key choice (`GET /free`: the
+    visitor's free questions left); the run as it happens -- the steps (profiles, tasks, analysts,
+    code checks, brief), counters (time, model calls, analyses, tokens, findings), an
+    orchestration map (lead, analysts, code checks, the analysis server's 12 analyses, with dots
+    for each hand-off, call and result), a timeline per agent and a live log; then the brief: the
+    answer, the findings it rests on with their figures and code's reruns, what the figures can't
+    tell, a follow-up box and the link. Plain HTML and JavaScript, no build step: the stream is
+    read with `fetch` (a POST, so not `EventSource`). Mocked first with a replayed example run and
+    agreed with the user before it was wired up.
   - The question runs in a task of its own, its record saved at the start, after each finding
     and at the end. **Closing the page stops it** (decided 2026-11-13): a serverless host keeps a
     machine only while requests are open, so a question left running after its stream closed

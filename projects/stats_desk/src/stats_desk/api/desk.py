@@ -2,7 +2,7 @@
 
 How a question runs: in a task of its own, its events going into a queue the stream reads. Its
 record (agents/record.py) is saved when it starts, after each finding and at the end. Closing
-the page stops it (decided 2026-11-13): a serverless host (Azure Container Apps; Cloud Run when
+the page stops it: a serverless host (Azure Container Apps; Cloud Run when
 this was first written) keeps a machine only while requests are open and scales it away after,
 so a question left running after its stream closed would be cut off. What it found by then is
 saved, status "stopped", and it can be carried on.
@@ -11,7 +11,7 @@ Keys (DESIGN.md section 7):
   - the user's own: checked first with Groq's model list (no tokens), used for this question
     only (llm.using_key), never stored or logged.
   - none: a free question on one of the desk's keys (config.FREE_KEYS, one per Groq
-    organisation, used by the desk alone). Decided 2026-11-13 (user):
+    organisation, used by the desk alone). The rules:
       - the only count is per visitor: FREE_PER_VISITOR_PER_DAY (3), new questions and
         follow-ups together, by a hash of their address;
       - no fixed count per key: the desk counts each key's tokens over the last 24 hours (it is
@@ -22,7 +22,10 @@ Keys (DESIGN.md section 7):
         the other key; with none left it pauses, saved, and the visitor decides: carry it on
         with their own key, or leave it.
 One question at a time per key, whichever machine it reaches (a lease in the store: a free
-key's 8,000 tokens a minute can't run two). At most MAX_RUNNING questions on one machine.
+key's 8,000 tokens a minute can't run two). A free question also borrows the other free keys
+while no question holds them, each call going on the key with the most room in its minute
+(llm.QuestionKeys): a lone question runs on two minutes' worth, and hands a
+key back within 20 s of another question taking it. At most MAX_RUNNING questions on one machine.
 """
 
 import asyncio
@@ -38,7 +41,7 @@ from ..agents.lead import investigate
 from ..agents.record import Record, now
 from ..core import events, llm
 from ..core.governor import DailyLimitReached, account_of
-from .progress import step
+from .progress import update
 from .store import Store, new_id
 
 log = logging.getLogger("stats_desk.api")
@@ -195,6 +198,12 @@ class Desk:
             await self.store.add(counter)
         return key
 
+    async def free_left(self, visitor) -> int:
+        """The visitor's free questions left today (follow-ups included); 0 with no free keys."""
+        if not self.free_keys:
+            return 0
+        return max(0, self.free_per_visitor - await self.store.count(f"visitor-{visitor}-{today()}"))
+
     async def tokens_left(self, key) -> int:
         """What the key has left of its day, by the desk's own count; 0 if Groq said it's spent."""
         if await self.store.blocked(f"spent-{account_of(key)}"):
@@ -218,9 +227,9 @@ class Desk:
         held = {"lease": lease}
 
         def listen(event):
-            said = step(event)
+            said = update(event)
             if said:
-                queue.put_nowait(("step", {"step": said}))
+                queue.put_nowait(("step", said))
 
         async def spare(spent_key, retry_after):
             """A free key's day ran out mid-question: mark it spent (every machine skips it until
@@ -231,15 +240,26 @@ class Desk:
             held["lease"] = account_of(new) if new else None
             if new:
                 record.key_switches += 1
-                queue.put_nowait(("step", {"step": "One free key's allowance for today ran out; "
+                queue.put_nowait(("step", {"who": "desk", "kind": "note",
+                                           "step": "One free key's allowance for today ran out; "
                                                    "carrying on with the other free key"}))
             return new
 
         async def used(on_key, tokens):
             await self.store.add_usage(f"tokens-{account_of(on_key)}", tokens)
 
+        async def borrow(own_key):
+            """The other free keys this question may also use now: no other question holds them
+            (on any machine) and they have enough of their day left."""
+            return [k for k in self.free_keys if k != own_key
+                    and await self.store.holder(account_of(k)) in (None, record.id)
+                    and await self.tokens_left(k) >= self.free_min_left]
+
+        async def spent(spent_key, retry_after):
+            await self.store.block(f"spent-{account_of(spent_key)}", retry_after)
+
         try:
-            async with llm.using_key(key, *((spare, used) if record.free else ())):
+            async with llm.using_key(key, *((spare, used, borrow, spent) if record.free else ())):
                 with events.listening(listen):
                     async with self.connect() as analyses:
                         await investigate(analyses, via="api", record=record, save=self.save,

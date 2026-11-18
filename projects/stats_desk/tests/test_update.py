@@ -73,7 +73,7 @@ async def test_a_new_year_is_seen_whatever_mospi_calls_it(raw):
 
 
 async def test_a_figure_mospi_revised_replaces_ours_and_is_logged(raw):
-    """User, 2026-11-14: MoSPI's figures are the official ones -- take the revision, record it."""
+    """MoSPI's figures are the official ones: take the revision, record it."""
     stored = Stored.read(raw)
     now = [row("August", "5.1"), row("September", "5.0"), row("October", "5.2")]   # August revised
     m, _ = moSPI(["PLFS 2025", "PLFS 2024"], ["2026", "2025"], now)
