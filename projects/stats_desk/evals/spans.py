@@ -8,7 +8,11 @@ and a step can be run several times to see whether it behaves the same way.
     tasks      the lead's next call: its plan (agents/plan.py), given the profiles it needed.
                Checked: it hands out tasks, at most FIRST_ROUND now, none pointing the analyst at
                a profile; how many later tasks it planned; each listed for marking by hand as a
-               hypothesis or a lookup
+               hypothesis or a lookup; whether code's task check refuses them, and if so the
+               lead's second plan
+    retask     the lead's reply to code refusing a fixed plan (one a lead really wrote) for a
+               measure or age group not published for its groups. Checked: it gives the tasks
+               again, and code passes them
     analyst    one analyst on one task, in full. Checked: it handed in, used an analysis that
                fits the task, didn't chain single figures, how many analyses and refusals
     brief      the lead from the point its findings came back, given fixed findings with code's
@@ -33,7 +37,7 @@ from datetime import date
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-SPANS = ("pick", "tasks", "analyst", "brief")
+SPANS = ("pick", "tasks", "retask", "analyst", "brief")
 
 
 def cases():
@@ -86,25 +90,75 @@ async def pick(analyses, case, question):
 
 
 async def tasks(analyses, case, question):
+    """The lead's plan; and when code's task check refuses it (a measure or age group its groups
+    aren't published on), the refusal handed back as ask_analysts would, and the lead's second
+    plan. No analyst runs."""
     from stats_desk.agents.lead import FIRST_ROUND
+    from stats_desk.core.tools import ToolError
     profiles = await analyses.call("profile", names=case["needed"])
-    decision, _, _ = await _lead_turn(analyses, question, _call("profile", {"names": case["needed"]}, profiles))
+    history = _call("profile", {"names": case["needed"]}, profiles)
+    decision, _, run = await _lead_turn(analyses, question, history)
     calls = _decision_calls(decision)
     asked = [args for name, args in calls if name == "ask_analysts"]
     given = [str(t) for args in asked for t in args.get("tasks", [])]
     later = [str(t) for args in asked for t in args.get("later", [])]
     named = {"names groups as published": any(n in t for n in case["names"] for t in given)} if case.get("names") else {}
-    # a measure or age group its groups aren't published on: code would refuse these tasks
-    from stats_desk.agents.lead import unpublished_settings
-    tables = await analyses.call("tables")
-    unpublished = [t for t in given if await unpublished_settings(analyses, tables, t)]
+    refused, again, again_refused = None, [], None
+    if given:
+        try:
+            await run.check_tasks(given)
+        except ToolError as e:
+            refused = str(e)
+    if refused:
+        decision2, _, _ = await _lead_turn(analyses, question, history + _call("ask_analysts", asked[0], refused, "refused"))
+        asked2 = [args for name, args in _decision_calls(decision2) if name == "ask_analysts"]
+        again = [str(t) for args in asked2 for t in args.get("tasks", [])]
+        if again:
+            try:
+                await run.check_tasks(again)
+            except ToolError as e:
+                again_refused = str(e)
     return {"decided": [name for name, _ in calls] or ["wrote text"], "said": decision.get("content"), "tasks": given,
             "approach": [args.get("approach") for args in asked], "later": later,
+            "refused by code": refused, "tasks again": again, "refused again": again_refused,
             "checks": {"handed out tasks": bool(given),
                        "within the first round": 0 < len(given) <= FIRST_ROUND, **named,
                        "planned later tasks": len(later),
                        "none points at a profile": not any("profile" in t.lower() for t in given),
-                       "no unpublished setting": not unpublished}}
+                       "no unpublished setting": not refused,
+                       "rewrote after the refusal": (bool(again) and not again_refused) if refused else None}}
+
+
+async def retask(analyses, case, question):
+    """The lead's reply to code refusing its plan: the conversation as it stands after the lead
+    sent a fixed plan (spans.json, a plan a lead really wrote) and code's task check refused it,
+    the refusal written by that check now. Checked: it gives the tasks again, and code passes them."""
+    from stats_desk.core.tools import ToolError
+    profiles = await analyses.call("profile", names=case["needed"])
+    history = _call("profile", {"names": case["needed"]}, profiles)
+    from stats_desk.agents.lead import Investigation
+    run = Investigation(analyses, question)
+    run.tables = await analyses.call("tables")
+    try:
+        await run.check_tasks(case["plan"]["tasks"])
+        raise RuntimeError(f"{case['id']}: code no longer refuses this plan; the case needs another")
+    except ToolError as e:
+        refused = str(e)
+    decision, _, _ = await _lead_turn(analyses, question, history + _call("ask_analysts", case["plan"], refused, "refused"))
+    calls = _decision_calls(decision)
+    asked = [args for name, args in calls if name == "ask_analysts"]
+    again = [str(t) for args in asked for t in args.get("tasks", [])]
+    again_refused = None
+    if again:
+        try:
+            await run.check_tasks(again)
+        except ToolError as e:
+            again_refused = str(e)
+    return {"decided": [name for name, _ in calls] or ["wrote text"], "said": decision.get("content"),
+            "refused by code": refused, "tasks": again, "approach": [args.get("approach") for args in asked],
+            "refused again": again_refused,
+            "checks": {"gave the tasks again": bool(again), "code passes them": bool(again) and not again_refused,
+                       "same number of tasks": len(again) == len(case["plan"]["tasks"])}}
 
 
 async def analyst(analyses, case, question=None):
@@ -186,7 +240,7 @@ async def brief(analyses, case, question):
                        "cause words": outcome["cause words"]}}
 
 
-STEPS = {"pick": pick, "tasks": tasks, "analyst": analyst, "brief": brief}
+STEPS = {"pick": pick, "tasks": tasks, "retask": retask, "analyst": analyst, "brief": brief}
 
 
 async def run_case(span, case, question):
@@ -237,7 +291,8 @@ def main(argv):
             if only and case["id"] not in only:
                 continue
             for rep in range(1, repeat + 1):
-                question = golden[case["id"]]["question"] if case["id"] in golden else case.get("question")
+                qid = case.get("question_of", case["id"])
+                question = golden[qid]["question"] if qid in golden else case.get("question")
                 try:
                     row = {"span": span, "id": case["id"], "rep": rep,
                            **asyncio.run(run_case(span, case, question))}

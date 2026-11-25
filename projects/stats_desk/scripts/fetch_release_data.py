@@ -14,13 +14,15 @@ import time
 from pathlib import Path
 
 from stats_desk import config
+from stats_desk.datasets import DATASET
 from stats_desk.release.mospi import LiveTransport, Mospi
+from stats_desk.release.update import ANNUAL, INDICATORS, MCP_NAME, MONTHLY
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "data" / "raw" / "plfs"
-INDICATORS = {1: "LFPR", 2: "WPR", 3: "UR"}
-JOBS = ([(code, 1, year) for code in INDICATORS for year in ("PLFS 2025", "PLFS 2024")]
-        + [(code, 3, year) for code in INDICATORS for year in ("2026", "2025")])
+OUT = ROOT / "data" / "raw" / DATASET.key
+# the years first fetched; after that, the daily release check adds new ones (update.py)
+JOBS = ([(code, ANNUAL, year) for code in INDICATORS for year in (f"{MCP_NAME} 2025", f"{MCP_NAME} 2024")]
+        + [(code, MONTHLY, year) for code in INDICATORS for year in ("2026", "2025")])
 
 
 async def main():
@@ -34,9 +36,9 @@ async def main():
                 print(f"have  {path.name}")
                 continue
             started = time.monotonic()
-            rows = await mospi.data("PLFS", {"indicator_code": code, "frequency_code": freq,
-                                             "year": year}, max_rows=20_000, pace=0.4)
-            path.write_text(json.dumps({"dataset": "PLFS", "indicator_code": code,
+            rows = await mospi.data(MCP_NAME, {"indicator_code": code, "frequency_code": freq,
+                                               "year": year}, max_rows=20_000, pace=0.4)
+            path.write_text(json.dumps({"dataset": MCP_NAME, "indicator_code": code,
                                         "frequency_code": freq, "year": year, "rows": rows},
                                        ensure_ascii=False), encoding="utf-8")
             print(f"saved {path.name}: {len(rows):,} rows in {time.monotonic() - started:.0f}s")

@@ -42,6 +42,7 @@ from .. import config
 from ..agents.record import Record
 from ..analysis.data import Release
 from ..core import trace
+from ..datasets import DATASET
 from .analysis_server import SharedAnalysisServer
 from .desk import MAX_RUNNING, Ask, Desk, check_groq_key
 from .store import Store, from_env
@@ -116,7 +117,7 @@ def create_app(store: Store | None = None, connect=None, check_key=check_groq_ke
         trace.flush()
 
     app = FastAPI(title="Stats Desk", lifespan=lifespan,
-                  description="Questions about India's official labour statistics (MoSPI's PLFS), "
+                  description=f"Questions about {DATASET.subject} ({DATASET.publisher}'s {DATASET.name}), "
                               "answered by agents from published figures, every number checked.")
     app.state.desk = desk
 

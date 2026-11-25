@@ -40,6 +40,7 @@ from ..analysis.analyses import NOTE
 from ..analysis.data import MEASURES, TOTAL
 from ..core import events, llm, meter, trace
 from ..core.tools import Registry, Tool, ToolError
+from ..datasets import DATASET
 from . import plan
 from .agent import FORM, Agent, Stopped, answer
 from .analyst import BUDGET as ANALYST_BUDGET
@@ -55,7 +56,7 @@ UNPUBLISHED = re.compile(r"\b(?:not|never) (?:been )?published\b|\bunpublished\b
                          r"|\b(?:doesn't|does not|don't|do not|didn't|did not) publish\b|\bno published\b")
 # not "published only for <another age group or measure>": that says it IS published, for that
 # (eval: taken as evidence, it let "MoSPI doesn't publish unemployment by education" through)
-PUBLISHED_REFUSAL = re.compile(r"not published|nothing published|has no (?:field|period|states)|no \w+ '")
+PUBLISHED_REFUSAL = re.compile(rf"not published|nothing published|has no (?:field|period|{DATASET.across_plural})|no \w+ '")
 DEFINITION_WORDS = ("by definition", "built in", "computed from", "mechanical", "by construction", "follows from")
 SKIPPED = re.compile(r"not published(?:, left out)?: ((?:\d{4}-\d{2}(?:, )?)+)")       # series, trend; average
 MONTHS = ("january", "february", "march", "april", "may", "june", "july", "august", "september", "october",
@@ -98,7 +99,11 @@ QUESTION_BUDGET = 60_000
 TASK_RESERVE = ANALYST_BUDGET   # an analyst's budget; code's checks spend no tokens
 BRIEF_RESERVE = 6_000
 
-PERSONA = f"""You are the lead analyst at a desk that answers questions about India's official labour statistics: MoSPI's PLFS, with the unemployment rate (UR), labour force participation rate (LFPR) and worker population ratio (WPR); annual by state, gender, sector, age, education, religion and social group, and monthly by gender, sector and age.
+# the dataset's own words in the instructions (datasets/plfs.toml)
+_D, _EX = DATASET, DATASET.examples
+ACROSS, ACROSS_PLURAL = DATASET.across, DATASET.across_plural
+
+PERSONA = f"""You are the lead analyst at a desk that answers questions about {_D.subject}: {_D.publisher}'s {_D.name}, with {_D.holds}.
 
 You direct; you never run analyses yourself. Every reply is a tool call: profile, ask_analysts, or {FORM} to hand in. Never reply in prose.
 1. Read the profiles that bear on the question; the list below says which table each comes from. Ask for all of them in one profile call. A profile says what code found striking in its table's latest release.
@@ -107,17 +112,17 @@ You direct; you never run analyses yourself. Every reply is a tool call: profile
    Analysts can:
    - look up figures; rank the groups of a field; take the gap between groups and whether it widened or narrowed since a year (or a month) earlier
    - over time: the change since the previous year or month; the months described (peaks, dips, streaks); an average over a stretch of months; whether it is rising, falling or has no clear trend
-   - across states: whether two figures go together; and find which split shows the biggest differences
-   - do each of these for any groups a task names: every group of a field (e.g. by state), a few of one field (e.g. women and men), or groups that differ in more than one way (e.g. rural women in one state, and urban women), always with the total
-   They cannot: average across groups, give shares of people (only rates are published), adjust for prices, test statistical significance, or give a combination MoSPI doesn't publish.
-4. Each finding comes back with the analyst's claim, its figures, the same figures rerun by code in the other period and on the other measure, and warnings from code. Judge it yourself: does it hold there too; are the groups compared alike in all but one way; could an overall figure hide the opposite pattern within its groups; does it rest on a small state set apart as an outlier; is it true by definition; is it a link you would expect anyway, because the states share something that moves both? A link you would expect anyway is not a finding: don't present it as one. Then go on with your plan: give the later tasks as the findings now make them look, drop the ones they make unnecessary, and add one only if something that matters for the answer is still open. A task that came back empty can be given again. Stop when more tasks are unlikely to change the answer; if the figures can't settle the question, say so. At most {MAX_ANALYSTS} tasks in all.
+   - across {ACROSS_PLURAL}: whether two figures go together; and find which split shows the biggest differences
+   - do each of these for any groups a task names: every group of a field (e.g. {_EX['every_group']}), a few of one field (e.g. {_EX['few_groups']}), or groups that differ in more than one way (e.g. {_EX['differ_groups']}), always with the total
+   They cannot: average across groups, {_D.cannot}, test statistical significance, or give a combination {_D.publisher} doesn't publish.
+4. Each finding comes back with the analyst's claim, its figures, the same figures rerun by code in the other period and on the other measure, and warnings from code. Judge it yourself: does it hold there too; are the groups compared alike in all but one way; could an overall figure hide the opposite pattern within its groups; does it rest on a small {ACROSS} set apart as an outlier; is it true by definition; is it a link you would expect anyway, because the {ACROSS_PLURAL} share something that moves both? A link you would expect anyway is not a finding: don't present it as one. Then go on with your plan: give the later tasks as the findings now make them look, drop the ones they make unnecessary, and add one only if something that matters for the answer is still open. A task that came back empty can be given again. Stop when more tasks are unlikely to change the answer; if the figures can't settle the question, say so. At most {MAX_ANALYSTS} tasks in all.
 5. Hand in the brief with {FORM}:
-- answer: the direct answer in 2-5 sentences. Quote numbers exactly as the findings show them, each with its unit (% or points), group, year and measure, and keep levels apart from changes. If what was asked is not published, say so, and give the nearest figures that are.
+- answer: the direct answer in 2-5 sentences. Quote numbers exactly as the findings show them, each with its unit ({_D.unit} or points), group, year and measure, and keep levels apart from changes. If what was asked is not published, say so, and give the nearest figures that are.
 - findings: ids of the findings it rests on (f1, f2, ...)
 - ruled_out: what was checked and did not hold, and why
 - cannot_tell: what these figures cannot say. They show where and for whom, not why.
 If the question asks whether one thing makes or causes another, don't answer yes or no: say what the figures show, and that they can't show cause.
-Correlations across states describe states (people's chances there), not causes. Never work a number out yourself."""
+Correlations across {ACROSS_PLURAL} describe {ACROSS_PLURAL} ({_D.describes}), not causes. Never work a number out yourself."""
 
 
 class BriefForm(BaseModel):
@@ -236,7 +241,7 @@ def profile_list(tables_text):
     return "\n".join(out)
 
 
-SETTINGS = ("measure", "age")
+SETTINGS = DATASET.settings        # measure, age: the dimensions with no total
 
 
 def catalogue(tables_text):
@@ -287,8 +292,9 @@ async def unpublished_settings(analyses, tables_text, task):
     settings, groups = named_in(task, values)
     if not settings:
         return None
-    measures = [v for f, v in settings if f == "measure"] or [None]
-    ages = [v for f, v in settings if f == "age"] or [None]
+    measure_field, band_field = DATASET.measure, DATASET.band
+    measures = [v for f, v in settings if f == measure_field] or [None]
+    ages = [v for f, v in settings if f == band_field] or [None]
     wanted = {i for i, pattern in INDICATORS.items() if re.search(pattern, task, re.I)} or set(INDICATORS)
     tables = [t for t in fields if t.split("_")[0] in wanted]
     # annual or monthly, when the task's own words say which (a year alone: annual)
@@ -299,10 +305,10 @@ async def unpublished_settings(analyses, tables_text, task):
     for field, group in [*groups.items(), (None, None)]:
         for measure in measures:
             for age in ages:
-                where = {k: v for k, v in (("measure", measure), ("age", age), (field, group)) if k and v}
+                where = {k: v for k, v in ((measure_field, measure), (band_field, age), (field, group)) if k and v}
                 notes, published = [], False
                 for table in tables:
-                    if any(k not in fields[table] for k in where if k != "measure"):   # measure: every table has one
+                    if any(k not in fields[table] for k in where if k != measure_field):   # every table has one
                         continue
                     try:
                         text = await analyses.call("value", table=table, where=where)
@@ -354,7 +360,7 @@ def follow_up_context(record: Record) -> str:
             lines.append("Its findings: cite them as e1, e2... in your brief, like your own; ask analysts "
                          "only for what they don't cover.")
         elif record.earlier:
-            lines.append(f"MoSPI re-released the figures since ({record.earlier_release}; now {record.release}): "
+            lines.append(f"{DATASET.publisher} re-released the figures since ({record.earlier_release}; now {record.release}): "
                          "the earlier findings can't be cited or mixed with today's. Ask analysts for any "
                          "figure you need.")
         for eid, f in record.earlier.items():
@@ -436,14 +442,7 @@ class Investigation:
                    else f"in your first call, keeping room to follow up on what they find; {MAX_ANALYSTS} in all"
                    if first else f"{MAX_ANALYSTS} in all per question")
             raise ToolError(f"Send at most {most} task{'s' if most > 1 else ''} now ({why}).")
-        problems = []
-        for n, task in enumerate(tasks, 1):
-            found = await unpublished_settings(self.analyses, self.tables, task)
-            if found:
-                problems.append(f"task {n}: {found}")
-        if problems:
-            raise ToolError("No task was given out: " + "; ".join(problems) + ". Give the tasks again without "
-                            "the measure or age group the question doesn't ask about: analysts use the published one.")
+        await self.check_tasks(tasks)
         # Parallel by code, not by the model's choice: on live runs 1 and 2 the lead was told to
         # ask for independent tasks in one turn and made one call per turn both times.
         # numbered after every task ever given, resumed runs' unfinished ones included
@@ -456,6 +455,19 @@ class Investigation:
         events.emit("plan", approach=approach, tasks=dict(zip(fids, tasks)), later=later)
         found = await asyncio.gather(*(self._task(fid, task) for fid, task in zip(fids, tasks)))
         return "\n\n".join(found) + plan.later_text(later)
+
+    async def check_tasks(self, tasks: list):
+        """Refuse the tasks, none given out, when one names a measure or age group its groups aren't
+        published on (`unpublished_settings`)."""
+        problems = []
+        for n, task in enumerate(tasks, 1):
+            found = await unpublished_settings(self.analyses, self.tables, task)
+            if found:
+                problems.append(f"task {n}: {found}")
+        if problems:
+            raise ToolError("No task was given out: " + "; ".join(problems) + ". Give the tasks again without "
+                            f"the {DATASET.measure} or {DATASET.band} group the question doesn't ask about: "
+                            "analysts use the published one.")
 
     async def _task(self, fid, task):
         """One analyst on one task, then code's checks on its finding."""
@@ -593,15 +605,15 @@ class Investigation:
         if built and not any(w in said for w in DEFINITION_WORDS):
             why = built.split("TRUE BY DEFINITION (", 1)[-1].rsplit("): it is not", 1)[0]
             raise Rewrite(f"Code found this link true by definition: {why}. "
-                          "Say in the answer that it holds by definition, so it is not a finding about states.")
+                          f"Say in the answer that it holds by definition, so it is not a finding about {ACROSS_PLURAL}.")
         # months MoSPI didn't publish, inside the figures the brief rests on (eval:
         # every result said "not published: 2026-03"; the brief didn't)
         rests_on = [i for fid in form.findings if fid in done for i in done[fid].results]
         skipped = sorted({m for i in rests_on for m in SKIPPED.findall(self.analyses.results.get(i, ""))
                           for m in re.findall(r"\d{4}-\d{2}", m)})
         if skipped and not any(m in said or month_name(m) in said for m in skipped):
-            raise Rewrite(f"The monthly figures skip {', '.join(month_name(m).title() for m in skipped)}: MoSPI "
-                          "didn't publish it. Say so in the answer.")
+            raise Rewrite(f"The monthly figures skip {', '.join(month_name(m).title() for m in skipped)}: "
+                          f"{DATASET.publisher} didn't publish it. Say so in the answer.")
         return form
 
     def _refused_as_unpublished(self) -> bool:
@@ -628,7 +640,7 @@ class Investigation:
                 continue                # several groups, each set on its own: not one combination
             where = merged.setdefault(args["table"], {})
             for k, v in (args.get("where") or {}).items():
-                if k not in ("period", "measure") and v is not None and not isinstance(v, list):
+                if k not in ("period", DATASET.measure) and v is not None and not isinstance(v, list):
                     where.setdefault(k, v)
         for table, where in merged.items():
             if len(where) < 2:

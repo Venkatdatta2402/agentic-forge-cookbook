@@ -12,17 +12,20 @@ figure.
 
 from dataclasses import dataclass
 
+from ..datasets import DATASET
 from ..release.stats import correlate, outliers
-from .data import CONTAINS, TOTAL
+from .data import BAND, CONTAINS, TOTAL
 
 # Where a far-off group may be noise: the small territories (Lakshadweep, Andaman & Nicobar,
 # Chandigarh) are states surveyed with small samples. In other fields a far-off group is a real,
 # large group and a finding: setting outliers apart in every field ranked "women minus men across
 # education" without its two graduate groups (+8.4, +10.6), hiding the widest gender gap there is.
-NOISY_SMALL_GROUPS = {"state"}
+NOISY_SMALL_GROUPS = DATASET.small_groups
 
-# WPR = LFPR x (1 - UR/100): across states, WPR moves with the other two by construction
-MECHANICAL = {frozenset({"lfpr", "wpr"}), frozenset({"ur", "wpr"})}
+# indicators computed from others (WPR = LFPR x (1 - UR/100)): across states, they move together
+# by construction. {pair of indicators: why}
+MECHANICAL = DATASET.identities
+ACROSS, ACROSS_PLURAL = DATASET.across, DATASET.across_plural
 
 
 def num(x):
@@ -184,16 +187,17 @@ def strength(r, n):
     states) a correlation this size often appears by chance, so it is no clear link at all: a
     span test had an analyst call r = -0.19 "associated"."""
     if abs(r) < 2 / n ** 0.5:
-        return f"no clear link: a correlation this small (under {2 / n ** 0.5:.2f} for {n} states) often appears by chance"
+        return (f"no clear link: a correlation this small (under {2 / n ** 0.5:.2f} for {n} {ACROSS_PLURAL}) "
+                "often appears by chance")
     way = "the same way" if r > 0 else "opposite ways"
     size = "weak" if abs(r) < 0.5 else "moderate" if abs(r) < 0.7 else "strong"
-    return f"a {size} link: across states the two tend to go {way}"
+    return f"a {size} link: across {ACROSS_PLURAL} the two tend to go {way}"
 
 
 def relate(tx, sx, ty, sy) -> dict:
     """The across-state correlation of two figures (stats.correlate), with each side's values
     and why it's true by definition when it is."""
-    x, y = tx.groups(sx, "state"), ty.groups(sy, "state")
+    x, y = tx.groups(sx, ACROSS), ty.groups(sy, ACROSS)
     return {**correlate(x, y), "x": x, "y": y, "built_in": built_in(tx, sx, ty, sy)}
 
 
@@ -201,15 +205,16 @@ def built_in(tx, sx, ty, sy):
     """Why x and y move together by definition, or None."""
     diff = [f for f in tx.fields if f in ty.fields and sx.values.get(f) != sy.values.get(f)]
     if tx.indicator != ty.indicator:
-        if frozenset({tx.indicator, ty.indicator}) in MECHANICAL and not diff:
-            return "WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))"
+        pair = frozenset({tx.indicator, ty.indicator})
+        if pair in MECHANICAL and not diff:
+            return MECHANICAL[pair]
         return None
     if len(diff) != 1:
         return None
     f = diff[0]
     a, b = sx.values[f], sy.values[f]
-    if f == "age":
-        return f"the age bands overlap ({a}, {b})"
+    if f == BAND:
+        return f"the {BAND} bands overlap ({a}, {b})"
     if TOTAL.get(f) in (a, b):
         return f"{b if a == TOTAL[f] else a} is part of {TOTAL[f]}"
     if a in CONTAINS.get(f, {}) or b in CONTAINS.get(f, {}):

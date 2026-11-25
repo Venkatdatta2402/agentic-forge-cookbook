@@ -17,6 +17,7 @@ from itertools import combinations
 
 from ..core import events
 from ..core.tools import ToolError
+from ..datasets import DATASET
 from .analyst import Finding, compact
 
 CAUSE_WORDS = re.compile(r"\b(because|due to|caus\w*|leads? to|led to|results? in|as a result|"
@@ -115,7 +116,7 @@ def held(analysis, result, recheck):
     if found is None:
         return []
     now = float(found["n"])
-    what, unit = (found["what"], " points") if analysis == "gap" else ("the correlation across states", "")
+    what, unit = (found["what"], " points") if analysis == "gap" else (f"the correlation across {DATASET.across_plural}", "")
     out, label, body = [], None, []
     for line in recheck.split("\n")[1:] + ["in end:"]:
         header = HEADER.match(line)

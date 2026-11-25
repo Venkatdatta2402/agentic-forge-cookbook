@@ -144,6 +144,26 @@ ones ~730-780 since the over-time lines (2026-11-13).
 loses its total row, the build **stops and reports what changed**; the previous profile stays in
 use. A release that changes shape can't produce a quietly wrong profile.
 
+**"Written for PLFS" now lives in one file: `src/stats_desk/datasets/plfs.toml`** (Phase 1 of
+the dataset redesign, 2026-11-25). Before, PLFS facts were spread through the code (column
+names, totals, defaults, the measure's names, which indicator a task means, the true-by-definition
+identity, that `relate` works across states) and the prompts (the lead's opening line, the
+examples, "only rates are published"). Now the code and the instructions take every one of them
+from the description, as in a semantic layer (SDMX's data structure definitions; dbt's,
+Cube's or Cortex Analyst's semantic models): dimensions with their totals, defaults, names and
+synonyms; the indicators and the words that name them; identities; how MoSPI's columns map onto
+ours; the profiles' contrasts; and the examples the instructions show. What is published together
+is still worked out from the stored rows, as SDMX's "actual constraints" are. Tool descriptions
+are templates (`$across_plural`, `$ex_gap`...) filled in when the server registers them.
+
+Checked to change nothing: every prompt, tool description and schema, the tables list, the
+profiles, the release rebuilt from data/raw (every row and card), 123 saved analysis calls
+replayed and the task check on 174 saved tasks: 512 entries, byte-identical before and after.
+
+Still PLFS-shaped, for Phase 3 (a second dataset) to settle: exactly two settings, a measure and
+an overlapping band (`role` in the file); one dimension to correlate across; rates in %; annual
+and monthly tables; MoSPI's own per-dataset selectors in `release/mospi.py`; the web page's text.
+
 ### 3.5 Honesty rules built into the text
 
 - Correlations across states describe **states**: people's chances there, not why. "A woman

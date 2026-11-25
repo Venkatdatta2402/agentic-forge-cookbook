@@ -33,9 +33,13 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
-INDICATORS = {1: "LFPR", 2: "WPR", 3: "UR"}
-PROBE = 3                    # the indicator asked about; all three are released together
-ANNUAL, MONTHLY = 1, 3       # MoSPI's frequency codes
+from ..datasets import DATASET
+
+# MoSPI's indicator codes -> short names, in code order (datasets/plfs.toml)
+INDICATORS = {i["code"]: k.upper() for k, i in sorted(DATASET.indicators.items(), key=lambda kv: kv[1]["code"])}
+PROBE = DATASET.indicators[DATASET.source["probe"]]["code"]   # all indicators are released together
+ANNUAL, MONTHLY = DATASET.source["frequencies"]["annual"], DATASET.source["frequencies"]["monthly"]
+MCP_NAME = DATASET.source["mcp"]          # the dataset's name at MoSPI
 
 
 @dataclass
@@ -84,12 +88,12 @@ async def check(mospi, stored: Stored) -> list[Job]:
     """What to fetch: three small requests to MoSPI, whatever the answer."""
     jobs = []
     for freq, label in ((ANNUAL, "annual"), (MONTHLY, "monthly")):
-        listed = await mospi.years("PLFS", indicator_code=PROBE, frequency_code=freq)
+        listed = await mospi.years(MCP_NAME, indicator_code=PROBE, frequency_code=freq)
         jobs += [Job(freq, y, f"new {label} year {y}") for y in newer(listed, stored.years[freq])]
     if stored.years[MONTHLY]:
         latest = stored.years[MONTHLY][0]
         have = len(stored.rows.get((PROBE, MONTHLY, latest), []))
-        now = await mospi.count("PLFS", {"indicator_code": PROBE, "frequency_code": MONTHLY, "year": latest})
+        now = await mospi.count(MCP_NAME, {"indicator_code": PROBE, "frequency_code": MONTHLY, "year": latest})
         if now > have:
             jobs.append(Job(MONTHLY, latest, f"monthly {latest}: {now - have} more rows than we keep (a new month)"))
     return jobs
@@ -124,7 +128,7 @@ async def fetch(mospi, stored: Stored, jobs: list[Job], pace=0.4) -> Fetched:
     out, tables = Fetched(), {}
     for job in jobs:
         for code in INDICATORS:
-            rows = await mospi.data("PLFS", {"indicator_code": code, "frequency_code": job.frequency, "year": job.year},
+            rows = await mospi.data(MCP_NAME, {"indicator_code": code, "frequency_code": job.frequency, "year": job.year},
                                     max_rows=20_000, pace=pace)
             tables[(code, job.frequency, job.year)] = rows
             added, gone, changed = compare(stored.rows.get((code, job.frequency, job.year)) or [], rows)
@@ -138,7 +142,7 @@ async def fetch(mospi, stored: Stored, jobs: list[Job], pace=0.4) -> Fetched:
                 out.details += [f"{name}: {_short(r)}: {r['value']} -> dropped" for r in gone]
     for (code, freq, year), rows in tables.items():          # only once every fetch has succeeded
         stored.path(code, freq, year).write_text(json.dumps(
-            {"dataset": "PLFS", "indicator_code": code, "frequency_code": freq, "year": year, "rows": rows},
+            {"dataset": MCP_NAME, "indicator_code": code, "frequency_code": freq, "year": year, "rows": rows},
             ensure_ascii=False), encoding="utf-8")
     if out.details:
         log = stored.raw.parent / "REVISIONS.md"

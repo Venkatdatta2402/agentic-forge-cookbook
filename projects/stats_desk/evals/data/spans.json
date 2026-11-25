@@ -62,5 +62,12 @@
    {"task": "How does unemployment differ by education?",
     "claim": "Graduates have the highest unemployment, 11.2% in 2025, against 3.1% for everyone and 0.3% for those not literate.",
     "calls": [{"tool": "compare", "args": {"table": "ur_annual", "by": "education"}}]}]}
+ ],
+ "retask": [
+  {"id": "R1", "question_of": "Q8", "needed": ["UR_annual_2025"],
+   "about": "A plan the lead wrote in the tasks span (2026-11-25), refused by code's task check: graduates on all ages and CWS, neither published for education.",
+   "plan": {"approach": "Test whether higher education levels (degree, graduate, post-graduate) are associated with higher unemployment rates and whether this pattern differs by gender or urban-rural location.",
+            "tasks": ["Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above compared with the overall UR, using PS+SS measure, all ages, latest year 2025, and also provide the same figures for the other measure (CWS) where available.",
+                      "Find the unemployment rate (UR) by gender for the same education levels (graduate and post-graduate) and compare the gender gap at those education levels with the overall gender gap in UR."]}}
  ]
 }

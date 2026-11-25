@@ -16,7 +16,7 @@ Field rules, each checked against the numbers rather than assumed:
   social,
   education
   age          no total          overlapping bands (15-29 inside 15+ inside All ages); default 15+
-  status       no total          CWS and PS+SS are two measures; pinned per profile, always stated
+  measure      no total          CWS and PS+SS are two measures; pinned per profile, always stated
   year, month  no total          pinned to the period profiled
 
 `verify_totals` repeats the between-parts check on every download, so a new release (or another
@@ -25,15 +25,14 @@ dataset) can't quietly break a rule.
 
 from collections import defaultdict
 
-RENAME = {"AgeGroup": "age", "weekly_status": "status", "socialGroup": "social",
-          "General_Education": "education", "state": "state", "gender": "gender",
-          "sector": "sector", "religion": "religion", "month": "month", "year": "year",
-          "quarter": "quarter"}
+from ..datasets import DATASET
+
+# the source's columns -> ours (datasets/plfs.toml)
+RENAME = DATASET.source["columns"]
 
 # fields with a total, and the values that mean "every group of this field"
-TOTALS = {"gender": {"person"}, "sector": {"rural + urban"}, "state": {"All India"},
-          "religion": {"all", None}, "social": {"all", None}, "education": {"all", None}}
-DEFAULTS = {"age": "15 years and above"}           # no total: the broad band
+TOTALS = DATASET.total_values
+DEFAULTS = {DATASET.band: DATASET.defaults[DATASET.band]}   # no total: the broad band
 NOT_STATED = None                                   # education tables leave age empty
 
 
@@ -46,7 +45,7 @@ class Cells:
 
     def __init__(self, rows, pinned=None):
         """`rows`: raw MoSPI rows. `pinned`: values for the fields with no total, e.g.
-        {"status": "PS+SS", "year": "PLFS 2025"}; rows with other values are left out."""
+        {"measure": "PS+SS", "year": "PLFS 2025"}; rows with other values are left out."""
         self.pinned = dict(pinned or {})
         self.fields = []
         self.rows = []
@@ -98,19 +97,19 @@ def unstated_age_band(cells_by_indicator: dict, tolerance=0.05):
     """
     candidates = None
     evidence = {}
+    band_field = DATASET.band
     for name, cells in cells_by_indicator.items():
-        if "age" not in cells.fields:
+        if band_field not in cells.fields:
             continue
-        bands = {b: cells.get(age=b) for b in cells.levels("age")}
+        bands = {b: cells.get(**{band_field: b}) for b in cells.levels(band_field)}
         unstated = None
-        for field in ("education", "religion", "social"):
-            if field in cells.fields:
-                key = tuple((f, "TOTAL" if f in TOTALS else (NOT_STATED if f == "age" else None))
-                            for f in cells.fields)
-                values = cells._index.get(key)
-                if values:
-                    unstated = values[0]
-                    break
+        # the age-less table's own total: every field at its total, the band not stated
+        if any(None in TOTALS[f] for f in TOTALS if f in cells.fields):
+            key = tuple((f, "TOTAL" if f in TOTALS else (NOT_STATED if f == band_field else None))
+                        for f in cells.fields)
+            values = cells._index.get(key)
+            if values:
+                unstated = values[0]
         if unstated is None:
             continue
         matching = {b for b, v in bands.items() if v is not None and abs(v - unstated) <= tolerance}
@@ -125,7 +124,7 @@ class ProfileShapeError(Exception):
     publishing quietly wrong tables and profiles; the previous release stays in use."""
 
 
-KNOWN_RAW = set(RENAME) | {"value", "unit", "indicator", "frequency", "year_type"}
+KNOWN_RAW = set(RENAME) | set(DATASET.source["other_columns"])
 
 
 def guard(raw_rows, cells: Cells):

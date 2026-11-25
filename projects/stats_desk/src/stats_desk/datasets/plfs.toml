@@ -1,0 +1,144 @@
+# PLFS, described as data. Code and the agents' instructions take every fact about the dataset
+# from here: its dimensions with their totals, defaults and names, its indicators, how the
+# source's rows map onto ours, and the examples the instructions show. What is published
+# together is not written here: it is worked out from the stored rows (data.Table.shapes), as
+# SDMX's "actual constraints" are.
+
+key = "plfs"
+name = "PLFS"
+publisher = "MoSPI"
+subject = "India's official labour statistics"
+# the dataset in one line: what the lead is told the desk answers questions about
+holds = "the unemployment rate (UR), labour force participation rate (LFPR) and worker population ratio (WPR); annual by state, gender, sector, age, education, religion and social group, and monthly by gender, sector and age"
+unit = "%"
+# on every table's card
+value_note = "a published rate in %; never add or average rows -- use the total rows"
+# what the analysts can't give, beyond what no dataset gives (the lead's "They cannot" list)
+cannot = "give shares of people (only rates are published), adjust for prices"
+# what a question's words are in the tables (live run: the lead took "cities" to be unpublished)
+groups_mean = "sector urban = towns and cities, rural = villages; state = states and union territories; there is no figure for a single city or district"
+# what a correlation across the `across` dimension's groups describes
+describes = "people's chances there"
+describes_in = "people's chances in them"
+
+[source]
+mcp = "PLFS"                                  # the dataset's name at MoSPI's MCP server
+frequencies = { annual = 1, monthly = 3 }     # MoSPI's frequency codes
+probe = "ur"                                  # the indicator the daily check asks about
+# MoSPI's column -> ours
+columns = { AgeGroup = "age", weekly_status = "measure", socialGroup = "social", General_Education = "education", state = "state", gender = "gender", sector = "sector", religion = "religion", month = "month", year = "year", quarter = "quarter" }
+other_columns = ["value", "unit", "indicator", "frequency", "year_type"]
+
+[tables.annual]
+columns = ["year", "measure", "state", "gender", "sector", "age", "education", "religion", "social"]
+source = "MoSPI PLFS, annual"
+
+[tables.monthly]
+columns = ["year", "month", "period", "measure", "age", "gender", "sector"]
+source = "MoSPI PLFS, monthly"
+
+[indicators.lfpr]
+code = 1
+name = "labour force participation rate (LFPR)"
+words = 'participat|labou?r force|\bLFPR\b'
+
+[indicators.wpr]
+code = 2
+name = "worker population ratio (WPR)"
+words = '\bworkers?\b|population ratio|\bWPR\b|\bemployed\b|\bemployment\b|in work\b|working'
+
+[indicators.ur]
+code = 3
+name = "unemployment rate (UR)"
+words = 'unemploy|\bUR\b'      # "unemployed" must not count as "employed"
+
+[[identities]]
+pairs = [["lfpr", "wpr"], ["ur", "wpr"]]
+because = "WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))"
+
+# Dimensions. A dimension with a total can be left out of a request (it is at its total); one
+# without is a setting, with a default. `role`: which setting is the measure, and which the
+# overlapping bands (age).
+
+[dimensions.measure]
+role = "measure"
+default = "PS+SS"
+no_total = "two different measures (PS+SS usual status, CWS current weekly status); never mix them"
+side_by_side = "two different measures; never mix them"
+names = { "PS+SS" = "usual status (PS+SS)", CWS = "current weekly status (CWS)" }
+synonyms = { "PS+SS" = ["usual status"], CWS = ["current weekly status"] }
+
+[dimensions.age]
+role = "band"
+default = "15 years and above"
+short = "15+"
+no_total = "overlapping bands (15-29 is inside 15 years and above); pick one band"
+side_by_side = "the bands overlap (15-29 is inside 15 years and above)"
+missing_in = "education"      # MoSPI's education rows give no age: the band is worked out from the numbers
+
+[dimensions.age.synonyms]
+"15 years and above" = ["15+", "15 and above", "15 and over", "15 and older", "15 or older", "15 years and over", "15 years or older", "aged 15 and"]
+"15-29 years" = ["15-29", "15–29", "15 to 29"]
+"15-59 years" = ["15-59", "15–59", "15 to 59"]
+
+[dimensions.gender]
+total = "person"
+
+[dimensions.sector]
+total = "rural + urban"
+
+[dimensions.state]
+total = "All India"
+plural = "states"
+across = true          # correlations (relate) run across its groups
+small_groups = true    # a far-off group may be a small, noisy sample: set apart as an outlier
+
+[dimensions.religion]
+total = "all"
+empty_is_total = true
+
+[dimensions.social]
+total = "all"
+empty_is_total = true
+
+[dimensions.education]
+total = "all"
+empty_is_total = true
+contains = { "9.secondary & above" = "contains 4.secondary to 8.post graduate" }
+
+# gaps the profiles follow across the other dimensions and states
+[[contrasts]]
+field = "gender"
+a = "female"
+b = "male"
+label = "women minus men"
+
+[[contrasts]]
+field = "sector"
+a = "urban"
+b = "rural"
+label = "urban minus rural"
+
+[[contrasts]]
+field = "age"
+a = "15-29 years"
+b = "15 years and above"
+label = "youth (15-29) minus all 15+"
+
+# Examples in the instructions and tool descriptions, in this dataset's groups. Never the
+# eval's groups: an example that answers a test question steers it (tests/test_leak.py).
+[examples]
+one_group = { state = "Odisha", sector = "rural", gender = "female" }
+by = "state"
+some_groups = { sector = ["rural", "urban"] }
+several_groups = [{ state = "Odisha", sector = "rural" }, { religion = "Sikhism", gender = "male" }]
+group_in_list = { sector = "rural", gender = "female" }
+every_group = "by state"
+few_groups = "women and men"
+differ_groups = "rural women in one state, and urban women"
+value_lists = '{"sector": ["rural", "urban"], "period": ["2024", "2025"]}'
+compare_where = "rural people only"
+gap = "`field` sector, `a` urban, `b` rural"
+average_groups = "women and men don't average to everyone"
+relate = "participation (x_table lfpr_annual) and unemployment (y_table ur_annual)"
+relate_by = "gender"

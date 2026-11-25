@@ -26,17 +26,18 @@ What agents read is the text: a few hundred tokens per indicator.
 from ..analysis.compute import (against_history, changes, earlier, gaps_across, missing_months, num, pts,
                                 relate, spread, streak, trend_line, trend_verdict)
 from ..analysis.data import MEASURES, TOTAL
+from ..datasets import DATASET
 
-NAMES = {1: "labour force participation rate (LFPR)", 2: "worker population ratio (WPR)",
-         3: "unemployment rate (UR)"}
-SHORT = {1: "LFPR", 2: "WPR", 3: "UR"}
+# MoSPI's indicator codes -> names, in code order (datasets/plfs.toml)
+_BY_CODE = sorted(DATASET.indicators.items(), key=lambda kv: kv[1]["code"])
+NAMES = {i["code"]: i["name"] for _, i in _BY_CODE}
+SHORT = {i["code"]: k.upper() for k, i in _BY_CODE}
 
 # a gap is a difference between two groups of one field
-CONTRASTS = {"gender": ("female", "male", "women minus men"),
-             "sector": ("urban", "rural", "urban minus rural"),
-             "age": ("15-29 years", "15 years and above", "youth (15-29) minus all 15+")}
+CONTRASTS = dict(DATASET.contrasts)
+ACROSS, ACROSS_PLURAL = DATASET.across, DATASET.across_plural
 GAPS, INTERACTIONS = "largest gaps from the total", "gaps that change most across another field"
-CORRELATIONS, CHANGES = "strongest correlations across states", "biggest changes since last release"
+CORRELATIONS, CHANGES = f"strongest correlations across {ACROSS_PLURAL}", "biggest changes since last release"
 PER_KIND = 3
 
 
@@ -50,7 +51,7 @@ def interactions(t, s):
         if not ra or not rb:
             continue
         for other in t.fields:
-            if other in (field, "measure"):
+            if other in (field, DATASET.measure):
                 continue
             gaps = {k: x - y for k, (x, y) in gaps_across(t, s, field, a, b, other).items()}
             sp = spread(other, gaps)
@@ -102,14 +103,18 @@ def _correlations(tables):
     return out
 
 
+BAND_SHORT = DATASET.dimensions[DATASET.band]["short"]
+HEADLINE = f"headline ({TOTAL[ACROSS]}, everyone)"
+
+
 def annual_text(t, correlations, unstated_age=None):
     s = t.settings()
     headline = t.value(s)
-    measure = s.values["measure"]
-    lines = [f"PROFILE {t.title}, {s.period}, {MEASURES.get(measure, measure)}, ages 15+ unless stated",
-             f"headline (All India, everyone): {num(headline)}%"]
-    for other in t.values["measure"]:
-        rows = t.rows(s.with_(measure=other)) if other != measure else []
+    measure = s.values[DATASET.measure]
+    lines = [f"PROFILE {t.title}, {s.period}, {MEASURES.get(measure, measure)}, {DATASET.band}s {BAND_SHORT} unless stated",
+             f"{HEADLINE}: {num(headline)}{DATASET.unit}"]
+    for other in t.values[DATASET.measure]:
+        rows = t.rows(s.with_(**{DATASET.measure: other})) if other != measure else []
         if rows:
             lines.append(f"on the other measure, {MEASURES.get(other, other)}: {num(rows[0]['value'])}% "
                          "-- never mix the two")
@@ -139,9 +144,9 @@ def annual_text(t, correlations, unstated_age=None):
         if abs(c["pearson"]) < 2 / c["n"] ** 0.5:      # this small often appears by chance: not striking
             continue
         note = ("" if c["agree"] else f" -- rank correlation {c['spearman']:.2f} disagrees; driven by "
-                + ", ".join(c.get("driven_by") or ["a few states"]))
+                + ", ".join(c.get("driven_by") or [f"a few {ACROSS_PLURAL}"]))
         kinds[CORRELATIONS].append((abs(c["pearson"]) * (1 if c["agree"] else 0.5),
-                                    f"{x} and {y}: r = {c['pearson']:.2f} over {c['n']} states{note}"))
+                                    f"{x} and {y}: r = {c['pearson']:.2f} over {c['n']} {ACROSS_PLURAL}{note}"))
     if refs:
         for f in t.fields:
             if f in TOTAL:
@@ -153,10 +158,11 @@ def annual_text(t, correlations, unstated_age=None):
         lines += [f"  - {text}" for text in items]
     if built:
         lines.append("not findings (true by definition): " + "; ".join(built))
-    if unstated_age and "education" in t.fields:
-        lines.append(f"education figures: MoSPI's table gives no age; they match the {unstated_age} "
-                     "figures, so they are read as that band")
-    lines.append("Across-state correlations describe states (people's chances there), not causes.")
+    missing_in = DATASET.dimensions[DATASET.band].get("missing_in")
+    if unstated_age and missing_in in t.fields:
+        lines.append(f"{missing_in} figures: {DATASET.publisher}'s table gives no {DATASET.band}; they match the "
+                     f"{unstated_age} figures, so they are read as that band")
+    lines.append(f"Across-{ACROSS} correlations describe {ACROSS_PLURAL} ({DATASET.describes}), not causes.")
     return "\n".join(lines)
 
 
@@ -206,15 +212,15 @@ def monthly_text(t, measure_note=None):
     s = t.settings()
     headline = t.value(s)
     series = {r["period"]: r["value"] for r in t.rows(s, all_periods=True)}
-    lines = [f"PROFILE {t.title}, latest {s.period}, ages 15+ unless stated",
-             f"headline (All India, everyone): {num(headline)}%"]
+    lines = [f"PROFILE {t.title}, latest {s.period}, {DATASET.band}s {BAND_SHORT} unless stated",
+             f"{HEADLINE}: {num(headline)}{DATASET.unit}"]
     if measure_note:
         lines.append(f"measure: {measure_note}")
     lines.append("series: " + ", ".join(f"{p} {num(x)}" for p, x in series.items()))
     if missing_months(list(series)):
         lines.append("not published: " + ", ".join(missing_months(list(series))))
     lines += _over_time(series)
-    fields = [f for f in t.fields if f != "measure"]
+    fields = [f for f in t.fields if f != DATASET.measure]
     lines += _groups_over_time(t, s, fields)
     for label, before in earlier(t, s.period):
         lines.append(f"vs {label} ({before}): {num(series[before])}% -> {num(headline)}%")

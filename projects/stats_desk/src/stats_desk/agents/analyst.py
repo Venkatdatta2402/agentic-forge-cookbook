@@ -17,14 +17,14 @@ from pydantic import BaseModel, Field
 
 from .. import config
 from ..analysis.analyses import NOTE
-from ..analysis.data import MEASURES
 from ..core.tools import Registry, ToolError
+from ..datasets import DATASET, indicator_pattern
 from .agent import FORM, Agent, Stopped, answer
 
 TOOLS = ("value", "compare", "gap", "change", "series", "average", "trend", "relate", "drill", "tables")
 BUDGET = 16_000        # tokens for one task: ~5 calls at ~2.9k each before results (12k fitted 3)
 
-PERSONA = f"""You are an analyst of India's official labour statistics (MoSPI's PLFS). You carry out ONE task from the lead analyst with the analysis tools, then hand in what you found.
+PERSONA = f"""You are an analyst of {DATASET.subject} ({DATASET.publisher}'s {DATASET.name}). You carry out ONE task from the lead analyst with the analysis tools, then hand in what you found.
 
 How to work:
 - Pick the analysis whose description fits the task. One analysis that answers it beats several lookups: put every group the task names in that one call, chosen as the tables list says (one group, `by`, a list as a field's value, or a list of groups).
@@ -74,7 +74,7 @@ class Finding:
 
 
 # lines a reader of a finding doesn't need: every state's pair of values, every month's value
-DROPPED = ("values: ", "states (x, y): ", "this describes states")
+DROPPED = ("values: ", f"{DATASET.across_plural} (x, y): ", f"this describes {DATASET.across_plural}")
 KEEP = 3        # of a long list: the first and last 3
 
 
@@ -97,10 +97,10 @@ def compact(text):
     return "\n".join(out)
 
 
-# which indicator a task is about, by its words: "unemployed" must not count as "employed"
-INDICATORS = {"ur": r"unemploy|\bUR\b",
-              "lfpr": r"participat|labou?r force|\bLFPR\b",
-              "wpr": r"\bworkers?\b|population ratio|\bWPR\b|\bemployed\b|\bemployment\b|in work\b|working"}
+# which indicator a task is about, by its words (datasets/plfs.toml): "unemployed" must not count
+# as "employed"
+INDICATORS = DATASET.words
+TABLE_LINE = re.compile(rf"({indicator_pattern()})_(annual|monthly): ")
 
 
 def tables_for(tables_text, task):
@@ -110,7 +110,7 @@ def tables_for(tables_text, task):
     wanted = {i for i, pattern in INDICATORS.items() if re.search(pattern, task, re.I)} or set(INDICATORS)
     out = []
     for line in tables_text.split("\n")[1:]:
-        table = re.match(r"(ur|lfpr|wpr)_(annual|monthly): ", line)
+        table = TABLE_LINE.match(line)
         if (table and table[1] not in wanted) or line.startswith("profiles: "):
             continue
         out.append(line)
@@ -128,21 +128,9 @@ def check_numbers(analyses, cited, *texts):
 
 
 def ways_to_say(field, used):
-    """The words that name a setting in a claim or a task: the measure by its code or its name, an
-    age group as published or written short (15+, 15 and above, 15-29)."""
-    ways = {used.lower()}
-    if field == "measure" and used in MEASURES:
-        ways.add(MEASURES[used].split(" (")[0].lower())          # usual status, current weekly status
-    if field == "age":
-        span = re.match(r"(\d+)\s*-\s*(\d+)", used)
-        start = re.match(r"(\d+) years and above", used)
-        if span:
-            ways |= {f"{span[1]}-{span[2]}", f"{span[1]}–{span[2]}", f"{span[1]} to {span[2]}"}
-        elif start:
-            n = start[1]
-            ways |= {f"{n}+", f"{n} and above", f"{n} and over", f"{n} and older", f"{n} or older",
-                     f"{n} years and over", f"{n} years or older", f"aged {n} and"}
-    return ways
+    """The words that name a setting in a claim or a task: as published, or any of its synonyms in
+    the dataset's description (usual status for PS+SS; 15+, 15 and above for 15 years and above)."""
+    return {used.lower()} | {w.lower() for w in DATASET.synonyms(field, used)}
 
 
 def check_settings(analyses, cited, claim):

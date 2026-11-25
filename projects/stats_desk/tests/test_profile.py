@@ -14,7 +14,7 @@ from stats_desk.release.stats import correlate, outliers, spearman
 
 @pytest.fixture(scope="module")
 def ur2025():
-    return Cells(REAL["2025"], pinned={"status": "PS+SS", "year": "PLFS 2025"})
+    return Cells(REAL["2025"], pinned={"measure": "PS+SS", "year": "PLFS 2025"})
 
 
 def test_raw_cells_read_published_values_with_other_fields_at_their_totals(ur2025):
@@ -25,7 +25,7 @@ def test_raw_cells_read_published_values_with_other_fields_at_their_totals(ur202
     assert ur2025.get(state="Gujarat") == 0.9
     assert ur2025.get(religion="Sikhism") == 5.1
     assert ur2025.get(state="Atlantis") is None
-    assert Cells(REAL["2025"], pinned={"status": "CWS", "year": "PLFS 2025"}).get() == 5.3
+    assert Cells(REAL["2025"], pinned={"measure": "CWS", "year": "PLFS 2025"}).get() == 5.3
 
 
 def test_totals_lie_between_their_parts_in_the_real_data(ur2025):

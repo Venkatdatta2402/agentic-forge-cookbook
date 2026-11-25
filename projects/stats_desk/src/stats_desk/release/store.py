@@ -23,17 +23,17 @@ from pathlib import Path
 
 import duckdb
 
+from ..datasets import DATASET
 from .cells import RENAME, TOTALS, Cells, guard
 
 MONTHS = {m: i for i, m in enumerate(
     ["January", "February", "March", "April", "May", "June", "July", "August", "September",
      "October", "November", "December"], start=1)}
-ANNUAL_COLUMNS = ["year", "measure", "state", "gender", "sector", "age", "education", "religion", "social"]
-MONTHLY_COLUMNS = ["year", "month", "period", "measure", "age", "gender", "sector"]
+ANNUAL_COLUMNS = DATASET.tables["annual"]["columns"]
+MONTHLY_COLUMNS = DATASET.tables["monthly"]["columns"]
 NO_TOTAL = {"year": "one year per row", "month": "one month per row", "period": "one month per row",
-            "measure": "two different measures (PS+SS usual status, CWS current weekly status); "
-                       "never mix them",
-            "age": "overlapping bands (15-29 is inside 15 years and above); pick one band"}
+            **DATASET.no_total}
+TIME_COLUMNS = ("year", "month", "period")
 
 
 class StoreError(Exception):
@@ -64,15 +64,19 @@ def clean_annual(rows, unstated_age):
             value = float(raw["value"])
         except (TypeError, ValueError, KeyError):
             continue
-        row = {"year": _year(r.get("year")), "measure": r.get("status"), "state": r.get("state"),
-               "gender": r.get("gender"), "sector": r.get("sector"),
-               "age": r.get("age") or unstated_age,
-               "education": r.get("education") or "all", "religion": r.get("religion") or "all",
-               "social": r.get("social") or "all"}
-        if row["age"] is None:
-            raise StoreError("rows without an age, and no band could be worked out for them")
+        row = {"year": _year(r.get("year"))}
+        for c in ANNUAL_COLUMNS:
+            if c in TIME_COLUMNS:
+                continue
+            row[c] = r.get(c)
+            if not row[c] and None in TOTALS.get(c, ()):         # an empty religion is "all"
+                row[c] = DATASET.totals[c]
+        band = DATASET.band
+        row[band] = row[band] or unstated_age
+        if row[band] is None:
+            raise StoreError(f"rows without an {band}, and no band could be worked out for them")
         key = tuple(row[c] for c in ANNUAL_COLUMNS)
-        stated = 0 if r.get("age") is None else 1          # a table that states its age wins
+        stated = 0 if r.get(band) is None else 1          # a table that states its age wins
         if key in seen:
             gap = abs(seen[key] - value)
             if gap > COPY_TOLERANCE:
@@ -98,9 +102,10 @@ def clean_monthly(rows, measure):
             value = float(raw["value"])
         except (TypeError, ValueError, KeyError):
             continue
-        year, month = _year(raw.get("year")), MONTHS.get(str(raw.get("month")))
-        row = {"year": year, "month": month, "period": date(year, month, 1), "measure": measure,
-               "age": raw.get("AgeGroup"), "gender": raw.get("gender"), "sector": raw.get("sector")}
+        r = {RENAME[k]: v for k, v in raw.items() if k in RENAME}
+        year, month = _year(r.get("year")), MONTHS.get(str(r.get("month")))
+        row = {"year": year, "month": month, "period": date(year, month, 1),
+               **{c: r.get(c) for c in MONTHLY_COLUMNS if c not in TIME_COLUMNS}, DATASET.measure: measure}
         key = tuple(row[c] for c in MONTHLY_COLUMNS)
         if key in seen and abs(seen[key] - value) > 1e-9:
             raise StoreError(f"two published copies of {dict(zip(MONTHLY_COLUMNS, key))} disagree")
@@ -148,7 +153,7 @@ def card(con, name, title, source, notes=()):
                 pairs.append(f"{a} x {b}" + ("" if n else " (NOT published)"))
         lines.append("  split together: " + "; ".join(pairs))
     lines += [f"  note: {n}" for n in notes]
-    lines.append("  value: a published rate in %; never add or average rows -- use the total rows")
+    lines.append(f"  value: {DATASET.value_note}")
     return "\n".join(lines)
 
 
@@ -165,24 +170,28 @@ def build_release(path, annual: dict, monthly: dict, unstated_age):
         con.execute("CREATE TABLE _profiles (name VARCHAR, profile VARCHAR)")
         con.execute("CREATE TABLE _release (built DATE, released VARCHAR)")
         types = defaultdict(lambda: "VARCHAR", year="INTEGER", month="INTEGER", period="DATE")
+        measure, band = DATASET.measure, DATASET.band
+        default = DATASET.defaults[measure]
         for name, (title, rows) in annual.items():
             years = sorted({r.get("year") for r in rows})
             for year in years:
                 checks = guard([r for r in rows if r.get("year") == year],
                                Cells([r for r in rows if r.get("year") == year],
-                                     pinned={"status": "PS+SS", "year": year}))
+                                     pinned={measure: default, "year": year}))
             cleaned, notes = clean_annual(rows, unstated_age)
             _create(con, name, ANNUAL_COLUMNS, cleaned, types)
             if unstated_age:
-                notes.insert(0, f"education rows give no age in MoSPI's table; stored as "
+                missing_in = DATASET.dimensions[band]["missing_in"]
+                notes.insert(0, f"{missing_in} rows give no {band} in {DATASET.publisher}'s table; stored as "
                                 f"'{unstated_age}', the band their totals match")
-            notes.append(f"each total lies between its parts ({_year(years[-1])}, usual status): " + ", ".join(
+            short = DATASET.measure_names.get(default, default).split(" (")[0]
+            notes.append(f"each total lies between its parts ({_year(years[-1])}, {short}): " + ", ".join(
                 f"{f} {c['inside']}/{c['groups']}" for f, c in checks.items()))
-            con.execute("INSERT INTO _cards VALUES (?, ?)", [name, card(con, name, title, "MoSPI PLFS, annual", notes)])
-        for name, (title, rows, measure, how) in monthly.items():
-            _create(con, name, MONTHLY_COLUMNS, clean_monthly(rows, measure), types)
+            con.execute("INSERT INTO _cards VALUES (?, ?)", [name, card(con, name, title, DATASET.tables["annual"]["source"], notes)])
+        for name, (title, rows, used, how) in monthly.items():
+            _create(con, name, MONTHLY_COLUMNS, clean_monthly(rows, used), types)
             con.execute("INSERT INTO _cards VALUES (?, ?)", [name, card(
-                con, name, title, "MoSPI PLFS, monthly", [f"measure {measure}: {how}"])])
+                con, name, title, DATASET.tables["monthly"]["source"], [f"{measure} {used}: {how}"])])
         con.execute("INSERT INTO _release VALUES (?, ?)", [date.today(), _released(con, annual, monthly)])
     finally:
         con.close()

@@ -12,18 +12,20 @@ from dataclasses import dataclass, field
 
 import duckdb
 
-from ..release.cells import TOTALS
+from ..datasets import DATASET
 
+# every fact below is the dataset's own (datasets/plfs.toml)
 # the value meaning "every group": person, rural + urban, All India, all
-TOTAL = {f: min(v - {None}) for f, v in TOTALS.items()}
+TOTAL = DATASET.totals
 # fields with no total, and what a request that doesn't name them gets
-DEFAULTS = {"age": "15 years and above", "measure": "PS+SS"}
-MEASURES = {"PS+SS": "usual status (PS+SS)", "CWS": "current weekly status (CWS)"}
+DEFAULTS = DATASET.defaults
+MEASURES = DATASET.measure_names
+# the setting that is the measure, and the one whose values are overlapping bands (age)
+MEASURE, BAND = DATASET.measure, DATASET.band
 # groups that contain other groups of their field: shown, never ranked against them
-CONTAINS = {"education": {"9.secondary & above": "contains 4.secondary to 8.post graduate"}}
+CONTAINS = DATASET.contains
 # fields whose groups overlap or measure different things: shown side by side, never ranked
-SIDE_BY_SIDE = {"age": "the bands overlap (15-29 is inside 15 years and above)",
-                "measure": "two different measures; never mix them"}
+SIDE_BY_SIDE = DATASET.side_by_side
 TIME = ("year", "month", "period")
 
 
@@ -72,7 +74,7 @@ class Table:
         split = [f for f in self.fields if f in TOTAL]
         flags = ", ".join(f"\"{f}\" <> '{TOTAL[f]}'" for f in split) or "true"
         self.shapes = set()
-        for *on, age, measure in con.execute(f'SELECT DISTINCT {flags}, age, measure FROM "{name}"').fetchall():
+        for *on, age, measure in con.execute(f'SELECT DISTINCT {flags}, "{BAND}", "{MEASURE}" FROM "{name}"').fetchall():
             self.shapes.add((frozenset(f for f, x in zip(split, on) if x), age, measure))
 
     # ---- what a request means ----
@@ -138,13 +140,13 @@ class Table:
     def describe(self, s: Settings, vary=(), period=None):
         """One line saying exactly which figures these are."""
         parts = [f"{self.title}, {period or s.period}"]
-        if "measure" not in vary and "measure" in s.values:
-            parts.append(MEASURES.get(s.values["measure"], s.values["measure"]))
-        if "age" not in vary and "age" in s.values:
-            parts.append(f"age {s.values['age']}")
+        if MEASURE not in vary and MEASURE in s.values:
+            parts.append(MEASURES.get(s.values[MEASURE], s.values[MEASURE]))
+        if BAND not in vary and BAND in s.values:
+            parts.append(f"{BAND} {s.values[BAND]}")
         chosen = [f"{f} = {v}" for f, v in s.values.items()
-                  if f not in ("measure", "age") and v != TOTAL.get(f)]
-        parts.append(", ".join(chosen) if chosen else "everyone, All India")
+                  if f not in (MEASURE, BAND) and v != TOTAL.get(f)]
+        parts.append(", ".join(chosen) if chosen else f"everyone, {TOTAL[DATASET.across]}")
         if vary:
             parts.append(f"by {' x '.join(vary)}")
         return " | ".join(parts)
@@ -190,27 +192,28 @@ class Table:
         only."""
         splits = [(sp, age) for sp, age, _ in self.shapes]
         fields = {f for sp, _ in splits for f in sp}
-        every = set(self.values.get("measure", []))
+        every = set(self.values.get(MEASURE, []))
 
         def only(measures):                 # a measure a split is limited to, or ""
-            return f"measure {', '.join(sorted(measures))}" if measures and measures != every else ""
+            return f"{MEASURE} {', '.join(sorted(measures))}" if measures and measures != every else ""
 
         out = []
         by_age = {}
-        for age in sorted({a for _, a in splits} - {DEFAULTS["age"]}):
+        for age in sorted({a for _, a in splits} - {DEFAULTS[BAND]}):
             partners = frozenset(f for sp, a in splits if a == age for f in sp)
             measures = frozenset(m for _, a, m in self.shapes if a == age)
             by_age.setdefault((partners, measures), []).append(age)
         for (partners, measures), ages in by_age.items():
             if partners != fields or only(measures):
-                out.append(f"age group{'s' if len(ages) > 1 else ''} {', '.join(ages)}: only by "
-                           f"{', '.join(sorted(partners)) or 'nothing else (All India totals)'}"
+                nothing = f"nothing else ({TOTAL[DATASET.across]} totals)"
+                out.append(f"{BAND} group{'s' if len(ages) > 1 else ''} {', '.join(ages)}: only by "
+                           f"{', '.join(sorted(partners)) or nothing}"
                            + (f" ({only(measures)} only)" if only(measures) else ""))
         for f in sorted(fields):
             partners = {g for sp, _ in splits if f in sp for g in sp} - {f}
             ages = sorted({a for sp, a in splits if f in sp})
             measure = only({m for sp, _, m in self.shapes if f in sp})
-            limits = ([f"ages {ages[0]}"] if ages == [DEFAULTS["age"]] else []) + ([measure] if measure else [])
+            limits = ([f"{BAND}s {ages[0]}"] if ages == [DEFAULTS[BAND]] else []) + ([measure] if measure else [])
             if partners != fields - {f} or limits:
                 out.append(f"{f}: only by {', '.join(sorted(partners)) or 'itself'}"
                            + (f" ({', '.join(limits)} only)" if limits else ""))
@@ -225,12 +228,12 @@ class Table:
             maximal = [sp for sp in widest if not any(sp < other for other in widest)]
             return (f"{self.name}: {' x '.join(sorted(split))} is not published together. Published "
                     "together: " + "; ".join(" x ".join(sorted(sp)) for sp in maximal))
-        ages = sorted({a for a, m in same if m == s.values.get("measure")})
+        ages = sorted({a for a, m in same if m == s.values.get(MEASURE)})
         measures = sorted({m for a, m in same})
-        if s.values.get("measure") not in measures:
-            return f"{self.name}: {self.describe(s, vary)} is published only for measure {', '.join(measures)}"
-        if s.values.get("age") not in ages:
-            return f"{self.name}: this split is published only for age {', '.join(ages)}"
+        if s.values.get(MEASURE) not in measures:
+            return f"{self.name}: {self.describe(s, vary)} is published only for {MEASURE} {', '.join(measures)}"
+        if s.values.get(BAND) not in ages:
+            return f"{self.name}: this split is published only for {BAND} {', '.join(ages)}"
         return f"{self.name}: nothing published for {self.describe(s, vary)}"
 
 

@@ -28,21 +28,29 @@ from typing import Annotated
 
 from pydantic import WithJsonSchema
 
+from ..datasets import DATASET
 from . import compute
 from .compute import num, pts, spread
-from .data import CONTAINS, DEFAULTS, MEASURES, SIDE_BY_SIDE, TIME, TOTAL, Refusal
+from .data import BAND, CONTAINS, DEFAULTS, MEASURE, MEASURES, SIDE_BY_SIDE, TIME, TOTAL, Refusal
+
+# the dimension relate correlates across (state), and what such a correlation describes
+ACROSS, ACROSS_PLURAL = DATASET.across, DATASET.across_plural
+PUBLISHER = DATASET.publisher
+NO_MARGINS = f"not a test of statistical significance: {PUBLISHER}'s data carries no margins of error"
+DESCRIBES = f"this describes {ACROSS_PLURAL} ({DATASET.describes_in}), not causes"
 
 # The defaults are said once, in tables() and the analyst's instructions: repeated in each of the
 # 8 parameters that take a `where`, they cost ~360 tokens on every call an analyst makes.
+_EX = DATASET.examples
 DEFAULTS_RULE = "\n".join([
     "choosing groups, the same in every analysis (the total always comes with them):",
-    '- one group: set its fields in where, e.g. {"state": "Odisha", "sector": "rural", "gender": "female"}',
-    '- every group of a field: by, e.g. by "state"',
-    '- some groups of one field: a list as that field\'s value, e.g. where {"sector": ["rural", "urban"]}',
-    '- groups that differ in more than one field: where a list of groups, e.g. '
-    '[{"state": "Odisha", "sector": "rural"}, {"religion": "Sikhism", "gender": "male"}]',
-    "fields not set are at their total (person, rural + urban, All India, all; for any field, total works "
-    "too); age is 15 years and above, measure PS+SS, period the latest, unless set"])
+    f"- one group: set its fields in where, e.g. {json.dumps(_EX['one_group'])}",
+    f'- every group of a field: by, e.g. by "{_EX["by"]}"',
+    f"- some groups of one field: a list as that field's value, e.g. where {json.dumps(_EX['some_groups'])}",
+    f"- groups that differ in more than one field: where a list of groups, e.g. {json.dumps(_EX['several_groups'])}",
+    f"fields not set are at their total ({', '.join(dict.fromkeys(TOTAL.values()))}; for any field, total works "
+    f"too); {', '.join(f'{f} is {d}' if f == BAND else f'{f} {d}' for f, d in sorted(DEFAULTS.items()))}, "
+    "period the latest, unless set"])
 # Sent with 11 parameters on every analyst call: the groups are explained once, in the tables
 # list, so this only points there (Pydantic's own schema for the type and an explanation here
 # were 68 tokens each, ~450 a call)
@@ -51,8 +59,7 @@ Where = Annotated[dict | list[dict] | None,
                                   "description": 'the groups: see "choosing groups" in the tables list'})]
 # what a question's words are in the tables (live run: the lead took "cities" to be
 # unpublished, though urban by gender is in both the annual and the monthly tables)
-MEANINGS = ("what the groups mean: sector urban = towns and cities, rural = villages; state = states and union "
-            "territories; there is no figure for a single city or district")
+MEANINGS = f"what the groups mean: {DATASET.groups_mean}"
 
 
 def _result(kind, args, lines):
@@ -87,8 +94,8 @@ def tables(release, name: str | None = None) -> str:
     lines = [f"release: {release.released}"]
     # measure named per table: live run 1's skeptic asked the monthly table for PS+SS, which only
     # the annual tables have
-    lines += [f"{t.name}: {t.title}; periods {t.periods[0]} to {t.periods[-1]}; measure "
-              f"{' or '.join(t.values['measure'])}; fields {', '.join(f for f in t.fields if f != 'measure')}"
+    lines += [f"{t.name}: {t.title}; periods {t.periods[0]} to {t.periods[-1]}; {MEASURE} "
+              f"{' or '.join(t.values[MEASURE])}; fields {', '.join(f for f in t.fields if f != MEASURE)}"
               + (f"; published together: {t.combinations()}" if t.combinations() else "")
               for t in release.tables.values()]
     lines.append("profiles: " + ", ".join(release.profiles))
@@ -107,7 +114,7 @@ def tables(release, name: str | None = None) -> str:
 def profile(release, names: list[str]) -> str:
     """What code found striking in the latest release of one or more indicators: the largest
     gaps from the total, the gaps that change most across another field, correlations across
-    states, the biggest changes. Ask for every profile you need at once."""
+    $across_plural, the biggest changes. Ask for every profile you need at once."""
     unknown = [n for n in names if n not in release.profiles]
     if unknown or not names:
         raise Refusal(f"no profile {', '.join(unknown) or 'named'}. Profiles: {', '.join(release.profiles)}")
@@ -123,7 +130,7 @@ def value(release, table: str, where: Where = None, by: str | None = None) -> st
     """What are the figures? The published figures for every group asked for, all in one call,
     with the total; for two groups, their difference. Never look groups up one call at a time.
     Only here can a list go in several fields at once, periods too, and inside a group of a list
-    of groups: where {"sector": ["rural", "urban"], "period": ["2024", "2025"]} gives four
+    of groups: where $ex_value_lists gives four
     figures. For how a gap moved, use gap; to rank, compare."""
     t = release.table(table)
     args_where = where
@@ -244,14 +251,15 @@ def _custom(t, where, periods=True, by=None, lists=False):
         raise Refusal("give by or a list of groups, not both")
     if not 2 <= len(where) <= MAX_GROUPS and not (lists and len(where) == 1):
         raise Refusal(f"give 2 to {MAX_GROUPS} groups in the list")
+    one = json.dumps(DATASET.examples["group_in_list"])
     if any(not isinstance(w, dict) for w in where):
-        raise Refusal('each group in the list is one set of settings, e.g. {"sector": "rural", "gender": "female"}')
+        raise Refusal(f"each group in the list is one set of settings, e.g. {one}")
     expanded = []
     for w in where:
         inside = {k: v for k, v in w.items() if isinstance(v, list)}
         if inside and not lists:
-            raise Refusal('each group in the list is one set of settings with no lists inside (only value '
-                          'takes them), e.g. {"sector": "rural", "gender": "female"}')
+            raise Refusal("each group in the list is one set of settings with no lists inside (only value "
+                          f"takes them), e.g. {one}")
         expanded += [{**w, **dict(zip(inside, combo))} for combo in itertools.product(*inside.values())]
     if len(expanded) > MAX_LOOKUPS:
         raise Refusal(f"{len(expanded)} figures at once is too many (at most {MAX_LOOKUPS})")
@@ -323,9 +331,9 @@ def _total(by) -> str:
 
 
 def compare(release, table: str, by: str, where: Where = None) -> str:
-    """Which groups are high or low? The groups of one field (`by`, e.g. state) ranked highest
-    first, with the total; `where` fixes the rest (e.g. rural people only). Groups that differ in
-    more than one field (where a list of groups): a ranking within each. Small states that are
+    """Which groups are high or low? The groups of one field (`by`, e.g. $ex_by) ranked highest
+    first, with the total; `where` fixes the rest (e.g. $ex_compare_where). Groups that differ in
+    more than one field (where a list of groups): a ranking within each. Small $across_plural that are
     statistical outliers are set apart."""
     t = release.table(table)
     args = {"table": table, "by": by, "where": where}
@@ -367,7 +375,7 @@ def _moved(before, now) -> str:
 def gap(release, table: str, field: str, a: str | list[str], b: str, across: str | None = None,
         where: Where = None) -> str:
     """How far apart are groups, and is the gap growing? a minus b for groups of one field
-    (`field` sector, `a` urban, `b` rural), everything else the same, and the same gap a year
+    ($ex_gap), everything else the same, and the same gap a year
     (or a month) earlier: widened, narrowed or reversed. `a` a list: each against b; `a` "*":
     every group against b (b may be the total). `across` another field: the gap within each of
     its groups (one a only). Groups that differ in more than one field (where a list of groups):
@@ -679,8 +687,7 @@ def average(release, table: str, start: str, end: str, where: Where = None,
     """What was the level over a stretch of months? The average from `start` to `end` (e.g.
     2026-01 to 2026-06); with `vs_start` and `vs_end`, against another stretch. Several groups:
     one average each, with the total; for two, their gap. An average of a group's own monthly
-    rates, not a published figure: never use it to combine groups (women and men don't average to
-    everyone)."""
+    rates, not a published figure: never use it to combine groups ($ex_average_groups)."""
     t = release.table(table)
     if (vs_start is None) != (vs_end is None):
         raise Refusal("give both vs_start and vs_end, or neither")
@@ -738,9 +745,9 @@ def trend(release, table: str, where: Where = None, start: str | None = None, en
           by: str | None = None) -> str:
     """Is it rising or falling overall? A straight line through the months (`start` to `end`, or
     all) and a verdict: rising, falling or no clear trend, judged against how far the months
-    usually sit from the line. Monthly tables only: the annual ones hold 2 years, so use change.
+    usually sit from the line. Monthly tables only: the annual ones hold $annual_years years, so use change.
     Several groups: one line each, with the total; for two, whether their gap is widening. Not a
-    test of statistical significance: MoSPI publishes no margins of error."""
+    test of statistical significance: $publisher publishes no margins of error."""
     t = release.table(table)
     args = {"table": table, "where": where, "start": start, "end": end, "by": by}
     custom = _custom(t, where, periods=False, by=by)
@@ -760,7 +767,7 @@ def trend(release, table: str, where: Where = None, start: str | None = None, en
     held, gaps = _stretch(t, values, start, end, "trend")
     if len(held) < 4:
         raise Refusal(f"a trend needs at least 4 published periods; {start} to {end} has {len(held)}"
-                      + ("" if t.monthly else ": the annual tables hold 2 years, so use change"))
+                      + ("" if t.monthly else f": the annual tables hold {len(t.periods)} years, so use change"))
     line = compute.trend_line(held)
     unit = "month" if t.monthly else "year"
     over, scatter = line["over"], line["scatter"]
@@ -775,7 +782,7 @@ def trend(release, table: str, where: Where = None, start: str | None = None, en
         lines.append(f"{verdict}: the change along the line is larger than the usual scatter, but less than twice it")
     else:
         lines.append(f"{verdict}: the change along the line is more than twice the usual scatter around it")
-    lines.append("not a test of statistical significance: MoSPI's data carries no margins of error")
+    lines.append(NO_MARGINS)
     return _result("trend", {"table": table, "where": where, "start": start, "end": end}, lines)
 
 
@@ -795,7 +802,7 @@ def _trend_by(t, drawn, start, end, args):
             short.append(str(g))
     if not fits:
         raise Refusal(f"a trend needs at least 4 published periods for a group; {start} to {end} has fewer"
-                      + ("" if t.monthly else ": the annual tables hold 2 years, so use change"))
+                      + ("" if t.monthly else f": the annual tables hold {len(t.periods)} years, so use change"))
     lines = [head(f"{start} to {end}"), *notes, f"one straight line per {noun}, steepest rise first:"]
     # the months MoSPI skipped inside the stretch, as the one-figure trend says them (eval: a
     # brief resting on this result never said March 2026 wasn't published)
@@ -815,7 +822,7 @@ def _trend_by(t, drawn, start, end, args):
         if d[first] * d[last] < 0 and min(abs(d[first]), abs(d[last])) >= 0.05:
             lines.append(f"the lines crossed: {a} minus {b} was {pts(d[first])} in {first}, {pts(d[last])} in {last}")
         lines += _gap_direction(a, b, d, unit)
-    lines.append("not a test of statistical significance: MoSPI's data carries no margins of error")
+    lines.append(NO_MARGINS)
     return _result("trend", args, lines)
 
 
@@ -825,13 +832,15 @@ def _sides(release, x_table, y_table, x_where, y_where):
     sides = []
     for name, where in ((x_table, x_where), (y_table or x_table, y_where)):
         t = release.table(name)
-        if "state" not in t.fields:
-            raise Refusal(f"{name} has no states; relate works across states (the annual tables)")
-        if where and "state" in where:
-            raise Refusal("relate compares states; leave state out of where")
-        s = t.settings(where, vary=["state"])
-        if len(t.groups(s, "state")) < 2:
-            raise Refusal(t.missing(s, ["state"]))
+        if ACROSS not in t.fields:
+            kinds = sorted({"monthly" if u.monthly else "annual" for u in release.tables.values() if ACROSS in u.fields})
+            raise Refusal(f"{name} has no {ACROSS_PLURAL}; relate works across {ACROSS_PLURAL} "
+                          f"(the {' and '.join(kinds)} tables)")
+        if where and ACROSS in where:
+            raise Refusal(f"relate compares {ACROSS_PLURAL}; leave {ACROSS} out of where")
+        s = t.settings(where, vary=[ACROSS])
+        if len(t.groups(s, ACROSS)) < 2:
+            raise Refusal(t.missing(s, [ACROSS]))
         sides.append((t, s))
     (tx, sx), (ty, sy) = sides
     if tx is ty and sx.values == sy.values and sx.period == sy.period:
@@ -841,11 +850,10 @@ def _sides(release, x_table, y_table, x_where, y_where):
 
 def relate(release, x_table: str, y_table: str | None = None, x_where: Where = None,
            y_where: Where = None, by: str | None = None) -> str:
-    """Do two figures go together across states? E.g. participation (x_table lfpr_annual) and
-    unemployment (y_table ur_annual), each with its own `x_where` and `y_where`: the correlation,
-    the states that drive it, and whether the link is true by definition. Several groups (`by`, or
+    """Do two figures go together across $across_plural? E.g. $ex_relate, each with its own `x_where` and `y_where`: the correlation,
+    the $across_plural that drive it, and whether the link is true by definition. Several groups (`by`, or
     the groups in x_where): a correlation within each, with the total; each group's settings
-    apply to both figures. Describes states (people's chances there), not causes."""
+    apply to both figures. Describes $across_plural ($describes), not causes."""
     args = {"x_table": x_table, "y_table": y_table, "x_where": x_where, "y_where": y_where}
     groups = _custom(release.table(x_table), x_where)
     if groups:
@@ -862,26 +870,26 @@ def relate(release, x_table: str, y_table: str | None = None, x_where: Where = N
     if by:
         return _relate_by(release, x_table, y_table, x_where, y_where, by, cx or cy, {**args, "by": by})
     tx, sx, ty, sy = _sides(release, x_table, y_table, x_where, y_where)
-    lines = [f"x: {tx.describe(sx, ['state'])}", f"y: {ty.describe(sy, ['state'])}"]
+    lines = [f"x: {tx.describe(sx, [ACROSS])}", f"y: {ty.describe(sy, [ACROSS])}"]
     c = compute.relate(tx, sx, ty, sy)
     if c.get("too_few"):
-        lines.append(f"only {c['n']} states have both figures: too few for a correlation (10 needed)")
+        lines.append(f"only {c['n']} {ACROSS_PLURAL} have both figures: too few for a correlation (10 needed)")
         return _result("relate", args, lines)
     if c.get("pearson") is None or c.get("spearman") is None:
-        lines.append("one of the two doesn't vary across states: no correlation")
+        lines.append(f"one of the two doesn't vary across {ACROSS_PLURAL}: no correlation")
         return _result("relate", args, lines)
-    lines.append(f"{c['n']} states: ordinary correlation r = {c['pearson']:.2f}, "
+    lines.append(f"{c['n']} {ACROSS_PLURAL}: ordinary correlation r = {c['pearson']:.2f}, "
                  f"rank correlation rho = {c['spearman']:.2f}")
     lines.append(compute.strength(c["pearson"], c["n"]))
     if c["agree"]:
         lines.append("the two agree")
     else:
-        lines.append("they disagree: a few states pull the ordinary one; r without each: " + ", ".join(
+        lines.append(f"they disagree: a few {ACROSS_PLURAL} pull the ordinary one; r without each: " + ", ".join(
             f"{m['name']} {m['pearson_without']:.2f}" for m in c["most_influential"]))
     if c["built_in"]:
         lines.append(f"BUILT IN, not a finding: {c['built_in']}")
-    lines.append("this describes states (people's chances in them), not causes")
-    lines.append("states (x, y): " + "; ".join(
+    lines.append(DESCRIBES)
+    lines.append(f"{ACROSS_PLURAL} (x, y): " + "; ".join(
         f"{k} {num(c['x'][k])}, {num(c['y'][k])}" for k in sorted(set(c["x"]) & set(c["y"]))))
     return _result("relate", args, lines)
 
@@ -891,16 +899,16 @@ def _relate_by(release, x_table, y_table, x_where, y_where, by, chosen, args):
     correlation per group, the states' figures left out (relate without `by` lists them)."""
     tx = release.table(x_table)
     ty = release.table(y_table or x_table)
-    if by == "state":
-        raise Refusal("relate compares states already; give by another field, e.g. gender")
+    if by == ACROSS:
+        raise Refusal(f"relate compares {ACROSS_PLURAL} already; give by another field, e.g. {DATASET.examples['relate_by']}")
     for t, where in ((tx, x_where), (ty, y_where)):
         _field(t, by, where, "compared")
     groups = [g for g in tx.values[by] if g != TOTAL.get(by) and g in ty.values[by]
               and (chosen is None or g in chosen)]
     if by in TOTAL:
         groups.append(TOTAL[by])
-    lines = [f"x: {tx.describe(tx.settings(x_where, vary=['state', by]), ['state', by])}",
-             f"y: {ty.describe(ty.settings(y_where, vary=['state', by]), ['state', by])}"]
+    lines = [f"x: {tx.describe(tx.settings(x_where, vary=[ACROSS, by]), [ACROSS, by])}",
+             f"y: {ty.describe(ty.settings(y_where, vary=[ACROSS, by]), [ACROSS, by])}"]
     done, refusals = 0, []
     for g in groups:
         name = _total(by) if g == TOTAL.get(by) else g
@@ -912,18 +920,18 @@ def _relate_by(release, x_table, y_table, x_where, y_where, by, chosen, args):
             continue
         c = compute.relate(gx, sx, gy, sy)
         if c.get("too_few") or c.get("pearson") is None or c.get("spearman") is None:
-            lines.append(f"{name}: too few states with both figures, or no variation: no correlation")
+            lines.append(f"{name}: too few {ACROSS_PLURAL} with both figures, or no variation: no correlation")
             continue
         done += 1
-        lines.append(f"{name}: {c['n']} states, r = {c['pearson']:.2f}, rho = {c['spearman']:.2f}; "
+        lines.append(f"{name}: {c['n']} {ACROSS_PLURAL}, r = {c['pearson']:.2f}, rho = {c['spearman']:.2f}; "
                      f"{compute.strength(c['pearson'], c['n'])}"
-                     + ("" if c["agree"] else "; the two disagree: a few states pull r")
+                     + ("" if c["agree"] else f"; the two disagree: a few {ACROSS_PLURAL} pull r")
                      + (f"; BUILT IN, not a finding: {c['built_in']}" if c["built_in"] else ""))
     if refusals and len(refusals) == len(groups):
         raise refusals[0]                # as for one group: nearest() may answer on the nearest published
     if not done:
-        raise Refusal(f"no group of {by} has both figures for enough states")
-    lines.append("this describes states (people's chances in them), not causes")
+        raise Refusal(f"no group of {by} has both figures for enough {ACROSS_PLURAL}")
+    lines.append(DESCRIBES)
     return _result("relate", args, lines)
 
 
@@ -982,10 +990,10 @@ def _variants(release, analysis, args):
         other = _other_period(first, s.period)
         if other:
             yield f"in {other}", {**args, **{k: _set(args.get(k), period=other) for k in keys}}
-    measures = first.values.get("measure", [])
+    measures = first.values.get(MEASURE, [])
     if len(measures) > 1:
-        other = next(m for m in measures if m != s.values["measure"])
-        yield f"on {MEASURES.get(other, other)}", {**args, **{k: _set(args.get(k), measure=other) for k in keys}}
+        other = next(m for m in measures if m != s.values[MEASURE])
+        yield f"on {MEASURES.get(other, other)}", {**args, **{k: _set(args.get(k), **{MEASURE: other}) for k in keys}}
 
 
 def _set(where, **settings):
@@ -995,13 +1003,14 @@ def _set(where, **settings):
     return {**(where or {}), **settings}
 
 
-ONLY_FOR = re.compile(r"^(\w+): .*published only for (age|measure) (.+)$")
+_SETTINGS = "|".join(map(re.escape, (BAND, MEASURE)))
+ONLY_FOR = re.compile(rf"^(\w+): .*published only for ({_SETTINGS}) (.+)$")
 # the note `nearest` puts under a result's id; the analyst's hand-in is checked against it
-NOTE = re.compile(r"^note: these figures are for (age|measure) (.+?), not (.+?) as asked", re.M)
+NOTE = re.compile(rf"^note: these figures are for ({_SETTINGS}) (.+?), not (.+?) as asked", re.M)
 WHERES = (("where", "table"), ("x_where", "x_table"), ("y_where", "y_table"))
 
 
-def nearest(release, analysis, kwargs: dict, tries=2, allow=("age", "measure")) -> str:
+def nearest(release, analysis, kwargs: dict, tries=2, allow=(BAND, MEASURE)) -> str:
     """The analysis, or, when what was asked is published only for another age group or measure,
     the same analysis on the nearest one that is, saying so in its last line. An eval run: told
     "this split is published only for age 15 years and above", an analyst reported that the
@@ -1041,7 +1050,7 @@ def recheck(release, analysis: str, args: dict) -> str:
     for label, changed in _variants(release, analysis, args):
         try:
             # the rerun on the other measure may not be moved back to the first one: that is its point
-            allow = ("age",) if label.startswith("on ") else ("age", "measure")
+            allow = (BAND,) if label.startswith("on ") else (BAND, MEASURE)
             lines.append(f"{label}:\n" + nearest(release, RECHECKABLE[analysis], changed, allow=allow).split("\n", 1)[1])
         except Refusal as e:
             lines.append(f"{label}: {e}")

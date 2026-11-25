@@ -39,11 +39,14 @@ def test_no_eval_question_or_answer_is_in_what_the_agents_are_told():
 
     from stats_desk.agents import analyst, lead, plan
     from stats_desk.analysis.analyses import ANALYSES, DEFAULTS_RULE, MEANINGS
-    # everything an agent reads that isn't the data: prompts, tool descriptions, the plan's field
-    # descriptions, the groups' meanings and defaults in the tables list
+    from stats_desk.datasets import DATASET
+    # everything an agent reads that isn't the data: prompts, tool descriptions (filled in from
+    # the dataset's description), the plan's field descriptions, the groups' meanings and
+    # defaults in the tables list, and every example the dataset's description holds
     told = " ".join([lead.PERSONA, analyst.PERSONA, lead.Investigation.ask_analysts.__doc__,
                      _json.dumps(plan.Plan.model_json_schema()), MEANINGS, DEFAULTS_RULE,
-                     *(f.__doc__ for f in ANALYSES)]).lower()
+                     _json.dumps(DATASET.examples),
+                     *(DATASET.fill(f.__doc__, annual_years=2) for f in ANALYSES)]).lower()
     for q in DATA["questions"]:
         assert q["question"].lower() not in told, q["id"]
     for place in ("delhi", "haryana", "bihar", "nagaland", "kerala", "andaman", "chandigarh", "graduate", "muslim"):

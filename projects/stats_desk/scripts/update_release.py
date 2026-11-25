@@ -19,11 +19,12 @@ import sys
 from pathlib import Path
 
 from stats_desk import config
+from stats_desk.datasets import DATASET
 from stats_desk.release.mospi import LiveTransport, Mospi
 from stats_desk.release.update import Fetched, Stored, check, fetch
 
 ROOT = Path(__file__).resolve().parents[1]
-RAW = ROOT / "data" / "raw" / "plfs"
+RAW = ROOT / "data" / "raw" / DATASET.key
 
 
 def output(**values):
