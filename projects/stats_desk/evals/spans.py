@@ -94,12 +94,17 @@ async def tasks(analyses, case, question):
     given = [str(t) for args in asked for t in args.get("tasks", [])]
     later = [str(t) for args in asked for t in args.get("later", [])]
     named = {"names groups as published": any(n in t for n in case["names"] for t in given)} if case.get("names") else {}
+    # a measure or age group its groups aren't published on: code would refuse these tasks
+    from stats_desk.agents.lead import unpublished_settings
+    tables = await analyses.call("tables")
+    unpublished = [t for t in given if await unpublished_settings(analyses, tables, t)]
     return {"decided": [name for name, _ in calls] or ["wrote text"], "said": decision.get("content"), "tasks": given,
             "approach": [args.get("approach") for args in asked], "later": later,
             "checks": {"handed out tasks": bool(given),
                        "within the first round": 0 < len(given) <= FIRST_ROUND, **named,
                        "planned later tasks": len(later),
-                       "none points at a profile": not any("profile" in t.lower() for t in given)}}
+                       "none points at a profile": not any("profile" in t.lower() for t in given),
+                       "no unpublished setting": not unpublished}}
 
 
 async def analyst(analyses, case, question=None):
@@ -113,9 +118,15 @@ async def analyst(analyses, case, question=None):
     refused = sum(1 for m in transcript if m.get("role") == "tool" and m.get("kind") not in (None, "ok"))
     cited = found.results if isinstance(found, Finding) else []
     values = [analyses.calls[i][1].get("table") for i in cited if analyses.calls.get(i, ("",))[0] == "value"]
+    # what it called and what came back, so a failed run can be read without its trace
+    steps = [{"call": c["name"], "args": c["arguments"]} for m in transcript
+             if m.get("role") == "decision" and m.get("type") == "tool_calls" for c in m["calls"]]
+    replies = [{"kind": m.get("kind"), "content": (m.get("content") or "")[:600]} for m in transcript if m.get("role") == "tool"]
     return {"claim": getattr(found, "claim", None), "stopped": getattr(found, "reason", None), "used": used,
+            "steps": steps, "replies": replies,
             "new results": len(set(analyses.results) - before),
-            "checks": {"handed in": isinstance(found, Finding),
+            "checks": {"handed in": isinstance(found, Finding) and not found.claim.startswith("no claim:"),
+                       "handed in by code": isinstance(found, Finding) and found.claim.startswith("no claim:"),
                        "used an analysis that fits": any(u in case["fits"] for u in used),
                        "no chained single figures": not any(values.count(t) >= 2 for t in set(values)),
                        "analyses": len(used), "refused": refused}}

@@ -30,7 +30,7 @@ def test_wrong_fields_and_values_are_refused_with_the_valid_ones(release):
         A.value(release, "ur_annual", {"gendr": "female"})
     with pytest.raises(Refusal, match="education 'grad' could be any of 7.graduate, 8.post graduate"):
         A.value(release, "ur_annual", {"education": "grad"})           # two matches: not guessed
-    with pytest.raises(Refusal, match="no education 'doctorate'. Values: .*7.graduate"):
+    with pytest.raises(Refusal, match="no education 'doctorate'; its total is 'all' \\(or write total\\). Values: .*7.graduate"):
         A.value(release, "ur_annual", {"education": "doctorate"})
     with pytest.raises(Refusal, match="no period 2019. Stored: 2024, 2025"):
         A.value(release, "ur_annual", {"period": "2019"})
@@ -43,6 +43,35 @@ def test_a_group_asked_for_without_mospis_number_is_the_one_it_names(release):
         return A.value(release, "ur_annual", {"education": asked}).split("\n", 1)[1]
     assert figures("graduate") == figures("7.graduate") and "education = 7.graduate" in figures("graduate")
     assert figures("Post Graduate") == figures("8.post graduate & above")
+
+
+def test_what_is_published_only_for_another_age_group_comes_on_that_one_said_so(release):
+    """Eval: told "published only for age 15 years and above", an analyst reported the figures by
+    education as not published, and the brief said MoSPI doesn't publish them."""
+    asked = {"table": "ur_annual", "by": "education", "where": {"age": "All ages"}}
+    with pytest.raises(Refusal, match="published only for age 15 years and above"):
+        A.compare(release, **asked)
+    out = A.nearest(release, A.compare, asked)
+    # the note first, under the id: at the end, claims left it out
+    assert out.split("\n")[1] == ("note: these figures are for age 15 years and above, not All ages as asked "
+                                  "(All ages isn't published for this)")
+    assert "| age 15 years and above |" in out.split("\n")[2] and "7.graduate" in out
+    assert "age 15 years and above" in A.recheck(release, "compare", asked)            # code's reruns too
+    with pytest.raises(Refusal, match="no field"):                                       # other refusals stand
+        A.nearest(release, A.compare, {"table": "ur_annual", "by": "education", "where": {"agee": "x"}})
+
+
+def test_several_groups_and_periods_come_in_one_lookup_with_the_total(release):
+    """An eval analyst made five single lookups at ~3k tokens a call, ran out of its 12,000, and
+    its figures were lost: listing the groups gets them all in one call."""
+    out = A.value(release, "ur_annual", {"gender": ["female", "male"], "period": ["2024", "2025"]})
+    lines = out.split("\n")
+    assert lines[1].endswith("| by gender") and len([x for x in lines if x.startswith(("female, ", "male, "))]) == 4
+    assert any(x.startswith("total (person), 2024: ") for x in lines) and any(x.startswith("total (person), 2025: ") for x in lines)
+    with pytest.raises(Refusal, match="too many"):
+        A.value(release, "ur_annual", {"state": list(release.tables["ur_annual"].values["state"])[:25], "period": ["2024", "2025"]})
+    # code's rerun of it in the other measure reads the lists too, and stays on that measure
+    assert "on current weekly status" in A.recheck(release, "value", {"table": "ur_annual", "where": {"gender": ["female", "male"]}})
 
 
 def test_an_age_group_is_not_a_figure_to_back():
@@ -141,6 +170,95 @@ def test_other_analyses_give_one_answer_per_group_where_it_means_something(relea
     assert "\nfemale: " in linked and "\nmale: " in linked and "BUILT IN" in linked
     with pytest.raises(Refusal, match="relate compares states already"):
         A.relate(release, "ur_annual", by="state")
+
+
+def test_total_names_any_fields_total_and_a_value_of_another_field_is_named_as_such(release):
+    """Every field's total has its own name (person, rural + urban, All India, all). Span test: an
+    analyst asked for education "All ages", an age group, where education's total was meant."""
+    t = release.tables["ur_annual"]
+    assert [t._check(f, "total") for f in ("gender", "sector", "state", "education")] == \
+        ["person", "rural + urban", "All India", "all"]
+    with pytest.raises(Refusal, match="'All ages' is a value of age, not of education; its total is 'all'"):
+        A.gap(release, "ur_annual", "education", "7.graduate", "All ages")
+    assert "7.graduate minus all = +8.1 points" in A.gap(release, "ur_annual", "education", "7.graduate", "total")
+    with pytest.raises(Refusal, match="age has no total"):
+        t._check("age", "total")
+
+
+def test_several_groups_unpublished_for_a_setting_are_answered_on_the_nearest_published_one(release):
+    """Span test A7: the task said "all ages"; education is published for 15 years and above only.
+    One group was answered on the nearest age with a note; several groups at once came back
+    "not published for these settings", with no reason, and the analyst reported no figures."""
+    both = A.nearest(release, A.gap, {"table": "ur_annual", "field": "education", "b": "all",
+                                      "a": ["7.graduate", "8.post graduate & above"], "where": {"age": "All ages"}})
+    assert "7.graduate minus all = +8.1 points" in both and "note: these figures are for age 15 years and above, not All ages" in both
+    # each group over two years, in one call (the model's own call, refused before)
+    years = ["2024", "2025"]
+    out = A.value(release, "ur_annual", [{"education": "7.graduate", "period": years},
+                                         {"education": "8.post graduate & above", "period": years}])
+    assert "\n7.graduate, 2024: 12.9%" in out and "\n8.post graduate & above, 2025: 10%" in out
+    assert "total (everyone), 2024: 3.2%" in out and "total (everyone), 2025: 3.1%" in out
+    # one group unpublished among others: its line says why
+    mixed = A.value(release, "ur_annual", [{"education": "7.graduate"}, {"education": "all", "age": "15-29 years"},
+                                           {"education": "7.graduate", "age": "15-29 years"}])
+    assert "7.graduate, 15-29 years: not published (" in mixed and "not published for these settings" not in mixed
+
+
+def test_groups_are_chosen_the_same_way_in_every_analysis(release):
+    """`by` a field: every group and the total; a list in `where`: only those groups and the
+    total. An eval lead asked for graduates and post-graduates against everyone in two years, and
+    gap took two groups only."""
+    # a subset, with the total, in the analyses that show groups side by side
+    some = A.compare(release, "ur_annual", "religion", {"religion": ["Islam", "Hinduism"]})
+    assert "total (all): 3.1" in some and "highest first: Islam 3.2, Hinduism 3" in some
+    moved = A.change(release, "ur_annual", {"religion": ["Islam", "Hinduism"]})
+    assert "Islam 3.2 -> 3.2 (+0.0); Hinduism 3.1 -> 3 (-0.1)" in moved and "total (all): 3.2 -> 3.1 (-0.1)" in moved
+    one = A.series(release, "ur_monthly", {"gender": ["female"]})
+    assert "\nfemale: 2025-04 5.5," in one and "\nmale:" not in one and "\ntotal (person): 2025-04 5.1," in one
+    avg = A.average(release, "ur_monthly", "2025-04", "2025-06", {"gender": ["female", "male"]})
+    assert "total (person): 2025-04 to 2025-06 5.23" in avg
+    assert "female minus male: 2025-04 to 2025-06 +0.6 points" in avg      # the gap ignores the total
+    lines = A.trend(release, "ur_monthly", by="gender").split("\n")
+    rows = [x.strip().split(":")[0] for x in lines if x.startswith("  ")]
+    assert rows[-1] == "total (person)"                                     # after the groups, not ranked
+    linked = A.relate(release, "ur_annual", "wpr_annual", x_where={"gender": ["female"]})
+    assert "\nfemale: 36 states" in linked and "\nmale:" not in linked and "\ntotal (person): 36 states" in linked
+    every = A.value(release, "ur_annual", by="sector")
+    assert "rural: 2.4%" in every and "urban: 4.8%" in every and "total (rural + urban): 3.1%" in every
+    # gap: several groups against one, each with its own earlier gap; "*" for every group
+    both = A.gap(release, "ur_annual", "education", ["8.post graduate & above", "7.graduate"], "all")
+    assert "7.graduate 11.2, all 3.1; 7.graduate minus all = +8.1 points" in both
+    assert both.count("previous year (2024)") == 2
+    every = A.gap(release, "ur_annual", "gender", "*", "person")
+    assert "female minus person" in every and "male minus person" in every
+    with pytest.raises(Refusal, match="across takes one pair"):
+        A.gap(release, "ur_annual", "gender", "*", "person", across="sector")
+    # several groups each set on its own, in one call: `where` a list of settings
+    rural_kerala, urban = {"state": "Kerala", "sector": "rural", "gender": "female"}, {"sector": "urban", "gender": "female"}
+    both = A.value(release, "ur_annual", [rural_kerala, urban])
+    assert "\nKerala, rural, female: 6.2%" in both and "\nurban, female: 6.4%" in both
+    assert "total (female, the rest at their totals): 3.1%" in both
+    assert "Kerala, rural, female minus urban, female = -0.2 points; they differ in sector, state: not like with like" in both
+    # one not published: said on its line, with what is; the rest still answered
+    one = A.value(release, "ur_annual", [rural_kerala, {"religion": "Islam", "education": "7.graduate"}])
+    assert "Islam, 7.graduate: not published (education x religion is not published together" in one
+    moved = A.change(release, "ur_annual", [rural_kerala, urban])
+    assert "Kerala, rural, female 10.5 -> 6.2 (-4.3)" in moved and "the gap reversed" in moved
+    lines = A.trend(release, "ur_monthly", [{"gender": "female"}, {"gender": "male"}])
+    assert "one straight line per group" in lines and "total (everyone): " in lines and "female minus male from" in lines
+    within = A.gap(release, "ur_annual", "gender", "female", "male", where=[{"sector": "rural"}, {"state": "Kerala"}])
+    assert "within rural:" in within and "within Kerala:" in within and "female minus male = +3.3 points" in within
+    with pytest.raises(Refusal, match="not both"):
+        A.series(release, "ur_monthly", [{"gender": "female"}, {"sector": "urban"}], by="gender")
+    with pytest.raises(Refusal, match="no lists inside \\(only value takes them\\)"):
+        A.compare(release, "ur_annual", "religion", [{"gender": ["female", "male"]}, urban])
+    # code's reruns carry the groups to the other period
+    assert "Kerala, rural, female, 2024: 10.5%" in A.recheck(release, "value", {"table": "ur_annual", "where": [rural_kerala, urban]})
+    # a list is for the field compared: one field, not periods
+    with pytest.raises(Refusal, match="one field only"):
+        A.compare(release, "ur_annual", "religion", {"gender": ["female", "male"]})
+    with pytest.raises(Refusal, match="several periods"):
+        A.compare(release, "ur_annual", "religion", {"period": ["2024", "2025"]})
 
 
 def test_correlations_true_by_definition_say_so(release):

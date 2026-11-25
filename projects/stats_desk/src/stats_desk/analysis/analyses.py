@@ -21,20 +21,34 @@ Rules kept by every analysis:
 """
 
 import hashlib
+import itertools
 import json
+import re
 from typing import Annotated
 
-from pydantic import Field
+from pydantic import WithJsonSchema
 
 from . import compute
 from .compute import num, pts, spread
-from .data import CONTAINS, MEASURES, SIDE_BY_SIDE, TIME, TOTAL, Refusal
+from .data import CONTAINS, DEFAULTS, MEASURES, SIDE_BY_SIDE, TIME, TOTAL, Refusal
 
 # The defaults are said once, in tables() and the analyst's instructions: repeated in each of the
 # 8 parameters that take a `where`, they cost ~360 tokens on every call an analyst makes.
-DEFAULTS_RULE = ("fields left out of `where` are at their total (person, rural + urban, All India, "
-                 "all); age is 15 years and above, measure PS+SS, period the latest, unless set")
-Where = Annotated[dict | None, Field(description='e.g. {"gender": "female", "period": "2025"}')]
+DEFAULTS_RULE = "\n".join([
+    "choosing groups, the same in every analysis (the total always comes with them):",
+    '- one group: set its fields in where, e.g. {"state": "Odisha", "sector": "rural", "gender": "female"}',
+    '- every group of a field: by, e.g. by "state"',
+    '- some groups of one field: a list as that field\'s value, e.g. where {"sector": ["rural", "urban"]}',
+    '- groups that differ in more than one field: where a list of groups, e.g. '
+    '[{"state": "Odisha", "sector": "rural"}, {"religion": "Sikhism", "gender": "male"}]',
+    "fields not set are at their total (person, rural + urban, All India, all; for any field, total works "
+    "too); age is 15 years and above, measure PS+SS, period the latest, unless set"])
+# Sent with 11 parameters on every analyst call: the groups are explained once, in the tables
+# list, so this only points there (Pydantic's own schema for the type and an explanation here
+# were 68 tokens each, ~450 a call)
+Where = Annotated[dict | list[dict] | None,
+                  WithJsonSchema({"type": ["object", "array", "null"],
+                                  "description": 'the groups: see "choosing groups" in the tables list'})]
 # what a question's words are in the tables (live run: the lead took "cities" to be
 # unpublished, though urban by gender is in both the annual and the monthly tables)
 MEANINGS = ("what the groups mean: sector urban = towns and cities, rural = villages; state = states and union "
@@ -63,9 +77,9 @@ def _field(t, f, where, role):
 # ---------------------------------------------------------------- what's stored
 
 def tables(release, name: str | None = None) -> str:
-    """What is stored, and what is published together? With a table name: its card, every value
-    of every field, its totals, and which fields are published together. Use it when a call is
-    refused as not published, to see what is."""
+    """What is stored, what is published together, and how to choose groups? With a table name:
+    its card, every value of every field, its totals, and which fields are published together.
+    Use it when a call is refused as not published, to see what is."""
     if name:
         if name not in release.cards:
             raise Refusal(f"no table '{name}'. Tables: {', '.join(release.cards)}")
@@ -102,40 +116,243 @@ def profile(release, names: list[str]) -> str:
 
 # ---------------------------------------------------------------- one figure, one field
 
-def value(release, table: str, where: Where = None) -> str:
-    """What is the figure for one group? ONE published figure, e.g. participation of rural men in
-    Odisha in 2024. Not for comparing: two groups side by side come from gap (both figures and the
-    difference in one call), every group of a field from compare, a figure over time from series
-    or trend. Never call it twice to put two groups side by side."""
+MAX_LOOKUPS = 40       # every state (36) of one figure fits
+
+
+def value(release, table: str, where: Where = None, by: str | None = None) -> str:
+    """What are the figures? The published figures for every group asked for, all in one call,
+    with the total; for two groups, their difference. Never look groups up one call at a time.
+    Only here can a list go in several fields at once, periods too, and inside a group of a list
+    of groups: where {"sector": ["rural", "urban"], "period": ["2024", "2025"]} gives four
+    figures. For how a gap moved, use gap; to rank, compare."""
     t = release.table(table)
-    s = t.settings(where)
-    return _result("value", {"table": table, "where": where}, [t.describe(s), f"value: {num(t.value(s))}%"])
+    args_where = where
+    groups = _custom(t, where, by=by, lists=True)
+    if groups:
+        return _value_groups(t, groups, {"table": table, "where": where})
+    if by:
+        _field(t, by, where, "listed")
+        where = {**(where or {}), by: [g for g in t.values[by] if g != TOTAL.get(by)]}
+    lists = {k: v for k, v in (where or {}).items() if isinstance(v, list)}
+    if not lists:
+        s = t.settings(where)
+        return _result("value", {"table": table, "where": where}, [t.describe(s), f"value: {num(t.value(s))}%"])
+    return _values(t, table, where, lists, {"table": table, "where": args_where, "by": by})
+
+
+def _value_groups(t, groups, args):
+    """value for groups each set on its own: one line each, the total on what they share, and for
+    two the difference (saying when they differ in more than one field)."""
+    common, differ = _common(groups), _differ(groups)
+    spans = bool(set(differ) & set(TIME))
+    lines = [t.describe(t.settings(common, vary=[f for f in differ if f not in TIME]),
+                        [f for f in differ if f not in TIME], period="periods as listed" if spans else None)]
+    got, refusals = {}, []
+    for label, w in groups:
+        try:
+            got[label] = t.value(t.settings(w))
+            lines.append(f"{label}: {num(got[label])}%")
+        except Refusal as refused:
+            refusals.append(refused)
+            lines.append(f"{label}: not published ({_why(refused)})")
+    if not got:
+        raise refusals[0]               # none of them: one refusal (and nearest() may step in)
+    # the total on what the groups share, in each period they cover
+    shared = {k: v for k, v in common.items() if k not in TIME}
+    periods = sorted({str(w[k]) for _, w in groups for k in w if k in TIME}) if spans else [None]
+    for p in periods:
+        try:
+            value_ = t.value(t.settings({**shared, **({"period": p} if p else common)}))
+            lines.append(f"{_total_of(t, shared)}{', ' + p if p else ''}: {num(value_)}%")
+        except Refusal:
+            pass
+    if len(got) == 2 == len(groups):
+        (a, va), (b, vb) = got.items()
+        lines.append(f"{a} minus {b} = {pts(va - vb)} points" + (f"; {_not_like(groups)}" if _not_like(groups) else ""))
+    return _result("value", args, lines)
+
+
+def _values(t, table, where, lists, args):
+    """value with lists: every combination of the listed groups (and periods), one line each."""
+    if any(not v for v in lists.values()):
+        raise Refusal("a list in where is empty: give at least one group")
+    combos = list(itertools.product(*lists.values()))
+    if len(combos) > MAX_LOOKUPS:
+        raise Refusal(f"{len(combos)} figures at once is too many (at most {MAX_LOOKUPS}); for every group of a "
+                      "field ranked use compare, over time series")
+    fixed = {k: v for k, v in where.items() if k not in lists}
+    fields = [k for k in lists if k not in TIME]
+    periods = [str(p) for p in lists.get("period", lists.get("year", []))]
+    base = t.settings(fixed, vary=fields)
+    lines = [t.describe(base, fields, period=", ".join(periods) or None)]
+    refusals = []
+    for combo in combos:
+        asked = dict(zip(lists, combo))
+        try:
+            s = t.settings({**fixed, **asked})
+            label = ", ".join(str(s.period if k in TIME else s.values[k]) for k in lists)
+            lines.append(f"{label}: {num(t.value(s))}%")
+        except Refusal as refused:
+            refusals.append(refused)
+            why = re.search(r"(published only for .+|not published.*)$", str(refused))
+            lines.append(f"{', '.join(str(v) for v in combo)}: not published"
+                         + (f" ({why[0]})" if why and why[0] != "not published" else ""))
+    if len(refusals) == len(combos):
+        raise refusals[0]               # none of them: one refusal (and nearest() may step in)
+    # the total for comparison, when one field's groups were listed
+    if len(fields) == 1 and fields[0] in TOTAL:
+        f = fields[0]
+        for p in periods or [None]:
+            try:
+                s = t.settings({**fixed, f: TOTAL[f], **({"period": p} if p else {})})
+                lines.append(f"{_total(f)}{', ' + s.period if p else ''}: {num(t.value(s))}%")
+            except Refusal:
+                pass
+    return _result("value", args, lines)
+
+
+def _listed(t, where, by=None):
+    """(where without its list, the field compared, the chosen groups or None). The same way of
+    asking for groups in every analysis: `by` a field is every group of it, with the total; a list
+    for a field in `where` is only those groups (and the total); several fields set in `where`
+    pick one combination, e.g. a state, a religion and a gender."""
+    where = dict(where or {})
+    lists = [k for k, v in where.items() if isinstance(v, list)]
+    if not lists:
+        return where, by, None
+    if set(lists) & set(TIME):
+        raise Refusal("for several periods use series, trend or average (or value, which takes a list of periods)")
+    if len(lists) > 1 or (by and lists != [by]):
+        raise Refusal("list the groups of one field only, the one compared" + (f" ({by})" if by else "")
+                      + "; for figures of several fields at once use value")
+    f = lists[0]
+    return where, f, [t._check(f, g) for g in where.pop(f)]
+
+
+MAX_GROUPS = 8
+
+
+def _custom(t, where, periods=True, by=None, lists=False):
+    """[(label, settings)] when `where` is a list of groups each set on its own (e.g. rural
+    women in one state, and urban men of one religion), else None. The label is the group's
+    values, e.g. "Odisha, rural". `lists` (value): a list inside a group gives each of its values,
+    e.g. a group over two years is two figures (span test: the model asked for three groups,
+    each over 2024 and 2025, and was refused)."""
+    if not isinstance(where, list):
+        return None
+    if by:
+        raise Refusal("give by or a list of groups, not both")
+    if not 2 <= len(where) <= MAX_GROUPS and not (lists and len(where) == 1):
+        raise Refusal(f"give 2 to {MAX_GROUPS} groups in the list")
+    if any(not isinstance(w, dict) for w in where):
+        raise Refusal('each group in the list is one set of settings, e.g. {"sector": "rural", "gender": "female"}')
+    expanded = []
+    for w in where:
+        inside = {k: v for k, v in w.items() if isinstance(v, list)}
+        if inside and not lists:
+            raise Refusal('each group in the list is one set of settings with no lists inside (only value '
+                          'takes them), e.g. {"sector": "rural", "gender": "female"}')
+        expanded += [{**w, **dict(zip(inside, combo))} for combo in itertools.product(*inside.values())]
+    if len(expanded) > MAX_LOOKUPS:
+        raise Refusal(f"{len(expanded)} figures at once is too many (at most {MAX_LOOKUPS})")
+    out = []
+    for w in expanded:
+        if not periods and set(w) & set(TIME):
+            raise Refusal("this analysis covers the periods itself; leave the period out of every group")
+        s = t.settings(w)
+        out.append((", ".join(str(s.period) if k in TIME else str(s.values[k]) for k in w) or "everyone", w))
+    if len({label for label, _ in out}) < len(out):
+        raise Refusal("two groups in the list are the same")
+    return out
+
+
+def _common(groups) -> dict:
+    """The settings every group shares: the total of the groups is taken on these."""
+    first, *rest = [w for _, w in groups]
+    return {k: v for k, v in first.items() if all(str(w.get(k)) == str(v) for w in rest)}
+
+
+def _differ(groups) -> list:
+    ws = [w for _, w in groups]
+    return sorted({k for w in ws for k in w if any(str(o.get(k)) != str(w[k]) for o in ws)})
+
+
+def _total_of(t, common) -> str:
+    named = ", ".join(str(t._check(k, v)) for k, v in common.items() if k not in TIME)
+    return f"total ({named}, the rest at their totals)" if named else "total (everyone)"
+
+
+def _not_like(groups) -> str:
+    differ = [f for f in _differ(groups) if f not in TIME]
+    return f"they differ in {', '.join(differ)}: not like with like" if len(differ) > 1 else ""
+
+
+def _within(analysis, release, groups, kwargs, key="where", also=None) -> list:
+    """The analysis within each custom group, one block each (compare, gap, drill, relate)."""
+    lines, refusals = [], []
+    for label, w in groups:
+        try:
+            extra = {also: {**(kwargs.get(also) or {}), **w}} if also else {}
+            text = analysis(release, **{**kwargs, key: w, **extra})
+        except Refusal as refused:
+            refusals.append(refused)
+            lines.append(f"{label}: not published ({_why(refused)})")
+            continue
+        lines.append(f"within {label}:")
+        lines += ["  " + line for line in text.split("\n")[1:]]
+    if len(refusals) == len(groups):
+        raise refusals[0]                # as for one group: nearest() may answer on the nearest published
+    return lines
+
+
+def _why(refused) -> str:
+    """A refusal's reason, for one group's line among others: what is published instead, e.g.
+    "published only for age 15 years and above" (span test: "not published for these settings",
+    with no reason, left an analyst reporting the figures don't exist)."""
+    text = str(refused)
+    found = re.search(r"published only for .+", text)
+    return found[0] if found else text.split(": ", 1)[-1]
+
+
+def _keep(groups: dict, chosen) -> dict:
+    return groups if chosen is None else {k: v for k, v in groups.items() if k in chosen}
+
+
+def _total(by) -> str:
+    return f"total ({TOTAL[by]})"
 
 
 def compare(release, table: str, by: str, where: Where = None) -> str:
-    """Which groups are high or low? Every group of one field (`by`) side by side, highest first,
-    with the total, e.g. by state or by social group; `where` fixes the rest (e.g. rural people
-    only). States that are statistical outliers are named and set apart."""
+    """Which groups are high or low? The groups of one field (`by`, e.g. state) ranked highest
+    first, with the total; `where` fixes the rest (e.g. rural people only). Groups that differ in
+    more than one field (where a list of groups): a ranking within each. Small states that are
+    statistical outliers are set apart."""
     t = release.table(table)
+    args = {"table": table, "by": by, "where": where}
+    groups = _custom(t, where)
+    if groups:
+        return _result("compare", args, _within(compare, release, groups, {"table": table, "by": by}))
+    where, by, chosen = _listed(t, where, by)
     _field(t, by, where, "compared")
     s = t.settings(where, vary=[by])
-    groups = t.groups(s, by)
-    if len(groups) < 2:
+    groups = _keep(t.groups(s, by), chosen)
+    if len(groups) < (1 if chosen else 2):
         raise Refusal(t.missing(s, [by]))
     lines = [t.describe(s, [by])]
     if by in TOTAL:
-        lines.append(f"total ({TOTAL[by]}): {num(t.value(s.with_(**{by: TOTAL[by]})))}")
+        lines.append(f"{_total(by)}: {num(t.value(s.with_(**{by: TOTAL[by]})))}")
     if by in SIDE_BY_SIDE:
         lines.append(", ".join(f"{k} {num(x)}" for k, x in groups.items()))
         lines.append(f"side by side, not ranked: {SIDE_BY_SIDE[by]}")
-        return _result("compare", {"table": table, "by": by, "where": where}, lines)
+        return _result("compare", args, lines)
     sp = spread(by, groups)
+    rankable = sp.rankable if sp else {k: x for k, x in groups.items() if k not in CONTAINS.get(by, {})}
     lines.append("highest first: " + ", ".join(
-        f"{k} {num(x)}" for k, x in sorted(sp.rankable.items(), key=lambda kv: -kv[1])))
+        f"{k} {num(x)}" for k, x in sorted(rankable.items(), key=lambda kv: -kv[1])))
     lines += _unranked(by, groups)
-    if len(sp.rankable) >= 3:
+    if sp and len(sp.rankable) >= 3:
         lines.append(sp.text())
-    return _result("compare", {"table": table, "by": by, "where": where}, lines)
+    return _result("compare", args, lines)
 
 
 # ---------------------------------------------------------------- gaps and interactions
@@ -147,35 +364,58 @@ def _moved(before, now) -> str:
     return "widened" if abs(now) > abs(before) else "narrowed" if abs(now) < abs(before) else "unchanged"
 
 
-def gap(release, table: str, field: str, a: str, b: str, across: str | None = None,
+def gap(release, table: str, field: str, a: str | list[str], b: str, across: str | None = None,
         where: Where = None) -> str:
-    """How far apart are two groups, and is the distance growing? a minus b for two groups of ONE
-    field (`field`, `a`, `b`: e.g. field sector, a urban, b rural), everything else the same; and
-    the same gap a year earlier (annual tables) or a month and a year earlier (monthly): widened,
-    narrowed or reversed. `across` another field: the gap within each of its groups, where it
-    widens, narrows or reverses. Use it for every comparison of two groups: it computes the
-    difference, so never subtract numbers yourself."""
+    """How far apart are groups, and is the gap growing? a minus b for groups of one field
+    (`field` sector, `a` urban, `b` rural), everything else the same, and the same gap a year
+    (or a month) earlier: widened, narrowed or reversed. `a` a list: each against b; `a` "*":
+    every group against b (b may be the total). `across` another field: the gap within each of
+    its groups (one a only). Groups that differ in more than one field (where a list of groups):
+    the gap within each. It computes every difference: never subtract numbers yourself."""
     t = release.table(table)
+    groups = _custom(t, where)
+    if groups:
+        return _result("gap", {"table": table, "field": field, "a": a, "b": b, "across": across, "where": where},
+                       _within(gap, release, groups, {"table": table, "field": field, "a": a, "b": b, "across": across}))
     _field(t, field, where, "of the gap")
-    a, b = t._check(field, a), t._check(field, b)
-    if a == b:
-        raise Refusal("a and b are the same group")
+    b = t._check(field, b)
+    if a == "*":
+        a_list = [g for g in t.values[field] if g not in (b, TOTAL.get(field))]
+    else:
+        a_list = [t._check(field, g) for g in (a if isinstance(a, list) else [a])]
+    if b in a_list or not a_list:
+        raise Refusal("a and b are the same group" if a_list else "give at least one group as a")
+    if across and len(a_list) > 1:
+        raise Refusal("across takes one pair: one group as a")
     where = dict(where or {})
     s = t.settings(where)
-    va, vb = t.value(s.with_(**{field: a})), t.value(s.with_(**{field: b}))
-    lines = [t.describe(t.settings(where, vary=[field]), [field]),
-             f"overall: {a} {num(va)}, {b} {num(vb)}; {a} minus {b} = {pts(va - vb)} points"]
-    # the same gap earlier: "is it narrowing?" in one analysis (live run: an
-    # analyst needed two calls, and another wrote that it couldn't be done with one)
-    for label, p in compute.earlier(t, s.period):
-        before = [t.rows(s.with_(period=p, **{field: g})) for g in (a, b)]
-        if not all(before):
-            lines.append(f"{label} ({p}): not published for these settings")
+    vb = t.value(s.with_(**{field: b}))
+    lines = [t.describe(t.settings(where, vary=[field]), [field])]
+    refusals = []
+    for one in a_list:
+        try:
+            va = t.value(s.with_(**{field: one}))
+        except Refusal as refused:
+            refusals.append(refused)
+            lines.append(f"{one}: not published ({_why(refused)})")
             continue
-        pa, pb = before[0][0]["value"], before[1][0]["value"]
-        lines.append(f"{label} ({p}): {a} {num(pa)}, {b} {num(pb)}; {a} minus {b} = {pts(pa - pb)} points; "
-                     f"since then the gap {_moved(pa - pb, va - vb)} ({pts((va - vb) - (pa - pb))} points)")
+        lines.append(f"{'overall: ' if len(a_list) == 1 else ''}{one} {num(va)}, {b} {num(vb)}; "
+                     f"{one} minus {b} = {pts(va - vb)} points")
+        # the same gap earlier: "is it narrowing?" in one analysis (live run: an
+        # analyst needed two calls, and another wrote that it couldn't be done with one)
+        for label, p in compute.earlier(t, s.period):
+            before = [t.rows(s.with_(period=p, **{field: g})) for g in (one, b)]
+            if not all(before):
+                lines.append(f"  {label} ({p}): not published for these settings")
+                continue
+            pa, pb = before[0][0]["value"], before[1][0]["value"]
+            lines.append(f"  {label} ({p}): {one} {num(pa)}, {b} {num(pb)}; {one} minus {b} = {pts(pa - pb)} points; "
+                         f"since then the gap {_moved(pa - pb, va - vb)} ({pts((va - vb) - (pa - pb))} points)")
+    if len(refusals) == len(a_list):
+        raise refusals[0]                # as for one group: nearest() may answer on the nearest published
+    a = a_list[0] if len(a_list) == 1 else a
     if across:
+        va = t.value(s.with_(**{field: a}))
         _field(t, across, where, "across")
         if across == field:
             raise Refusal("across must be a different field from the gap's")
@@ -201,18 +441,22 @@ def gap(release, table: str, field: str, a: str, b: str, across: str | None = No
 # ---------------------------------------------------------------- time
 
 def change(release, table: str, where: Where = None, by: str | None = None) -> str:
-    """How much did it move since an earlier point? The latest period against the previous year
-    (annual tables), or against the previous month and the same month a year earlier (monthly),
-    in points. `by`: the same for every group of a field, biggest rise first. Two points in time
-    only: whether it is rising or falling over many months is trend."""
+    """How much did it move since the previous year (annual tables), or the previous month and a
+    year earlier (monthly)? In points. Several groups: side by side with the total; for two, how
+    their gap moved. Two points in time only: rising or falling over many months is trend."""
     t = release.table(table)
+    args = {"table": table, "where": where, "by": by}
+    custom = _custom(t, where, periods=False, by=by)
+    if custom:
+        return _change_groups(t, custom, args)
+    where, by, chosen = _listed(t, where, by)
     if by:
         _field(t, by, where, "compared")
     s = t.settings(where, vary=[by] if by else [])
     refs = compute.earlier(t, s.period)
     if not refs:
         raise Refusal(f"no period stored before {s.period} in {table} (stored: {', '.join(t.periods)})")
-    if not (t.groups(s, by) if by else t.rows(s)):
+    if not (_keep(t.groups(s, by), chosen) if by else t.rows(s)):
         raise Refusal(t.missing(s, [by] if by else []))
     lines = [t.describe(s, [by] if by else [])]
     for label, p in refs:
@@ -222,29 +466,97 @@ def change(release, table: str, where: Where = None, by: str | None = None) -> s
                          f"{pts(now - before[0]['value'])} points" if before
                          else f"{label}: {p} not published for these settings")
             continue
-        pairs = compute.changes(t, s, by, p)
+        pairs = _keep(compute.changes(t, s, by, p), chosen)
         diffs = {k: now - before for k, (before, now) in pairs.items()}
         lines.append(f"{label} ({p} -> {s.period}), rose most first: " + "; ".join(
             f"{k} {num(pairs[k][0])} -> {num(pairs[k][1])} ({pts(d)})"
             for k, d in sorted(diffs.items(), key=lambda kv: -kv[1])))
-        if len(diffs) >= 3 and by not in SIDE_BY_SIDE:
-            lines.append("  changes: " + spread(by, diffs).text(pts))
-    return _result("change", {"table": table, "where": where, "by": by}, lines)
+        if by in TOTAL:
+            try:
+                total = [t.value(s.with_(**{by: TOTAL[by]}, **({"period": q} if q else {}))) for q in (p, None)]
+                lines.append(f"  {_total(by)}: {num(total[0])} -> {num(total[1])} ({pts(total[1] - total[0])})")
+            except Refusal:
+                pass
+        sp = spread(by, diffs) if len(diffs) >= 3 and by not in SIDE_BY_SIDE else None
+        if sp:
+            lines.append("  changes: " + sp.text(pts))
+    return _result("change", args, lines)
 
 
-def _by_period(t, s, by=None) -> dict:
-    """{group: {period: value}} over every stored period; one group (None) without `by`."""
+def _change_groups(t, custom, args):
+    """change for groups each set on its own, the total on what they share, and for two how the
+    gap between them moved."""
+    groups, head, _, notes = _lines(t, None, None, custom=custom)
+    now = t.periods[-1]
+    refs = compute.earlier(t, now)
+    if not refs:
+        raise Refusal(f"no period stored before {now} in {t.name}")
+    lines = [head(None), *notes]
+    for label, p in refs:
+        moved = {g: (v[p], v[now]) for g, v in groups.items() if p in v and now in v}
+        lines.append(f"{label} ({p} -> {now}): " + "; ".join(
+            f"{g} {num(b)} -> {num(a)} ({pts(a - b)})" for g, (b, a) in moved.items()) if moved
+            else f"{label} ({p} -> {now}): not published for these groups")
+        two = [g for g in moved if not _is_total(g)]
+        if len(two) == 2 == len(custom):
+            (x0, x1), (y0, y1) = moved[two[0]], moved[two[1]]
+            lines.append(f"  {two[0]} minus {two[1]}: {pts(x0 - y0)} -> {pts(x1 - y1)} points, "
+                         f"the gap {_moved(x0 - y0, x1 - y1)}")
+    return _result("change", args, lines)
+
+
+def _by_period(t, s, by=None, chosen=None) -> dict:
+    """{group: {period: value}} over every stored period, the chosen groups only (all if None),
+    then the total; one group (None) without `by`."""
     if not by:
         return {None: {r["period"]: r["value"] for r in t.rows(s, all_periods=True)}}
-    out = {}
+    out, total = {}, {}
     for r in t.rows(s, vary=[by], all_periods=True):
-        if r[by] != TOTAL.get(by):
+        if r[by] == TOTAL.get(by):
+            total[r["period"]] = r["value"]
+        elif chosen is None or r[by] in chosen:
             out.setdefault(r[by], {})[r["period"]] = r["value"]
+    if out and total:
+        out[_total(by)] = total
     return out
 
 
+def _lines(t, s, by, chosen=None, custom=None):
+    """The groups an analysis over time draws, one line each: (groups {name: {period: value}},
+    head(period) -> its first line, what a group is called, notes under the head). From `by`
+    (with `chosen`), or from custom groups each set on its own, with the total on what they share."""
+    if not custom:
+        groups = _by_period(t, s, by, chosen)
+        if not groups:
+            raise Refusal(t.missing(s, [by]))
+        return groups, lambda period: t.describe(s, [by], period=period), by, []
+    common, differ = _common(custom), [f for f in _differ(custom) if f not in TIME]
+    groups, notes = {}, []
+    for label, w in custom:
+        values = {r["period"]: r["value"] for r in t.rows(t.settings(w), all_periods=True)}
+        if values:
+            groups[label] = values
+        else:
+            notes.append(f"{label}: not published ({_why(t.missing(t.settings(w)))})")
+    if not groups:
+        raise Refusal(t.missing(t.settings(custom[0][1])))
+    total = {r["period"]: r["value"] for r in t.rows(t.settings(common), all_periods=True)}
+    if total:
+        groups[_total_of(t, common)] = total
+    if _not_like(custom):
+        notes.append("the groups: " + _not_like(custom))
+    base = t.settings(common, vary=differ)
+    return groups, lambda period: t.describe(base, differ, period=period), "group", notes
+
+
+def _is_total(g) -> bool:
+    return str(g).startswith("total (")
+
+
 def _gap_between(lines: dict) -> tuple | None:
-    """For exactly two lines: (a, b, {period: a minus b}) over the periods both have."""
+    """For exactly two groups (the total aside): (a, b, {period: a minus b}) over the periods both
+    have."""
+    lines = {g: v for g, v in lines.items() if not _is_total(g)}
     if len(lines) != 2:
         return None
     (a, va), (b, vb) = lines.items()
@@ -273,18 +585,23 @@ def _gap_direction(a, b, d: dict, unit) -> list[str]:
 
 
 def series(release, table: str, where: Where = None, by: str | None = None) -> str:
-    """Describe a figure over time: descriptive statistics of every stored period, with no verdict
-    on direction. Every value, months not published, lowest and highest, the biggest move between
-    periods, the latest streak (e.g. rose 3 months in a row), how the latest compares with the
-    rest, 3-month averages. Use it to spot peaks, dips, seasonality or a one-month blip. It does
-    not say whether the figure is rising or falling overall: that is trend. `by`: the same for
-    each group of a field side by side, and for two groups their gap in every period."""
+    """What happened period by period? Descriptive statistics, no verdict on direction: every
+    value, months not published, lowest and highest, the biggest move, the latest streak, how the
+    latest compares with the past, 3-month averages. For peaks, dips, seasonality or a one-off
+    blip. Several groups: side by side with the total; for two, their gap each period. Rising or
+    falling overall is trend."""
     t = release.table(table)
+    args = {"table": table, "where": where, "by": by}
+    custom = _custom(t, where, periods=False, by=by)
+    if custom:
+        return _series_by(t, _lines(t, None, None, custom=custom), args)
     if where and ({"period", "year"} & set(where)):
         raise Refusal("series covers every stored period; leave the period out of where")
+    where, by, chosen = _listed(t, where, by)
     if by:
         _field(t, by, where, "compared")
-        return _series_by(t, t.settings(where, vary=[by]), by, {"table": table, "where": where, "by": by})
+        s = t.settings(where, vary=[by])
+        return _series_by(t, _lines(t, s, by, chosen), args)
     s = t.settings(where)
     values = {r["period"]: r["value"] for r in t.rows(s, all_periods=True)}
     if not values:
@@ -320,12 +637,10 @@ def series(release, table: str, where: Where = None, by: str | None = None) -> s
     return _result("series", {"table": table, "where": where}, lines)
 
 
-def _series_by(t, s, by, args):
-    groups = _by_period(t, s, by)
-    if not groups:
-        raise Refusal(t.missing(s, [by]))
+def _series_by(t, drawn, args):
+    groups, head, _, notes = drawn
     order = sorted({p for v in groups.values() for p in v})
-    lines = [t.describe(s, [by], period=f"{order[0]} to {order[-1]}")]
+    lines = [head(f"{order[0]} to {order[-1]}"), *notes]
     for g, values in groups.items():
         periods = list(values)
         lo, hi = min(values, key=values.get), max(values, key=values.get)
@@ -361,27 +676,30 @@ def _stretch(t, values, start, end, name):
 
 def average(release, table: str, start: str, end: str, where: Where = None,
             vs_start: str | None = None, vs_end: str | None = None, by: str | None = None) -> str:
-    """What was the level over a stretch of months? The average of one figure from `start` to
-    `end` (e.g. 2026-01 to 2026-06); with `vs_start` and `vs_end`, against another stretch, and
-    the difference. `by`: one average per group of a field, and for two groups their gap. An
-    average of one group's monthly rates, not a published figure: never use it to combine groups
-    (women and men don't average to everyone)."""
+    """What was the level over a stretch of months? The average from `start` to `end` (e.g.
+    2026-01 to 2026-06); with `vs_start` and `vs_end`, against another stretch. Several groups:
+    one average each, with the total; for two, their gap. An average of a group's own monthly
+    rates, not a published figure: never use it to combine groups (women and men don't average to
+    everyone)."""
     t = release.table(table)
-    if where and ({"period", "year"} & set(where)):
-        raise Refusal("the periods are set by start and end; leave the period out of where")
     if (vs_start is None) != (vs_end is None):
         raise Refusal("give both vs_start and vs_end, or neither")
     args = {"table": table, "start": start, "end": end, "where": where, "vs_start": vs_start, "vs_end": vs_end}
+    stretches = [(start, end)] + ([(vs_start, vs_end)] if vs_start else [])
+    custom = _custom(t, where, periods=False, by=by)
+    if custom:
+        return _average_by(t, _lines(t, None, None, custom=custom), stretches, {**args, "by": by})
+    if where and ({"period", "year"} & set(where)):
+        raise Refusal("the periods are set by start and end; leave the period out of where")
+    where, by, chosen = _listed(t, where, by)
     if by:
         _field(t, by, where, "compared")
-        return _average_by(t, t.settings(where, vary=[by]), by, [(start, end)] + ([(vs_start, vs_end)] if vs_start else []),
-                           {**args, "by": by})
+        return _average_by(t, _lines(t, t.settings(where, vary=[by]), by, chosen), stretches, {**args, "by": by})
     s = t.settings(where)
     values = {r["period"]: r["value"] for r in t.rows(s, all_periods=True)}
     if not values:
         raise Refusal(t.missing(s))
     lines = [t.describe(s, period="averages over periods")]
-    stretches = [(start, end)] + ([(vs_start, vs_end)] if vs_start else [])
     means = []
     for a, b in stretches:
         held, gaps = _stretch(t, values, a, b, "average")
@@ -394,11 +712,9 @@ def average(release, table: str, start: str, end: str, where: Where = None,
     return _result("average", args, lines)
 
 
-def _average_by(t, s, by, stretches, args):
-    groups = _by_period(t, s, by)
-    if not groups:
-        raise Refusal(t.missing(s, [by]))
-    lines = [t.describe(s, [by], period="averages over periods")]
+def _average_by(t, drawn, stretches, args):
+    groups, head, _, notes = drawn
+    lines = [head("averages over periods"), *notes]
     means = {}                                  # group -> [average of each stretch]
     for g, values in groups.items():
         parts = []
@@ -420,19 +736,22 @@ def _average_by(t, s, by, stretches, args):
 
 def trend(release, table: str, where: Where = None, start: str | None = None, end: str | None = None,
           by: str | None = None) -> str:
-    """Is it rising or falling overall? The straight line through a figure's months (`start` to
-    `end`, or all of them), its change along the line, and a verdict: rising, falling or no clear
-    trend, judged against how far the months usually scatter around the line. Monthly tables: the
-    annual ones hold 2 years, so use change there. `by`: one line per group of a field, and for
-    two groups whether their gap is widening. Not a test of statistical significance: MoSPI
-    publishes no margins of error."""
+    """Is it rising or falling overall? A straight line through the months (`start` to `end`, or
+    all) and a verdict: rising, falling or no clear trend, judged against how far the months
+    usually sit from the line. Monthly tables only: the annual ones hold 2 years, so use change.
+    Several groups: one line each, with the total; for two, whether their gap is widening. Not a
+    test of statistical significance: MoSPI publishes no margins of error."""
     t = release.table(table)
+    args = {"table": table, "where": where, "start": start, "end": end, "by": by}
+    custom = _custom(t, where, periods=False, by=by)
+    if custom:
+        return _trend_by(t, _lines(t, None, None, custom=custom), start, end, args)
     if where and ({"period", "year"} & set(where)):
         raise Refusal("the periods are set by start and end; leave the period out of where")
+    where, by, chosen = _listed(t, where, by)
     if by:
         _field(t, by, where, "compared")
-        return _trend_by(t, t.settings(where, vary=[by]), by, start, end,
-                         {"table": table, "where": where, "start": start, "end": end, "by": by})
+        return _trend_by(t, _lines(t, t.settings(where, vary=[by]), by, chosen), start, end, {**args, "by": by})
     s = t.settings(where)
     values = {r["period"]: r["value"] for r in t.rows(s, all_periods=True)}
     if not values:
@@ -460,10 +779,8 @@ def trend(release, table: str, where: Where = None, start: str | None = None, en
     return _result("trend", {"table": table, "where": where, "start": start, "end": end}, lines)
 
 
-def _trend_by(t, s, by, start, end, args):
-    groups = _by_period(t, s, by)
-    if not groups:
-        raise Refusal(t.missing(s, [by]))
+def _trend_by(t, drawn, start, end, args):
+    groups, head, noun, notes = drawn
     start, end = start or t.periods[0], end or t.periods[-1]
     for p in (start, end):
         if p not in t.periods:
@@ -479,8 +796,14 @@ def _trend_by(t, s, by, start, end, args):
     if not fits:
         raise Refusal(f"a trend needs at least 4 published periods for a group; {start} to {end} has fewer"
                       + ("" if t.monthly else ": the annual tables hold 2 years, so use change"))
-    lines = [t.describe(s, [by], period=f"{start} to {end}"), f"one straight line per {by}, steepest rise first:"]
-    for g, (line, held) in sorted(fits.items(), key=lambda kv: -kv[1][0]["per"]):
+    lines = [head(f"{start} to {end}"), *notes, f"one straight line per {noun}, steepest rise first:"]
+    # the months MoSPI skipped inside the stretch, as the one-figure trend says them (eval: a
+    # brief resting on this result never said March 2026 wasn't published)
+    held = sorted({p for _, held in fits.values() for p in held})
+    if t.monthly and held and compute.missing_months([start, *held, end]):
+        lines.append("not published: " + ", ".join(compute.missing_months([start, *held, end])))
+    # the total after the groups, not ranked among them
+    for g, (line, held) in sorted(fits.items(), key=lambda kv: (_is_total(kv[0]), -kv[1][0]["per"])):
         lines.append(f"  {g}: {line['per']:+.2f} points a {unit}, {pts(line['over'])} points from {start} to {end}; "
                      f"{compute.trend_verdict(line)} (its {unit}s usually sit {line['scatter']:.1f} points from the line)")
     if short:
@@ -519,14 +842,26 @@ def _sides(release, x_table, y_table, x_where, y_where):
 def relate(release, x_table: str, y_table: str | None = None, x_where: Where = None,
            y_where: Where = None, by: str | None = None) -> str:
     """Do two figures go together across states? E.g. participation (x_table lfpr_annual) and
-    unemployment (y_table ur_annual), each with its own `x_where` and `y_where`: ordinary and rank
-    correlation, the states driving any disagreement, and whether the link is true by definition.
-    `by`: the same within each group of a field (e.g. for women, and for men). Describes states
-    (people's chances there), not causes."""
-    if by:
-        return _relate_by(release, x_table, y_table, x_where, y_where, by)
-    tx, sx, ty, sy = _sides(release, x_table, y_table, x_where, y_where)
+    unemployment (y_table ur_annual), each with its own `x_where` and `y_where`: the correlation,
+    the states that drive it, and whether the link is true by definition. Several groups (`by`, or
+    the groups in x_where): a correlation within each, with the total; each group's settings
+    apply to both figures. Describes states (people's chances there), not causes."""
     args = {"x_table": x_table, "y_table": y_table, "x_where": x_where, "y_where": y_where}
+    groups = _custom(release.table(x_table), x_where)
+    if groups:
+        # like `by`: each group's settings apply to both figures
+        if by or isinstance(y_where, list):
+            raise Refusal("give the list of groups in x_where only (each applies to both figures), and no by")
+        return _result("relate", args, _within(relate, release, groups,
+                                               {"x_table": x_table, "y_table": y_table, "y_where": y_where},
+                                               key="x_where", also="y_where"))
+    x_where, by, cx = _listed(release.table(x_table), x_where, by)
+    y_where, by, cy = _listed(release.table(y_table or x_table), y_where, by)
+    if cx and cy and set(cx) != set(cy):
+        raise Refusal("list the same groups in x_where and y_where, or in one of them only")
+    if by:
+        return _relate_by(release, x_table, y_table, x_where, y_where, by, cx or cy, {**args, "by": by})
+    tx, sx, ty, sy = _sides(release, x_table, y_table, x_where, y_where)
     lines = [f"x: {tx.describe(sx, ['state'])}", f"y: {ty.describe(sy, ['state'])}"]
     c = compute.relate(tx, sx, ty, sy)
     if c.get("too_few"):
@@ -551,48 +886,57 @@ def relate(release, x_table: str, y_table: str | None = None, x_where: Where = N
     return _result("relate", args, lines)
 
 
-def _relate_by(release, x_table, y_table, x_where, y_where, by):
-    """relate within each group of `by`: one correlation per group, the states' figures left out
-    (relate without `by` lists them)."""
+def _relate_by(release, x_table, y_table, x_where, y_where, by, chosen, args):
+    """relate within each group of `by` (the chosen ones, if listed) and the total: one
+    correlation per group, the states' figures left out (relate without `by` lists them)."""
     tx = release.table(x_table)
     ty = release.table(y_table or x_table)
     if by == "state":
         raise Refusal("relate compares states already; give by another field, e.g. gender")
     for t, where in ((tx, x_where), (ty, y_where)):
         _field(t, by, where, "compared")
-    groups = [g for g in tx.values[by] if g != TOTAL.get(by) and g in ty.values[by]]
+    groups = [g for g in tx.values[by] if g != TOTAL.get(by) and g in ty.values[by]
+              and (chosen is None or g in chosen)]
+    if by in TOTAL:
+        groups.append(TOTAL[by])
     lines = [f"x: {tx.describe(tx.settings(x_where, vary=['state', by]), ['state', by])}",
              f"y: {ty.describe(ty.settings(y_where, vary=['state', by]), ['state', by])}"]
-    done = 0
+    done, refusals = 0, []
     for g in groups:
+        name = _total(by) if g == TOTAL.get(by) else g
         try:
             gx, sx, gy, sy = _sides(release, x_table, y_table, {**(x_where or {}), by: g}, {**(y_where or {}), by: g})
         except Refusal as e:
-            lines.append(f"{g}: not published ({str(e).split(': ', 1)[-1][:120]})")
+            refusals.append(e)
+            lines.append(f"{name}: not published ({_why(e)})")
             continue
         c = compute.relate(gx, sx, gy, sy)
         if c.get("too_few") or c.get("pearson") is None or c.get("spearman") is None:
-            lines.append(f"{g}: too few states with both figures, or no variation: no correlation")
+            lines.append(f"{name}: too few states with both figures, or no variation: no correlation")
             continue
         done += 1
-        lines.append(f"{g}: {c['n']} states, r = {c['pearson']:.2f}, rho = {c['spearman']:.2f}; "
+        lines.append(f"{name}: {c['n']} states, r = {c['pearson']:.2f}, rho = {c['spearman']:.2f}; "
                      f"{compute.strength(c['pearson'], c['n'])}"
                      + ("" if c["agree"] else "; the two disagree: a few states pull r")
                      + (f"; BUILT IN, not a finding: {c['built_in']}" if c["built_in"] else ""))
+    if refusals and len(refusals) == len(groups):
+        raise refusals[0]                # as for one group: nearest() may answer on the nearest published
     if not done:
         raise Refusal(f"no group of {by} has both figures for enough states")
     lines.append("this describes states (people's chances in them), not causes")
-    return _result("relate", {"x_table": x_table, "y_table": y_table, "x_where": x_where, "y_where": y_where,
-                              "by": by}, lines)
+    return _result("relate", args, lines)
 
 
 # ---------------------------------------------------------------- where to look next
 
 def drill(release, table: str, where: Where = None) -> str:
-    """Which field matters most? When you don't know where to look: for every field not yet set
-    in `where`, how far apart its groups are, widest first. Then compare or gap on that field, or
-    drill again with a group of it set."""
+    """Which field matters most? When you don't know where to look: for every field not set in
+    `where`, how far apart its groups are, widest first; then compare or gap on that field.
+    Groups that differ in more than one field (where a list of groups): the same within each."""
     t = release.table(table)
+    groups = _custom(t, where)
+    if groups:
+        return _result("drill", {"table": table, "where": where}, _within(drill, release, groups, {"table": table}))
     s = t.settings(where)
     headline = t.value(s)
     found, closed = [], []
@@ -628,16 +972,64 @@ def _variants(release, analysis, args):
     """(label, changed args): the same request in the other period and on the other measure."""
     keys = ["where"] if "table" in args else ["x_where", "y_where"]
     first = release.table(args.get("table") or args["x_table"])
-    s = first.settings(args.get(keys[0]))
-    if analysis not in ("series", "change", "average", "trend"):     # these already span periods
+    given = args.get(keys[0]) or {}
+    wheres = given if isinstance(given, list) else [given]          # several groups: the first's settings
+    # a value with lists (several groups or periods at once): the setting from its single values
+    s = first.settings({k: v for k, v in wheres[0].items() if not isinstance(v, list)})
+    spans_periods = any(isinstance(w.get("period"), list) or isinstance(w.get("year"), list)
+                        or ({"period", "year"} & set(w) and isinstance(given, list)) for w in wheres)
+    if analysis not in ("series", "change", "average", "trend") and not spans_periods:   # these span periods
         other = _other_period(first, s.period)
         if other:
-            yield f"in {other}", {**args, **{k: {**(args.get(k) or {}), "period": other} for k in keys}}
+            yield f"in {other}", {**args, **{k: _set(args.get(k), period=other) for k in keys}}
     measures = first.values.get("measure", [])
     if len(measures) > 1:
         other = next(m for m in measures if m != s.values["measure"])
-        yield (f"on {MEASURES.get(other, other)}",
-               {**args, **{k: {**(args.get(k) or {}), "measure": other} for k in keys}})
+        yield f"on {MEASURES.get(other, other)}", {**args, **{k: _set(args.get(k), measure=other) for k in keys}}
+
+
+def _set(where, **settings):
+    """`where` with these settings, in every group when it is a list of groups."""
+    if isinstance(where, list):
+        return [{**w, **settings} for w in where]
+    return {**(where or {}), **settings}
+
+
+ONLY_FOR = re.compile(r"^(\w+): .*published only for (age|measure) (.+)$")
+# the note `nearest` puts under a result's id; the analyst's hand-in is checked against it
+NOTE = re.compile(r"^note: these figures are for (age|measure) (.+?), not (.+?) as asked", re.M)
+WHERES = (("where", "table"), ("x_where", "x_table"), ("y_where", "y_table"))
+
+
+def nearest(release, analysis, kwargs: dict, tries=2, allow=("age", "measure")) -> str:
+    """The analysis, or, when what was asked is published only for another age group or measure,
+    the same analysis on the nearest one that is, saying so in its last line. An eval run: told
+    "this split is published only for age 15 years and above", an analyst reported that the
+    figures by education "are not published", and the brief said MoSPI doesn't publish them."""
+    try:
+        return analysis(release, **kwargs)
+    except Refusal as refused:
+        found = ONLY_FOR.match(str(refused))
+        if not found or tries == 0 or found[2] not in allow:
+            raise
+        table, field, offered = found[1], found[2], [v.strip() for v in found[3].split(", ")]
+        used = DEFAULTS[field] if DEFAULTS[field] in offered else offered[0]
+        changed, asked = dict(kwargs), None
+        for where_key, table_key in WHERES:
+            this = kwargs.get(table_key) or (kwargs.get("x_table") if where_key == "y_where" else None)
+            if this == table and where_key in analysis.__code__.co_varnames:
+                given = kwargs.get(where_key) or {}
+                first = given[0] if isinstance(given, list) and given and isinstance(given[0], dict) else given
+                asked = asked or (first.get(field, DEFAULTS[field]) if isinstance(first, dict) else None)
+                changed[where_key] = _set(given, **{field: used})
+        if asked is None or asked == used:
+            raise
+        text = nearest(release, analysis, changed, tries - 1, allow)
+        # first, under the id: at the end, two span-test analysts used the figures and wrote
+        # claims that never said they were for another age group and measure than asked
+        head, _, rest = text.partition("\n")
+        return (f"{head}\nnote: these figures are for {field} {used}, not {asked} as asked "
+                f"({asked} isn't published for this)\n{rest}")
 
 
 def recheck(release, analysis: str, args: dict) -> str:
@@ -648,7 +1040,9 @@ def recheck(release, analysis: str, args: dict) -> str:
     lines = []
     for label, changed in _variants(release, analysis, args):
         try:
-            lines.append(f"{label}:\n" + RECHECKABLE[analysis](release, **changed).split("\n", 1)[1])
+            # the rerun on the other measure may not be moved back to the first one: that is its point
+            allow = ("age",) if label.startswith("on ") else ("age", "measure")
+            lines.append(f"{label}:\n" + nearest(release, RECHECKABLE[analysis], changed, allow=allow).split("\n", 1)[1])
         except Refusal as e:
             lines.append(f"{label}: {e}")
     return _result("recheck", {"analysis": analysis, "args": args},

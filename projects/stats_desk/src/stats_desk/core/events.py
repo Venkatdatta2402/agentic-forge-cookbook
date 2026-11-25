@@ -35,7 +35,9 @@ def label(analysis: str, args) -> str:
         out += f", {args['a']} against {args['b']}"
     where = args.get("where") or args.get("x_where")
     if isinstance(where, dict) and where:
-        out += f" ({', '.join(str(v) for v in where.values())})"
+        out += f" ({', '.join(' / '.join(map(str, v)) if isinstance(v, list) else str(v) for v in where.values())})"
+    elif isinstance(where, list) and all(isinstance(w, dict) for w in where):
+        out += f" ({' / '.join(', '.join(map(str, w.values())) or 'everyone' for w in where)})"
     return out
 
 

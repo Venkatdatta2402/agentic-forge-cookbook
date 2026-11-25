@@ -111,6 +111,17 @@ def parse_call(text):
     return None, found
 
 
+class NoDecision(RuntimeError):
+    """A step that got no usable reply: every try rejected or empty, or its retries spent the
+    budget. The runtime ends the agent with this as the reason, as at any budget; it doesn't
+    crash the question (span test: an analyst's 4 rejected tries raised out of the whole run)."""
+
+
+# Groq's words when the model wrote text where a tool call was required: "did not call a tool",
+# or, for half a thought ("We have change result. Need claim."), "could not be parsed"
+PROSE = ("did not call a tool", "could not be parsed")
+
+
 def fitting(tools, args):
     """The tools whose arguments these are."""
     out = []
@@ -181,9 +192,9 @@ class Think:
         "issue the call again" wrote "this cannot be computed directly with a single tool" three
         times and spent its budget without one analysis."""
         names = ", ".join(f"`{n}`" for n in self.tools.names)
-        message = str(getattr(error, "message", "") or error)
+        message = str(getattr(error, "message", "") or error) + " " + str(llm._error_body(error).get("message", ""))
         wrote = (llm.failed_generation(error) or "").strip()
-        if "did not call a tool" in message and wrote:
+        if any(p in message for p in PROSE) and wrote:
             return (f"You wrote this instead of calling a tool:\n{wrote[:800]}\n\n"
                     + (self.when_stuck or f"Act on it now with one of your tools: {names}."))
         return ((llm.tool_call_failure(error) or "That request could not be processed.")
@@ -205,7 +216,10 @@ class Think:
         if budget.get("tokens") is not None and budget["tokens"] < 4_000 and len(self.tools):
             note += (f"\nOnly about {budget['tokens']:,} tokens of budget are left. Finish now: "
                      "run any last query you need and hand in your result.")
-        return {"role": "system", "content": conversation.system + GUIDANCE + note}
+        # GUIDANCE says to answer in plain text: not for an agent whose every reply must be a tool
+        # call (it told the analyst both, on every call)
+        guidance = "" if self.require_tool else GUIDANCE
+        return {"role": "system", "content": conversation.system + guidance + note}
 
     async def run(self, conversation):
         base = [self._system(conversation), *history(conversation, self.shorten, self.keep_recent)]
@@ -213,16 +227,26 @@ class Think:
         schemas = self.tools.schemas
         kwargs = self._kwargs()
         forced = self.choose(conversation) if self.choose else None
+        # choose may say (tool, True): keep naming it on every try (an analyst out of budget: its
+        # own choice after a refused try was another analysis, which stopped it with its figures
+        # lost, in an eval)
+        forced, keep = forced if isinstance(forced, tuple) else (forced, False)
         forced = forced if forced in self.tools else None
+        # every try is paid in full, rejected or not: retries stop at the budget (span test: an
+        # analyst's 4 rejected tries cost 17k tokens on a 12k budget)
+        left, spent = (conversation.remaining_budget or {}).get("tokens"), 0
         for attempt in range(self.retries):
+            if attempt and left is not None and spent >= left:
+                raise NoDecision("its token budget went on replies Groq rejected")
             # one attempt with the tool named: Groq checks the call after it is generated, so a
             # model set on another tool is refused, not steered; after that, its own choice
             # (a step done too early is refused by its tool, which costs a call, not the turn)
-            named = forced if attempt == 0 else None
+            named = forced if attempt == 0 or keep else None
             if named:
                 kwargs = {**kwargs, "tool_choice": {"type": "function", "function": {"name": named}}}
             elif forced:
                 kwargs = self._kwargs()
+            spent += llm.estimate(messages, schemas)
             try:
                 reply = await llm.complete(self.model, messages, tools=schemas or None,
                                            max_tokens=self.max_tokens, **kwargs)
@@ -245,7 +269,7 @@ class Think:
             messages = [*base, {"role": "user", "content":
                                 "Your last reply was empty. Reply now: call a tool"
                                 + ("." if self.require_tool else ", or answer briefly in text.")}]
-        raise RuntimeError(f"no usable decision from {self.model} after {self.retries} attempts")
+        raise NoDecision(f"no usable reply from {self.model} in {self.retries} tries")
 
     async def finish(self, conversation, reason):
         """A stopped run's last word, from the results only, with no tools on offer."""
@@ -377,7 +401,10 @@ class AsyncRuntime:
                 if reason is not None and not carry_on:
                     return await self._end_gracefully(conversation, reason)
                 conversation.remaining_budget = self._remaining(conversation)
-                output = await self._next().run(conversation)
+                try:
+                    output = await self._next().run(conversation)
+                except NoDecision as stuck:
+                    return await self._end_gracefully(conversation, str(stuck))
                 if isinstance(output, list):
                     conversation.messages.extend(output)
                 elif output is not None:

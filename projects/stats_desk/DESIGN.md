@@ -364,8 +364,17 @@ three times, refused each time for a "29" that was only part of "ages 15-29". Fi
 - **One answer per group** (user: "two lines on a chart" was an example, for every analysis
   where it means something): `series`, `trend`, `average` and `relate` take `by` -- one line,
   average or correlation per group of a field side by side, and for two groups their gap and how
-  it moved (or whether the lines crossed). `compare`, `change` and `gap`'s `across` already did;
-  for `value` it would be `compare`.
+  it moved (or whether the lines crossed). `compare`, `change` and `gap`'s `across` already did.
+- **Groups are chosen the same way in every analysis** (said once, in the rule the tables list
+  ends with): `by` a field is every group of it and the total; a list for that field in `where`
+  is only those groups and the total; several fields set in `where` pick one combination; `where`
+  a list of settings is several groups each set on its own (e.g. rural women in one state, and
+  urban women), with the total on what they share. `value`, `change`, `series`, `trend` and
+  `average` put them side by side (for two, their difference, saying when they differ in more
+  than one field: not like with like); `compare`, `gap`, `drill` and `relate` run within each. `gap`
+  takes several groups against one (`a` a list, or `"*"` for every group), each with its earlier
+  gaps. Before, `gap` took two groups only: an eval lead asked for graduates and post-graduates
+  against everyone in two years, and its analyst needed two gaps and two lookups.
 - **Every agent turn is a tool call** (Think `require_tool`: the API's `tool_choice: "required"`):
   told to "just write the answer in plain text", gpt-oss-120b called the tool 3 of 3 times
   (measured). Reading a text reply as the form stays as the backstop. Brief spans Q1, Q2: handed
@@ -409,6 +418,87 @@ briefs. Its misses, each traced in the saved runs and fixed:
   question the tool answers, what it returns, what each setting does, and what to use instead
   (series: the path month by month; trend: the direction; change: two points in time). 1,888
   tokens for the analysts' 10 tools (1,829 before).
+
+**Eval after the second fixes (`evals/reports/runs_2026-11-19_second_fixes.md`, on the free keys).**
+Q5 and Q7 now pass their traps; Q1, Q4 and Q8 gave no brief, each traced and fixed:
+- the "not published" check matched honest wording ("the figures do not provide the reasons
+  why") and demanded a refusal the lead couldn't give for a combination it knew from the tables
+  list; refused, the lead resent the same brief until the run stopped with none. Now: only words
+  that claim MoSPI doesn't publish something count; code probes the groups the question's
+  analyses asked for, taken together, once (`_probe_combination`, no tokens); an unproven claim
+  goes to the repair call, so it can't loop;
+- told "published only for age 15 years and above", an analyst reported the figures by
+  education "not published", and the brief said so, wrongly. The server now answers on the
+  nearest published age group or measure, saying so in the result's last line
+  (`analyses.nearest`), and "published only for…" no longer counts as evidence of "not published";
+- three analysts made no model call for 15 minutes: a Groq request that never answered, waited
+  out under the SDK's default 600 s a try. Requests now time out at 60 s (`REQUEST_TIMEOUT`);
+- the per-group `trend` didn't list the months MoSPI skipped, so the brief couldn't be held to
+  saying so; it does now. A claim saying there is no clear trend is no longer flagged for
+  "rising or falling".
+
+Rerun of the three that gave no brief: Q1 2/3 points, Q4 2/2, Q8 a brief but 0/1. Q8's analyst
+made five single lookups at ~3k tokens a call, reached its 12,000 and was stopped, its figures
+lost. Rather than nudge it after the waste, `value` takes lists (several groups and periods in
+one call, with the field's total; at most 24 figures): the call the model reaches for, made
+cheap. Code's rerun on the other measure is never moved back to the first measure by `nearest`:
+that is the rerun's point.
+
+An analyst stopped before it hands in (its budget, a loop, replies Groq keeps rejecting) has its
+results handed in by code: the figures, a claim saying there is none, and a warning that it was
+cut short. Tried first and dropped: forcing the hand-in as its next call once about one call of
+budget was left. In a span test the model, its task not done, called another analysis instead,
+Groq rejected each try, and each was paid in full: 28k tokens on a 12k budget. Stopping at a
+limit is how agent frameworks end a run (LangChain's "force", the OpenAI Agents SDK's turn
+limit); a claim is the one thing code can't write. Alongside: a step whose tries are all
+rejected ends the agent instead of crashing the question; retries within a step stop at the
+budget; Groq's "could not be parsed" (half a thought sent as the reply) gets the model's own
+words back, as "did not call a tool" did. Already handled, measured on the saved runs: 5 of the
+7 rejected analyst calls were rescued by the runtime (a `null` for an optional setting, a
+hand-in written as text), so they cost no extra call.
+
+Several groups and the nearest published setting (span test A7: the lead's task said "all
+ages", education is published for 15 years and above only). One group refused for that is
+answered by `nearest` on the published age, with a note. Several at once had each refusal
+caught on its own line as "not published for these settings", so `nearest` never saw it and the
+analyst reported no figures. Now, every group refused: the call is refused as for one group (and
+`nearest` answers it); some: each of their lines says why. The analyst is told a note means the
+figures answer the task on the nearest setting. And `value` takes lists inside a group (each
+group over two years: the model's own call, refused before).
+
+The note is put first, under the result's id, and a hand-in is checked against it. Span tests
+(A7, 2 runs with the note last, 2 with it first): 4 of 4 analysts used the PS+SS figures and
+never said they weren't the CWS asked; where the note sat made no difference. Now code refuses a
+claim that doesn't name the setting a cited result's note gives (`check_settings`, next to the
+number check): "PS+SS" or "usual status", "15 years and above" or "15+". It costs a call only
+when the claim leaves it out.
+
+Settings in the lead's tasks. 31 of the 47 distinct tasks in the saved runs named a measure or
+age group, most where the question asked for neither (A7's task, from a question about degrees,
+said "all ages" and "CWS"). Two causes. The lead was never told what an analyst uses when a
+task names none, so it spelled settings out. And the "published together" line gave
+education's age limit but no measure limits, which annual tables have on four splits:
+education, religion, social group and the age groups 15-29 and 15-59 are on PS+SS only. Now that
+line gives each split's measure limit too, e.g. "education: only by gender, sector, state (ages
+15 years and above, measure PS+SS only)", and the lead is told to name a measure, age group or
+period only when the question asks about one, with the standard ones the analysts use
+otherwise.
+
+Tasks span (Q3, Q4, Q8, twice each) after that: the lead still named a measure in 6 of 6 (12 of
+12 over both span runs; the sentence telling it not to was then taken out, code does the job), mostly
+the published PS+SS, which does no harm; 1 of 6 asked for graduates on "all ages" and CWS. So
+code checks each task in `ask_analysts` (`unpublished_settings`): the groups a task names
+(matched on the values as the tables list writes them) on the measure and age group it names,
+asked of the server, no tokens, in every table of its indicator (annual or monthly, when the task
+says which). A task none of them publishes is refused before any analyst starts, with the
+server's nearest setting: "7.graduate (education) on measure CWS and age All ages isn't
+published together in ur_annual (the nearest that is: measure PS+SS, age 15 years and above)".
+Run over the 47 saved tasks: none refused. It doesn't catch a group written in other words than
+the tables list's ("Muslim" for Islam); the analyst's note and claim check stay for those.
+
+Group names, every field: "total" (or "overall") is any field's total, whatever its name
+(person, rural + urban, All India, all); a value of another field put under this one is refused
+saying whose it is ("'All ages' is a value of age, not of education; its total is 'all'").
 
 ### 4.4 Handing in findings
 

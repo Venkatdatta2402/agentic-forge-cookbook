@@ -19,7 +19,8 @@
   {"id": "A3", "task": "Which states saw the biggest change in the worker population ratio since 2024?", "fits": ["change"]},
   {"id": "A4", "task": "How has unemployment among 15-29 year olds moved month by month?", "fits": ["series"]},
   {"id": "A5", "task": "Do states where more women are in work also have lower unemployment among women?", "fits": ["relate"]},
-  {"id": "A6", "task": "For men's labour force participation, which way of splitting the figures shows the biggest differences?", "fits": ["drill", "compare"]}
+  {"id": "A6", "task": "For men's labour force participation, which way of splitting the figures shows the biggest differences?", "fits": ["drill", "compare"]},
+  {"id": "A7", "task": "Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above and the overall UR for all ages, state All India, measure CWS, for years 2024 and 2025; give the gap between each education level and overall and whether the gap widened or narrowed.", "fits": ["gap"]}
  ],
  "brief": [
   {"id": "Q1", "findings": [

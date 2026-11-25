@@ -13,7 +13,8 @@ its own results on its side (client.py). Stateless HTTP: no session to keep betw
 How each call ends, kept apart on the wire with `_meta` (MCP's place for a server's own data),
 so the agent side can tell the model's mistakes from ours:
 
-    the analysis answered          is_error False
+    the analysis answered          is_error False (published only for another age group or
+                                   measure: answered on the nearest one, its last line saying so)
     Refusal (wrong field, value,   is_error True, kind "refused": the message says what to do
       unpublished combination)
     anything else                  is_error True, kind "broken": a bug, logged to stderr and
@@ -28,7 +29,7 @@ import mcp.types as types
 from mcp.server.mcpserver import MCPServer
 
 from ..config import RELEASE_PATH
-from .analyses import ANALYSES
+from .analyses import ANALYSES, nearest
 from .data import Refusal, Release
 
 KIND = "stats_desk/kind"
@@ -46,7 +47,8 @@ def _bind(release, analysis):
 
     def call(**kwargs) -> types.CallToolResult:
         try:
-            return _reply(analysis(release, **kwargs), "ok")
+            # published only for another age group or measure: the nearest one, said so (analyses.nearest)
+            return _reply(nearest(release, analysis, kwargs), "ok")
         except Refusal as e:
             return _reply(str(e), "refused")
         except Exception:  # noqa: BLE001 -- ours to fix: logged, not shown to the model

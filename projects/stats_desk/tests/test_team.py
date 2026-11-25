@@ -168,11 +168,32 @@ async def test_the_plan_is_kept_and_its_later_tasks_come_back_with_the_findings(
 async def test_the_lead_plans_from_what_is_published_together(release_path):
     """The list of profiles says which fields MoSPI splits together (span tests:
     without it 2 of 3 plans asked for young people by education, which isn't published), and
-    what the groups mean (live run: "cities" taken to be unpublished)."""
+    what the groups mean (live run: "cities" taken to be unpublished), and which measure a split
+    is limited to (span test: a lead's task asked for education on CWS)."""
     async with connect(server=create(release_path)) as analyses:
         listed = profile_list(await analyses.call("tables"))
     assert "published together: " in listed and "education: only by" in listed
     assert "sector urban = towns and cities" in listed
+    ur = next(line for line in listed.split("\n") if "from table ur_annual" in line)
+    # the test release has CWS only in its totals: every split is on PS+SS only
+    assert "education: only by gender, sector (ages 15 years and above, measure PS+SS only)" in ur
+    assert "age group 15-29 years: only by gender, sector, state (measure PS+SS only)" in ur
+    monthly = next(line for line in listed.split("\n") if "from table ur_monthly" in line)
+    assert "(measure" not in monthly          # one measure: nothing to limit
+
+
+async def test_a_task_naming_a_setting_its_groups_arent_published_on_is_caught(release_path):
+    """Span test: told which measure each split is on, a lead still asked for graduates on CWS and
+    all ages. Code asks the server, no tokens, and the probes are not kept as results."""
+    from stats_desk.agents.lead import unpublished_settings
+    async with connect(server=create(release_path)) as analyses:
+        tables = await analyses.call("tables")
+        found = await unpublished_settings(analyses, tables, "Find the UR for 7.graduate on CWS, all ages, for 2025")
+        assert found.startswith("7.graduate (education) on measure CWS and age All ages isn't published together in ur_annual")
+        assert "the nearest that is: measure PS+SS, age 15 years and above" in found
+        assert await unpublished_settings(analyses, tables, "Find the UR for 7.graduate for 2025") is None
+        assert await unpublished_settings(analyses, tables, "Find the UR for graduates on PS+SS, 2025") is None
+        assert not [i for i in analyses.results if not i.startswith("tables")]
 
 
 async def test_the_eval_weak_spots_are_caught_by_code(release_path):
@@ -213,20 +234,30 @@ async def test_the_eval_weak_spots_are_caught_by_code(release_path):
 
 
 async def test_a_brief_saying_something_isnt_published_needs_a_refusal_behind_it(release_path):
-    """Live run: "the published tables do not provide unemployment by gender for
-    urban areas" -- they do; nobody had asked."""
+    """Live run: "unemployment by gender for urban areas is not published" -- it is; nobody had
+    asked. An unproven claim goes to the repair call (a refusal to the lead looped in the eval)."""
     from stats_desk.agents.analyst import Finding
-    from stats_desk.agents.lead import BriefForm
+    from stats_desk.agents.lead import BriefForm, Rewrite
     async with connect(server=create(release_path)) as analyses:
         text = await analyses.call("value", table="ur_annual")
         rid = text.split("\n")[0].removeprefix("result ")
         run = Investigation(analyses, "q")
         run.findings = {"f1": Finding("f1", "t", "c", [rid])}
         run.transcripts["analyst f1"] = [{"role": "tool", "kind": "ok", "content": text}]
-        brief = BriefForm(answer="It is published overall; the tables do not provide it by gender for cities.",
+        brief = BriefForm(answer="It is published overall; it isn’t published by gender for cities.",
                           findings=["f1"], cannot_tell="Why.")
-        with pytest.raises(ToolError, match="no analysis was refused as unpublished.*Give it to an analyst"):
+        with pytest.raises(Rewrite, match="isn't published.*nothing in this question shows.*Take that claim out"):
             run._check_brief(brief)
+        # an honest cannot_tell is not such a claim (eval: "the figures do not provide the reasons why")
+        honest = BriefForm(answer="It is published overall.", findings=["f1"],
+                           cannot_tell="The figures do not provide the reasons why.")
+        assert run._check_brief(honest) is honest
+        # "published only for <another age group>" says it IS published, there: no evidence (eval Q8)
+        run.transcripts["analyst f1"].append({"role": "tool", "kind": "refused",
+                                              "content": "ur_annual: this split is published only for age 15 years and above"})
+        with pytest.raises(Rewrite):
+            run._check_brief(brief)
+        run.transcripts["analyst f1"].pop()
         # once a request was refused as not published, saying so is backed
         run.transcripts["analyst f1"].append({"role": "tool", "kind": "refused",
                                               "content": "ur_annual: gender x religion x state is not published together"})
@@ -235,6 +266,22 @@ async def test_a_brief_saying_something_isnt_published_needs_a_refusal_behind_it
         run.transcripts["analyst f1"].pop()
         series = await analyses.call("series", table="ur_monthly")
         assert "not published: " in series and run._check_brief(brief) is brief
+
+
+async def test_the_groups_a_question_asked_for_together_are_probed_as_one_combination(release_path, release):
+    """The eval's Q4: Muslim women in all of India, and all women in one state, were asked for
+    one by one because the combination isn't published; code asks the server about the
+    combination itself, and its refusal backs the brief's "not published"."""
+    async with connect(server=create(release_path)) as analyses:
+        await analyses.call("value", table="ur_annual", where={"gender": "female", "religion": "Islam"})
+        state = next(s for s in release.tables["ur_annual"].values["state"] if s != "All India")
+        try:
+            await analyses.call("value", table="ur_annual", where={"gender": "female", "state": state})
+        except ToolError:
+            pass
+        run = Investigation(analyses, "q")
+        await run._probe_combination()
+    assert "not published together" in run.probed_unpublished and run._refused_as_unpublished()
 
 
 async def test_a_task_that_came_back_empty_says_nothing_about_what_is_published(release_path):

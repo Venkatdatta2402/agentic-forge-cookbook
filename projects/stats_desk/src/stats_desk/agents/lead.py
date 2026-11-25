@@ -36,22 +36,28 @@ from typing import Annotated
 from pydantic import BaseModel, Field, ValidationError
 
 from .. import config
-from ..analysis.data import MEASURES
+from ..analysis.analyses import NOTE
+from ..analysis.data import MEASURES, TOTAL
 from ..core import events, llm, meter, trace
 from ..core.tools import Registry, Tool, ToolError
 from . import plan
 from .agent import FORM, Agent, Stopped, answer
-from .analyst import Finding, check_numbers, run_analyst, tables_for
+from .analyst import BUDGET as ANALYST_BUDGET
+from .analyst import INDICATORS, Finding, check_numbers, run_analyst, tables_for, ways_to_say
 from .checks import check, outliers_in
 from .record import Record, now
 
 # a brief saying something isn't published (matched on plain()), and the server's refusals that say so
-UNPUBLISHED = re.compile(r"\b(?:not|isn't|aren't|never|no longer) (?:published|available|provided|reported|broken (?:down|out))"
-                         r"|\bdo(?:es)? not (?:publish|provide|include|report|give)\b|\bunavailable\b"
-                         r"|\bno (?:data|figures?|breakdown|split)s? (?:for|by|on)\b")
-PUBLISHED_REFUSAL = re.compile(r"not published|published only|nothing published|has no (?:field|period|states)|no \w+ '")
+# only words that say MoSPI doesn't publish something (eval: "the figures do not provide the
+# reasons why", an honest cannot_tell, was read as such a claim, and the brief refused)
+UNPUBLISHED = re.compile(r"\b(?:not|never) (?:been )?published\b|\bunpublished\b"
+                         r"|\b(?:isn't|aren't|wasn't|weren't|is not|are not|was not|were not) published\b"
+                         r"|\b(?:doesn't|does not|don't|do not|didn't|did not) publish\b|\bno published\b")
+# not "published only for <another age group or measure>": that says it IS published, for that
+# (eval: taken as evidence, it let "MoSPI doesn't publish unemployment by education" through)
+PUBLISHED_REFUSAL = re.compile(r"not published|nothing published|has no (?:field|period|states)|no \w+ '")
 DEFINITION_WORDS = ("by definition", "built in", "computed from", "mechanical", "by construction", "follows from")
-SKIPPED = re.compile(r"not published: ((?:\d{4}-\d{2}(?:, )?)+)")
+SKIPPED = re.compile(r"not published(?:, left out)?: ((?:\d{4}-\d{2}(?:, )?)+)")       # series, trend; average
 MONTHS = ("january", "february", "march", "april", "may", "june", "july", "august", "september", "october",
           "november", "december")
 
@@ -77,7 +83,7 @@ def plain(text):
     text = (text or "").lower().replace("‑", " ").replace("‐", " ").replace("-", " ").replace(" ", " ")
     # every kind of space as one (eval: "Andaman &" + a narrow no-break space +
     # "Nicobar" slipped past the outlier check); \s takes the narrow and no-break spaces too
-    text = re.sub(r"\s+", " ", text)
+    text = re.sub(r"\s+", " ", text).replace("’", "'")              # and a curly apostrophe as '
     return re.sub(r"\s*\+\s*", "+", text)
 
 
@@ -89,7 +95,7 @@ MAX_ANALYSTS = 4
 FIRST_ROUND = 3            # tasks in the first ask_analysts call: a live run spent all 4 at
                            # once, three failed, and nothing was left to give them out again
 QUESTION_BUDGET = 60_000
-TASK_RESERVE = 12_000      # an analyst's budget; code's checks spend no tokens
+TASK_RESERVE = ANALYST_BUDGET   # an analyst's budget; code's checks spend no tokens
 BRIEF_RESERVE = 6_000
 
 PERSONA = f"""You are the lead analyst at a desk that answers questions about India's official labour statistics: MoSPI's PLFS, with the unemployment rate (UR), labour force participation rate (LFPR) and worker population ratio (WPR); annual by state, gender, sector, age, education, religion and social group, and monthly by gender, sector and age.
@@ -98,7 +104,12 @@ You direct; you never run analyses yourself. Every reply is a tool call: profile
 1. Read the profiles that bear on the question; the list below says which table each comes from. Ask for all of them in one profile call. A profile says what code found striking in its table's latest release.
 2. From them, pick what bears on the question and turn it into 2-3 hypotheses: possible answers the figures can test. A profile only points: every number in your brief must come from an analyst's finding. Never hand in the brief before analysts have reported, even when a profile seems to answer the question.
 3. Give the hypotheses to analysts with ask_analysts, all in one call, one task each. Say what to find out, not how: the analyst chooses the analysis, and doesn't see the profiles, so name every group exactly as the profiles write it. Ask only for combinations the list of profiles says are published together; when the question's groups are not, ask for the nearest ones that are, each on its own, and say in the brief that the combination itself isn't published: the nearest figures stand in for it, they don't answer it. Never piece a combination together from two published ones.
-   Analysts can: look up a figure; compare every group of a field; take the gap between two groups, overall and within each group of another field, and whether it widened or narrowed since a year (or a month) earlier; give the change since the previous year, month, or the same month a year earlier; describe a figure over the months (peaks, dips, streaks, against its own history, 3-month averages); average a figure over a stretch of months; say whether a figure is rising, falling or has no clear trend over the months; do most of these for every group of a field side by side, including whether the gap between two groups is widening; say whether two figures go together across states; find which split shows the biggest differences. They cannot: average across groups, give shares of people (only rates are published), adjust for prices, test statistical significance, or give a combination MoSPI doesn't publish.
+   Analysts can:
+   - look up figures; rank the groups of a field; take the gap between groups and whether it widened or narrowed since a year (or a month) earlier
+   - over time: the change since the previous year or month; the months described (peaks, dips, streaks); an average over a stretch of months; whether it is rising, falling or has no clear trend
+   - across states: whether two figures go together; and find which split shows the biggest differences
+   - do each of these for any groups a task names: every group of a field (e.g. by state), a few of one field (e.g. women and men), or groups that differ in more than one way (e.g. rural women in one state, and urban women), always with the total
+   They cannot: average across groups, give shares of people (only rates are published), adjust for prices, test statistical significance, or give a combination MoSPI doesn't publish.
 4. Each finding comes back with the analyst's claim, its figures, the same figures rerun by code in the other period and on the other measure, and warnings from code. Judge it yourself: does it hold there too; are the groups compared alike in all but one way; could an overall figure hide the opposite pattern within its groups; does it rest on a small state set apart as an outlier; is it true by definition; is it a link you would expect anyway, because the states share something that moves both? A link you would expect anyway is not a finding: don't present it as one. Then go on with your plan: give the later tasks as the findings now make them look, drop the ones they make unnecessary, and add one only if something that matters for the answer is still open. A task that came back empty can be given again. Stop when more tasks are unlikely to change the answer; if the figures can't settle the question, say so. At most {MAX_ANALYSTS} tasks in all.
 5. Hand in the brief with {FORM}:
 - answer: the direct answer in 2-5 sentences. Quote numbers exactly as the findings show them, each with its unit (% or points), group, year and measure, and keep levels apart from changes. If what was asked is not published, say so, and give the nearest figures that are.
@@ -225,6 +236,95 @@ def profile_list(tables_text):
     return "\n".join(out)
 
 
+SETTINGS = ("measure", "age")
+
+
+def catalogue(tables_text):
+    """From the tables list: each table's fields, and every field's values."""
+    fields, values = {}, {}
+    for line in tables_text.split("\n"):
+        table = re.match(r"(\w+_(?:annual|monthly)): .*?; fields ([^;]+)", line)
+        if table:
+            fields[table[1]] = [f.strip() for f in table[2].split(",")]
+        listed = re.match(r"(\w+) values: (.*)$", line)
+        if listed:
+            values[listed[1]] = [v.strip() for v in listed[2].split(", ")]
+    return fields, values
+
+
+def _words(text):
+    """A task as it is matched: lower case, one kind of space and of hyphen."""
+    text = re.sub(r"[‐‑‒–]", "-", (text or "").lower())
+    return re.sub(r"\s+", " ", text)
+
+
+def named_in(task, values):
+    """What a task names: the settings ([(field, value)] of age and measure) and one group of each
+    other field ({field: value}), matched on the values as the tables list writes them ("7.graduate"
+    also as "graduate"). Totals are no group."""
+    said = _words(task)
+    settings = [(f, v) for f in SETTINGS for v in values.get(f, [])
+                if any(w in said for w in ways_to_say(f, v))]
+    groups = {}
+    for f, vs in values.items():
+        if f in SETTINGS:
+            continue
+        for v in vs:
+            name = re.sub(r"^\d+\.", "", v).lower()
+            if v != TOTAL.get(f) and re.search(rf"(?<!\w){re.escape(name)}(?!\w)", said):
+                groups.setdefault(f, v)
+    return settings, groups
+
+
+async def unpublished_settings(analyses, tables_text, task):
+    """A measure or age group a task names that its groups aren't published on: the server's own
+    note, else None. Code's calls, no tokens: each group of the task, on the settings it names, in
+    every table of the task's indicator that has the group's field; it counts only if no table
+    publishes it (a table without the note does). Span test: told which measure each split is on,
+    and to name none unless asked, a lead still wrote "all ages" and "CWS" for graduates, both
+    unpublished; an analyst then dropped the measure and its claim never said so."""
+    fields, values = catalogue(tables_text)
+    settings, groups = named_in(task, values)
+    if not settings:
+        return None
+    measures = [v for f, v in settings if f == "measure"] or [None]
+    ages = [v for f, v in settings if f == "age"] or [None]
+    wanted = {i for i, pattern in INDICATORS.items() if re.search(pattern, task, re.I)} or set(INDICATORS)
+    tables = [t for t in fields if t.split("_")[0] in wanted]
+    # annual or monthly, when the task's own words say which (a year alone: annual)
+    months = r"\bmonth|\b\d{4}-\d{2}\b|\b(?:" + "|".join(m[:3] for m in MONTHS) + r")[a-z]*\b"
+    kind = ("monthly" if re.search(months, task, re.I) else
+            "annual" if re.search(r"\bannual|\byears?\b|\b20\d\d\b", task, re.I) else None)
+    tables = [t for t in tables if kind is None or t.endswith(kind)]
+    for field, group in [*groups.items(), (None, None)]:
+        for measure in measures:
+            for age in ages:
+                where = {k: v for k, v in (("measure", measure), ("age", age), (field, group)) if k and v}
+                notes, published = [], False
+                for table in tables:
+                    if any(k not in fields[table] for k in where if k != "measure"):   # measure: every table has one
+                        continue
+                    try:
+                        text = await analyses.call("value", table=table, where=where)
+                    except ToolError:
+                        continue                   # refused for something else: not this check's to say
+                    rid = text.partition("\n")[0].removeprefix("result ").strip()
+                    analyses.results.pop(rid, None)    # a probe, never a result to cite
+                    analyses.calls.pop(rid, None)
+                    found = NOTE.findall(text)
+                    if not found:
+                        published = True
+                        break
+                    notes.append((table, found))
+                if notes and not published:
+                    table, found = notes[0]
+                    what = f"{group} ({field})" if field else "the figures"
+                    asked = " and ".join(f"{k} {v}" for k, v in where.items() if k in SETTINGS)
+                    nearest = ", ".join(f"{f} {used}" for f, used, _ in found)
+                    return f"{what} on {asked} isn't published together in {table} (the nearest that is: {nearest})"
+    return None
+
+
 FOLLOW_UP_CAP = 1_500      # tokens for everything a follow-up is shown of the earlier question
 
 
@@ -287,6 +387,7 @@ class Investigation:
         analyses.results = self.record.results
         self.usage = None
         self.tables = ""
+        self.probed_unpublished = ""      # the server's refusal of the question's groups taken together
         self.unfinished: dict = {}        # a resumed question's tasks that never finished
 
     @property
@@ -335,6 +436,14 @@ class Investigation:
                    else f"in your first call, keeping room to follow up on what they find; {MAX_ANALYSTS} in all"
                    if first else f"{MAX_ANALYSTS} in all per question")
             raise ToolError(f"Send at most {most} task{'s' if most > 1 else ''} now ({why}).")
+        problems = []
+        for n, task in enumerate(tasks, 1):
+            found = await unpublished_settings(self.analyses, self.tables, task)
+            if found:
+                problems.append(f"task {n}: {found}")
+        if problems:
+            raise ToolError("No task was given out: " + "; ".join(problems) + ". Give the tasks again without "
+                            "the measure or age group the question doesn't ask about: analysts use the published one.")
         # Parallel by code, not by the model's choice: on live runs 1 and 2 the lead was told to
         # ask for independent tasks in one turn and made one call per turn both times.
         # numbered after every task ever given, resumed runs' unfinished ones included
@@ -399,6 +508,9 @@ class Investigation:
         repair call that gets only the brief and what to fix (`_rewrite`); anything else goes back
         to the lead, with its whole context, as a refusal. Span tests: a brief refused
         for a missing measure was retried with the lead's full ~2,500-token context."""
+        said = plain(" ".join((form.answer, form.ruled_out, form.cannot_tell)))
+        if UNPUBLISHED.search(said) and not self._refused_as_unpublished():
+            await self._probe_combination()
         for _ in range(REWRITES):
             try:
                 return self._check_brief(form)
@@ -457,12 +569,11 @@ class Investigation:
         # published -- it is -- having never asked; only the analysis server's refusal knows
         said_unpublished = UNPUBLISHED.search(plain(" ".join((form.answer, form.ruled_out, form.cannot_tell))))
         if said_unpublished and not self._refused_as_unpublished():
-            room = len(self.findings) < MAX_ANALYSTS
-            raise ToolError(
-                f"The brief says something isn't published (\"{said_unpublished.group(0)}\"), but no analysis was "
-                "refused as unpublished in this question: that is the only way to know. "
-                + ("Give it to an analyst as a task first, with ask_analysts." if room else
-                   "No tasks are left to check it: take that claim out, and answer from the findings you have."))
+            # a wording fix by the small repair call, not a refusal to the lead: in the eval the
+            # lead sent the same brief back until the run was stopped with none
+            raise Rewrite(
+                f"The brief says something isn't published (\"{said_unpublished.group(0)}\"), but nothing in this "
+                "question shows that it isn't. Take that claim out, and say only what the findings show.")
         # only the findings' results and code's reruns of them: on live run 3 profiles were allowed
         # too, and three invented numbers passed because they happened to be in some profile
         cited = [i for f in done.values() for i in f.results + f.checked_with]
@@ -500,7 +611,34 @@ class Investigation:
         refused = any(m.get("role") == "tool" and m.get("kind") not in (None, "ok")
                       and PUBLISHED_REFUSAL.search(m.get("content") or "")
                       for messages in self.transcripts.values() for m in messages)
-        return refused or any("not published" in text for text in self.analyses.results.values())
+        return (refused or bool(self.probed_unpublished)
+                or any("not published" in text for text in self.analyses.results.values()))
+
+    async def _probe_combination(self):
+        """Ask the server, once, whether the groups this question's analyses asked for, taken
+        together, are published: e.g. religion=Islam from one finding and state=Kerala from
+        another (the eval's Q4: the lead knew from the tables list that the combination isn't
+        published, planned the nearest figures, and was refused for saying so without proof).
+        Code's own call: no tokens. Its refusal, if it is one, is the evidence."""
+        merged: dict = {}
+        for name, args in list(self.analyses.calls.values()):
+            if name == "recheck" or not isinstance(args, dict) or not args.get("table"):
+                continue
+            if not isinstance(args.get("where") or {}, dict):
+                continue                # several groups, each set on its own: not one combination
+            where = merged.setdefault(args["table"], {})
+            for k, v in (args.get("where") or {}).items():
+                if k not in ("period", "measure") and v is not None and not isinstance(v, list):
+                    where.setdefault(k, v)
+        for table, where in merged.items():
+            if len(where) < 2:
+                continue
+            try:
+                await self.analyses.call("value", table=table, where=where)
+            except ToolError as refused:
+                if PUBLISHED_REFUSAL.search(str(refused)):
+                    self.probed_unpublished = str(refused)
+                    return
 
     def lead(self) -> Agent:
         """The lead as this investigation runs it (the span tests run its steps one at a time)."""

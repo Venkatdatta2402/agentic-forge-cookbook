@@ -33,6 +33,7 @@ _encoding = tiktoken.get_encoding("o200k_base")
 # more than Groq's own rendering adds. So no padding: it erred high already (the earlier
 # x1.06 + 60 made it 16-26% high, holding back minute tokens calls never used).
 TYPICAL_REPLY = 500     # analyst replies measured at 76-610 tokens, reasoning included
+REQUEST_TIMEOUT = 60.0  # seconds a Groq request may take before the SDK gives up and retries
 
 # What a call Groq REJECTED (a malformed tool call) most likely wrote, reasoning included: Groq
 # charges it (probe 2026-11-13: two rejected calls cost 447 and 567 tokens of the minute's
@@ -81,7 +82,10 @@ class GroqBackend:
                                    base_url=config.GROQ_BASE_URL,
                                    # the governor keeps us inside the limits; the SDK's retries
                                    # remain for 5xx and the rare 429 from spend we couldn't see
-                                   max_retries=3)
+                                   max_retries=3,
+                                   # a reply takes 1-5 s; the SDK's default of 600 s a try let one
+                                   # silent request hold three analysts past the lead's 900 s (eval)
+                                   timeout=REQUEST_TIMEOUT)
 
     async def models(self) -> set[str]:
         """The models this key may use: Groq's model list, which costs no tokens. Raises

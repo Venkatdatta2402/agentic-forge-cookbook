@@ -53,8 +53,9 @@ def flags(analyses, finding: Finding) -> list[str]:
     cited = [(i, *analyses.calls.get(i, ("", {}))) for i in finding.results]
     values = [(i, args) for i, name, args in cited if name == "value"]
     for (i, a), (j, b) in combinations(values, 2):
-        if a.get("table") == b.get("table"):
-            wa, wb = a.get("where") or {}, b.get("where") or {}
+        wa, wb = a.get("where") or {}, b.get("where") or {}
+        # several groups in one value say themselves when they aren't like with like
+        if a.get("table") == b.get("table") and isinstance(wa, dict) and isinstance(wb, dict):
             differ = sorted(k for k in set(wa) | set(wb) if str(wa.get(k)) != str(wb.get(k)))
             if len(differ) > 1:
                 out.append(f"{i} and {j} differ in {', '.join(differ)}: not like with like; don't present "
@@ -71,7 +72,10 @@ def flags(analyses, finding: Finding) -> list[str]:
                        "if you name it, say it may rest on a small sample")
         # eval: the trend said "no clear trend", the claim and the brief "fell by 0.2"
         moved = MOVE_WORDS.findall(finding.claim)
-        if moved and re.search(r"(^|: )no clear trend", result, re.M):
+        # not when the claim itself says there is none (eval: "neither sector showing a clear
+        # rising or falling trend" was flagged)
+        says_none = re.search(r"\b(no clear|neither|not (?:a |any )?(?:clear|rising|falling|rise|fall))", finding.claim, re.I)
+        if moved and not says_none and re.search(r"(^|: )no clear trend", result, re.M):
             out.append(f"{i} finds no clear trend (the change along its straight line is within the usual "
                        f"scatter), but the claim says {', '.join(repr(w) for w in dict.fromkeys(moved))}: say "
                        "there is no clear trend; a change between two months is not a trend")
@@ -147,5 +151,6 @@ async def check(analyses, finding: Finding) -> Finding:
         finding.checked_with.append(rid)
         finding.elsewhere[rid] = compact(text)
         turned += [f"{i}: {w}" for w in held(analysis, analyses.results[i], text)]
-    finding.flags = flags(analyses, finding) + turned
+    # added to any it came with (a finding handed in by code says so first)
+    finding.flags = list(dict.fromkeys(finding.flags + flags(analyses, finding) + turned))
     return finding

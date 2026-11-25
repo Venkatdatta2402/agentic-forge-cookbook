@@ -16,19 +16,22 @@ from typing import Annotated
 from pydantic import BaseModel, Field
 
 from .. import config
+from ..analysis.analyses import NOTE
+from ..analysis.data import MEASURES
 from ..core.tools import Registry, ToolError
 from .agent import FORM, Agent, Stopped, answer
 
 TOOLS = ("value", "compare", "gap", "change", "series", "average", "trend", "relate", "drill", "tables")
-BUDGET = 12_000        # tokens for one task
+BUDGET = 16_000        # tokens for one task: ~5 calls at ~2.9k each before results (12k fitted 3)
 
 PERSONA = f"""You are an analyst of India's official labour statistics (MoSPI's PLFS). You carry out ONE task from the lead analyst with the analysis tools, then hand in what you found.
 
 How to work:
-- Pick the analysis whose description fits the task. One analysis that answers it beats several lookups: groups side by side come from one gap, compare, or an analysis with `by`.
+- Pick the analysis whose description fits the task. One analysis that answers it beats several lookups: put every group the task names in that one call, chosen as the tables list says (one group, `by`, a list as a field's value, or a list of groups).
 - Compare like with like: groups that differ in one field only. If the task compares groups that differ in several fields, compare like with like instead and say so.
 - The tools compute every difference, change and correlation. Never do arithmetic yourself.
 - If a tool refuses, its message says what is valid or published: fix the call from it. If the data can't answer the task, say so in your claim.
+- A result starting "note: these figures are for ..." answers the task on the nearest published setting: use its figures, and say in the claim which setting they are for.
 - If no single analysis does all of the task, run the one that gets closest, then the next. Never explain instead of acting.
 - 2-4 analyses are usually enough. Analyses that don't depend on each other can go in the same turn.
 - Every reply is a tool call: an analysis, or {FORM} to hand in. Never reply in prose.
@@ -124,14 +127,74 @@ def check_numbers(analyses, cited, *texts):
             "numbers out yourself: gap, change and relate compute differences.")
 
 
+def ways_to_say(field, used):
+    """The words that name a setting in a claim or a task: the measure by its code or its name, an
+    age group as published or written short (15+, 15 and above, 15-29)."""
+    ways = {used.lower()}
+    if field == "measure" and used in MEASURES:
+        ways.add(MEASURES[used].split(" (")[0].lower())          # usual status, current weekly status
+    if field == "age":
+        span = re.match(r"(\d+)\s*-\s*(\d+)", used)
+        start = re.match(r"(\d+) years and above", used)
+        if span:
+            ways |= {f"{span[1]}-{span[2]}", f"{span[1]}–{span[2]}", f"{span[1]} to {span[2]}"}
+        elif start:
+            n = start[1]
+            ways |= {f"{n}+", f"{n} and above", f"{n} and over", f"{n} and older", f"{n} or older",
+                     f"{n} years and over", f"{n} years or older", f"aged {n} and"}
+    return ways
+
+
+def check_settings(analyses, cited, claim):
+    """Refuse a hand-in whose claim doesn't say a cited result is on another age group or measure
+    than asked. Span tests: told so in PERSONA and by the note at the top of the result, 4 of 4
+    analysts used the figures and never said they were for PS+SS, not the CWS asked."""
+    said = re.sub(r"\s+", " ", claim.lower())
+    unsaid = []
+    for i in cited:
+        for field, used, asked in NOTE.findall(analyses.results.get(i, "")):
+            if not any(w in said for w in ways_to_say(field, used)):
+                unsaid.append(f"{field} {used}, not {asked} as asked ({i})")
+    if unsaid:
+        raise ToolError(
+            "Results you cited are on another setting than the task asked: "
+            f"{'; '.join(dict.fromkeys(unsaid))}. Say so in the claim, so the lead doesn't read "
+            "them as what was asked.")
+
+
+CUT_SHORT = ("no claim: the analyst was stopped ({reason}) before writing one. Its figures below are "
+             "what it found; read them yourself")
+
+
+def handed_in_by_code(analyses, finding_id, task, transcript, stopped):
+    """An analyst stopped before handing in (its budget, a doom loop, replies Groq kept
+    rejecting): code hands in its results, so the figures reach the lead. Before, code forced the
+    hand-in as the model's next call; in a span test the model, its task not done, called another
+    analysis instead 3 times, each rejected and paid for: 28k tokens on a 12k budget, and the
+    hand-in it finally wrote said nothing. Stopping an agent is the usual end at a budget (a
+    framework's turn limit); a claim is the one thing code can't write, so the lead is told."""
+    ids = [m["content"].split("\n", 1)[0].removeprefix("result ").strip() for m in transcript
+           if m.get("role") == "tool" and m.get("kind") in (None, "ok") and (m.get("content") or "").startswith("result ")]
+    # analyses only: a list of the tables is no figure (span test: it was handed in as one)
+    ids = [i for i in dict.fromkeys(ids) if i in analyses.results and not i.startswith(("tables-", "profile-"))]
+    if not ids:
+        return stopped
+    return Finding(finding_id, task, CUT_SHORT.format(reason=stopped.reason), ids,
+                   figures={i: compact(analyses.results[i]) for i in ids},
+                   flags=["the analyst was cut short: the claim is code's, not a reading of the figures; "
+                          "draw from the figures only what they plainly show"])
+
+
 async def run_analyst(analyses, finding_id, task, context, transcript=None):
-    """One analyst instance on one task. Returns a Finding, or Stopped.
+    """One analyst instance on one task. Returns a Finding (its own, or its results handed in by
+    code when it was stopped first), or Stopped if it got no result at all.
 
     Two lookups for one comparison (eval: women and men looked up one by one three
     times over) are headed off in `value`'s description and PERSONA, not refused at hand-in: a
     refusal there would cost the analyst more calls, not fewer."""
     async def build(report: Report):
         check_numbers(analyses, report.results, report.claim)
+        check_settings(analyses, report.results, report.claim)
         return Finding(finding_id, task, report.claim, report.results,
                        figures={i: compact(analyses.results[i]) for i in report.results})
 
@@ -144,8 +207,11 @@ async def run_analyst(analyses, finding_id, task, context, transcript=None):
                   when_stuck=("Act on it with a tool call. If no single analysis does all of the task, run the one "
                               "that gets closest now, then the next; then hand in with json what the results show, "
                               "and say in the claim what you could not get."))
-    return await answer(agent, f"Task from the lead: {task}", Report, context=context,
-                        transcript=transcript)
+    transcript = transcript if transcript is not None else []
+    found = await answer(agent, f"Task from the lead: {task}", Report, context=context, transcript=transcript)
+    if isinstance(found, Stopped):
+        return handed_in_by_code(analyses, finding_id, task, transcript, found)
+    return found
 
 
-__all__ = ["Finding", "Report", "Stopped", "check_numbers", "compact", "run_analyst"]
+__all__ = ["Finding", "Report", "Stopped", "check_numbers", "check_settings", "compact", "run_analyst"]

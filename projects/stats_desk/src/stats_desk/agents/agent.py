@@ -103,7 +103,10 @@ async def _read_as_form(text, form, conversation, tools):
 
 
 def system(persona):
-    """An agent's system prompt: its persona, and how to hand in."""
+    """An agent's system prompt: its persona, and how to hand in -- unless the persona already says
+    ("Hand in with json: ..."): the analyst's and the lead's do, and the line was said twice."""
+    if f"with {FORM}" in persona:
+        return persona
     return (persona + f"\n\nWhen you have finished, call `{FORM}` with your result. Do not write your "
                       "result as ordinary text.")
 

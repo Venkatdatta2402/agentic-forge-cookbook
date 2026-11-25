@@ -110,6 +110,13 @@ class Table:
         & above" -- a live run lost two analysts to that refusal, each repeating it."""
         if value in self.values[f]:
             return value
+        total = f"; its total is '{TOTAL[f]}' (or write total)" if f in TOTAL else "; it has no total"
+        # every field's total has its own name (person, rural + urban, All India, all): "total"
+        # works for any of them
+        if str(value).strip().lower() in ("total", "overall"):
+            if f in TOTAL and TOTAL[f] in self.values[f]:
+                return TOTAL[f]
+            raise Refusal(f"{self.name}: {f} has no total. Values: {', '.join(map(str, self.values[f]))}")
         want = _bare(value)
         exact = [v for v in self.values[f] if _bare(v) == want]
         close = exact or [v for v in self.values[f] if want and want in _bare(v)]
@@ -119,7 +126,14 @@ class Table:
             raise Refusal(f"{self.name}: {f} '{value}' could be any of {', '.join(map(str, close))}: "
                           "give one of them exactly as written here")
         listed = self.values[f] if len(self.values[f]) <= 40 else self.values[f][:40] + ["..."]
-        raise Refusal(f"{self.name}: no {f} '{value}'. Values: {', '.join(map(str, listed))}")
+        # a value of another field put under this one (span test: "All ages", an age group, given
+        # as the education to compare against, where education's total "all" was meant)
+        other = next((g for g in self.fields if g != f and want
+                      and any(_bare(v) == want for v in self.values[g])), None)
+        if other:
+            raise Refusal(f"{self.name}: '{value}' is a value of {other}, not of {f}{total}. "
+                          f"Values of {f}: {', '.join(map(str, listed))}")
+        raise Refusal(f"{self.name}: no {f} '{value}'{total}. Values: {', '.join(map(str, listed))}")
 
     def describe(self, s: Settings, vary=(), period=None):
         """One line saying exactly which figures these are."""
@@ -168,27 +182,38 @@ class Table:
 
     def combinations(self) -> str:
         """Which fields MoSPI splits together, in one line, or "" if every field goes with every
-        other: e.g. "ages 15-29 years, 15-59 years only by gender, sector, state; education only
-        by gender, sector, state, ages 15 years and above only". In the tables list, which the
-        lead plans from (span tests: without it, 2 of 3 plans asked for young people
-        by education, which MoSPI doesn't publish; with it, 1 of 3)."""
+        other: e.g. "age groups 15-29 years, 15-59 years: only by gender, sector, state (measure
+        PS+SS only); education: only by gender, sector, state (ages 15 years and above, measure
+        PS+SS only)". In the tables list, which the lead plans from (span tests: without it, 2 of 3
+        plans asked for young people by education, which MoSPI doesn't publish; with it, 1 of 3).
+        The measure too: without it, a lead's task asked for education on CWS, published on PS+SS
+        only."""
         splits = [(sp, age) for sp, age, _ in self.shapes]
         fields = {f for sp, _ in splits for f in sp}
+        every = set(self.values.get("measure", []))
+
+        def only(measures):                 # a measure a split is limited to, or ""
+            return f"measure {', '.join(sorted(measures))}" if measures and measures != every else ""
+
         out = []
         by_age = {}
         for age in sorted({a for _, a in splits} - {DEFAULTS["age"]}):
             partners = frozenset(f for sp, a in splits if a == age for f in sp)
-            by_age.setdefault(partners, []).append(age)
-        for partners, ages in by_age.items():
-            if partners != fields:
+            measures = frozenset(m for _, a, m in self.shapes if a == age)
+            by_age.setdefault((partners, measures), []).append(age)
+        for (partners, measures), ages in by_age.items():
+            if partners != fields or only(measures):
                 out.append(f"age group{'s' if len(ages) > 1 else ''} {', '.join(ages)}: only by "
-                           f"{', '.join(sorted(partners)) or 'nothing else (All India totals)'}")
+                           f"{', '.join(sorted(partners)) or 'nothing else (All India totals)'}"
+                           + (f" ({only(measures)} only)" if only(measures) else ""))
         for f in sorted(fields):
             partners = {g for sp, _ in splits if f in sp for g in sp} - {f}
             ages = sorted({a for sp, a in splits if f in sp})
-            if partners != fields - {f} or ages == [DEFAULTS["age"]]:
+            measure = only({m for sp, _, m in self.shapes if f in sp})
+            limits = ([f"ages {ages[0]}"] if ages == [DEFAULTS["age"]] else []) + ([measure] if measure else [])
+            if partners != fields - {f} or limits:
                 out.append(f"{f}: only by {', '.join(sorted(partners)) or 'itself'}"
-                           + (f", ages {ages[0]} only" if ages == [DEFAULTS["age"]] else ""))
+                           + (f" ({', '.join(limits)} only)" if limits else ""))
         return "; ".join(out)
 
     def missing(self, s: Settings, vary=()):

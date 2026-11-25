@@ -1,0 +1,628 @@
+[
+ {
+  "id": "Q1",
+  "run": 1,
+  "question": "Why do young women in cities struggle to find work?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1",
+    "P3"
+   ],
+   "of": 3,
+   "measure named": true,
+   "checks": {
+    "no cause read in": true
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 4,
+    "S2": 7
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 5,
+   "precision": 0.4,
+   "wasted": 1,
+   "refused": 1,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Find the unemployment rate (UR) for urban female youth (age 15-29) and compare it to urban male youth and to rural female youth, noting the gap and any change since 2024.",
+     "Find the labour force participation rate (LFPR) for urban female youth (age 15-29) and compare it to urban male youth and to rural female youth, noting the gap and any change since 2024."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "gap",
+     "args": "{\"a\":\"female\",\"b\":\"male\",\"field\":\"gender\",\"table\":\"ur_annual\",\"where\":{\"age\":\"15-29 years\",\"sector\":\"urban\"}}",
+     "kind": "ok",
+     "result": "gap-afa26b",
+     "said": null,
+     "covered": [
+      "S1"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "gap",
+     "args": "{\"a\":\"female\",\"across\":\"sector\",\"b\":\"male\",\"field\":\"sector\",\"table\":\"lfpr_annual\",\"where\":{\"age\":\"15-29 years\"}}",
+     "kind": "refused",
+     "result": null,
+     "said": "lfpr_annual: no sector 'female'. Values: rural, rural + urban, urban",
+     "covered": [],
+     "repeated": false,
+     "wasted": true
+    },
+    {
+     "n": 6,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "gap",
+     "args": "{\"a\":\"urban\",\"b\":\"rural\",\"field\":\"sector\",\"table\":\"ur_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\"}}",
+     "kind": "ok",
+     "result": "gap-bdd8de",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 7,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "gap",
+     "args": "{\"a\":\"female\",\"b\":\"male\",\"field\":\"gender\",\"table\":\"lfpr_annual\",\"where\":{\"age\":\"15-29 years\",\"sector\":\"urban\"}}",
+     "kind": "ok",
+     "result": "gap-3dd822",
+     "said": null,
+     "covered": [
+      "S2"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 9,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "gap",
+      "args": {
+       "a": "female",
+       "b": "male",
+       "field": "gender",
+       "table": "ur_annual",
+       "where": {
+        "age": "15-29 years",
+        "sector": "urban"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-41b887",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 10,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "gap",
+      "args": {
+       "a": "urban",
+       "b": "rural",
+       "field": "sector",
+       "table": "ur_annual",
+       "where": {
+        "age": "15-29 years",
+        "gender": "female"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-b03e83",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 11,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "gap",
+     "args": "{\"a\":\"urban\",\"b\":\"rural\",\"field\":\"sector\",\"table\":\"lfpr_annual\",\"where\":{\"age\":\"15-29 years\",\"gender\":\"female\"}}",
+     "kind": "ok",
+     "result": "gap-78ce3d",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 13,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "gap",
+      "args": {
+       "a": "female",
+       "b": "male",
+       "field": "gender",
+       "table": "lfpr_annual",
+       "where": {
+        "age": "15-29 years",
+        "sector": "urban"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-f048d3",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 14,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "gap",
+      "args": {
+       "a": "urban",
+       "b": "rural",
+       "field": "sector",
+       "table": "lfpr_annual",
+       "where": {
+        "age": "15-29 years",
+        "gender": "female"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-5beebd",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 31543,
+   "by agent": {
+    "lead": 10270,
+    "analyst": 21273
+   },
+   "model calls": 10,
+   "seconds": 188.7,
+   "waited": 289.3,
+   "cost if paid": 0.005415,
+   "groq errors": [],
+   "recovered": 0,
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "In 2025 the unemployment rate for urban women aged 15‑29 was 18.9%, far above the 11.8% for their male peers (a gender gap of +7.1 points) and the 8.6% for rural women (an urban‑rural gap of +10.3 points). At the same time, their labour‑force participation was only 23.2%, 37.7 points lower than urban men (60.9%) and 6.1 points lower than rural women (29.3%). These high unemployment and very low participation rates together indicate that young urban women face a double disadvantage in the labour market."
+ },
+ {
+  "id": "Q4",
+  "run": 1,
+  "question": "What is the unemployment rate of Muslim women in Kerala?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [
+    "P1",
+    "P2"
+   ],
+   "of": 2,
+   "measure named": true,
+   "checks": {
+    "says it is not published": true
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": 11,
+    "S2": 4
+   },
+   "recall": 1.0,
+   "missed": [],
+   "analyses chosen": 2,
+   "precision": 0.5,
+   "wasted": 0,
+   "refused": 0,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Find the annual unemployment rate (UR) for women of Muslim religion (all states) for 2025, using PS+SS measure.",
+     "Find the annual unemployment rate (UR) for women in Kerala state for 2025, using PS+SS measure."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"gender\":\"female\",\"measure\":\"PS+SS\",\"period\":\"2025\",\"religion\":\"Islam\"}}",
+     "kind": "ok",
+     "result": "value-447bef",
+     "said": null,
+     "covered": [
+      "S2"
+     ],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"gender\":\"female\",\"measure\":\"PS+SS\",\"period\":\"2025\",\"state\":\"Kerala\"}}",
+     "kind": "ok",
+     "result": "value-50fd51",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 7,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "ur_annual",
+       "where": {
+        "gender": "female",
+        "measure": "PS+SS",
+        "period": "2025",
+        "religion": "Islam"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-2b6c10",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 9,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "value",
+      "args": {
+       "table": "ur_annual",
+       "where": {
+        "gender": "female",
+        "measure": "PS+SS",
+        "period": "2025",
+        "state": "Kerala"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-b59952",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 11,
+     "by": "code",
+     "path": "lead > json",
+     "tool": "value",
+     "args": {
+      "table": "ur_annual",
+      "where": {
+       "gender": "female",
+       "religion": "Islam",
+       "state": "Kerala"
+      }
+     },
+     "kind": "refused",
+     "result": null,
+     "said": "ur_annual: gender x religion x state is not published together. Published together: education x gender x sector x state; gender x religion x sector; gender x sector x social",
+     "covered": [
+      "S1"
+     ],
+     "repeated": false,
+     "wasted": false
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 19901,
+   "by agent": {
+    "lead": 8634,
+    "analyst": 11267
+   },
+   "model calls": 7,
+   "seconds": 143.4,
+   "waited": 207.9,
+   "cost if paid": 0.003364,
+   "groq errors": [
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"answer\": \"MoSPI does not publish the unemployment rate for Muslim women specifically in Kerala. The closest available figures are: the unemployment rate for Muslim women across all states is 3.6% in 2025 (PS+SS), and the unemployment rate for women in Kerala overall is 6.4% in 2025 (PS+SS).\",\n "
+   ],
+   "recovered": 1,
+   "tasks stopped": [],
+   "tasks refused": 0
+  },
+  "answer": "MoSPI does not publish the unemployment rate for Muslim women specifically in Kerala. The closest available figures are: the unemployment rate for Muslim women across all states is 3.6% in 2025 (PS+SS), and the unemployment rate for women in Kerala overall is 6.4% in 2025 (PS+SS)."
+ },
+ {
+  "id": "Q8",
+  "run": 1,
+  "question": "Does getting a degree make people more likely to be unemployed?",
+  "outcome": {
+   "brief": true,
+   "stopped": null,
+   "points": [],
+   "of": 1,
+   "measure named": true,
+   "checks": {
+    "no cause read in": true,
+    "no bare yes or no to a cause": true,
+    "says the figures can't show cause": true
+   },
+   "numbers not in any result": [],
+   "numbers only in a profile": [],
+   "cause words": []
+  },
+  "path": {
+   "steps": {
+    "S1": null
+   },
+   "recall": 0.0,
+   "missed": [
+    "S1"
+   ],
+   "analyses chosen": 7,
+   "precision": 0.0,
+   "wasted": 5,
+   "refused": 0,
+   "single figures chained": [],
+   "tasks": {
+    "call 3": [
+     "Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above for 2025 and 2024, and the overall UR for all education combined, using UR_annual_2025 table.",
+     "Calculate the gap between each education level's UR and the overall UR for both years, and state whether the gap widened or narrowed from 2024 to 2025."
+    ]
+   },
+   "calls": [
+    {
+     "n": 1,
+     "by": "code",
+     "path": "",
+     "tool": "tables",
+     "args": {},
+     "kind": "ok",
+     "result": "tables-bf21a9",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 4,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"education\":\"7.graduate\",\"period\":\"2025\"}}",
+     "kind": "ok",
+     "result": "value-d826a0",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": true
+    },
+    {
+     "n": 5,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "gap",
+     "args": "{\"a\":\"1.not literate\",\"b\":\"all\",\"field\":\"education\",\"table\":\"ur_annual\",\"where\":{\"period\":\"2024\"}}",
+     "kind": "ok",
+     "result": "gap-10f41d",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 6,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"education\":\"7.graduate\",\"period\":\"2024\"}}",
+     "kind": "ok",
+     "result": "value-fc218e",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": true
+    },
+    {
+     "n": 7,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f2",
+     "tool": "gap",
+     "args": "{\"a\":\"1.not literate\",\"b\":\"all\",\"field\":\"education\",\"table\":\"ur_annual\",\"where\":{\"period\":\"2025\"}}",
+     "kind": "ok",
+     "result": "gap-1e597c",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 8,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"education\":\"8.post graduate \\u0026 above\",\"period\":\"2025\"}}",
+     "kind": "ok",
+     "result": "value-c87d12",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": true
+    },
+    {
+     "n": 10,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "gap",
+      "args": {
+       "a": "1.not literate",
+       "b": "all",
+       "field": "education",
+       "table": "ur_annual",
+       "where": {
+        "period": "2024"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-761428",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 11,
+     "by": "code",
+     "path": "lead > ask_analysts",
+     "tool": "recheck",
+     "args": {
+      "analysis": "gap",
+      "args": {
+       "a": "1.not literate",
+       "b": "all",
+       "field": "education",
+       "table": "ur_annual",
+       "where": {
+        "period": "2025"
+       }
+      }
+     },
+     "kind": "ok",
+     "result": "recheck-c7ab22",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": false
+    },
+    {
+     "n": 12,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"period\":\"2025\"}}",
+     "kind": "ok",
+     "result": "value-b40179",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": true
+    },
+    {
+     "n": 13,
+     "by": "model",
+     "path": "lead > ask_analysts > analyst f1",
+     "tool": "value",
+     "args": "{\"table\":\"ur_annual\",\"where\":{\"period\":\"2024\"}}",
+     "kind": "ok",
+     "result": "value-d41260",
+     "said": null,
+     "covered": [],
+     "repeated": false,
+     "wasted": true
+    }
+   ]
+  },
+  "cost": {
+   "tokens": 34510,
+   "by agent": {
+    "lead": 8994,
+    "analyst": 24129,
+    "lead: rewrite brief": 1387
+   },
+   "model calls": 13,
+   "seconds": 208.0,
+   "waited": 323.4,
+   "cost if paid": 0.006089,
+   "groq errors": [
+    "400 | tool_use_failed | Tool choice is required, but model did not call a tool | generated: {\n  \"answer\": \"The PLFS does not publish unemployment rates by education levels such as graduate or post‑graduate. The only education‑level breakdown available for the 2024‑2025 annual release is for the “not literate” category, whose unemployment rate was 0.2 % in 2024 and 0.3 % in 2025, both well "
+   ],
+   "recovered": 1,
+   "tasks stopped": [
+    "reached its token budget of 12,000"
+   ],
+   "tasks refused": 0
+  },
+  "answer": "The only education‑level breakdown available for the 2024‑2025 annual release is for the “not literate” category, whose unemployment rate was 0.2 % in 2024 and 0.3 % in 2025, both well below the overall unemployment rate of 3.2 % (2024) and 3.1 % (2025)."
+ }
+]
