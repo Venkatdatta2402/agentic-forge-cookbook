@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 
 from .. import config
 from ..analysis.analyses import NOTE
+from ..analysis.data import SHOWN, TOTAL
 from ..core.tools import Registry, ToolError
 from ..datasets import DATASET, indicator_pattern
 from .agent import FORM, Agent, Stopped, answer
@@ -103,16 +104,27 @@ INDICATORS = DATASET.words
 TABLE_LINE = re.compile(rf"({indicator_pattern()})_(annual|monthly): ")
 
 
+VALUES_LINE = re.compile(r"(\w+) values: (.*)$")
+
+
 def tables_for(tables_text, task):
     """The tables list an analyst gets with its task: only the tables of the indicators the task
     names (all of them if it names none), and no profiles (analysts never read them). The three
-    annual tables share every value, so this cuts table lines, ~210 tokens a call."""
+    annual tables share every value, so this cuts table lines, ~210 tokens a call. A field with
+    many values (the states) is given as a count: the analyses match a name as the task writes it
+    and list the closest on a miss (data.py), so the list was paid for on every call to spare a
+    refusal that rarely comes, and a dataset with hundreds of values couldn't be listed at all."""
     wanted = {i for i, pattern in INDICATORS.items() if re.search(pattern, task, re.I)} or set(INDICATORS)
     out = []
     for line in tables_text.split("\n")[1:]:
         table = TABLE_LINE.match(line)
         if (table and table[1] not in wanted) or line.startswith("profiles: "):
             continue
+        listed = VALUES_LINE.match(line)
+        if listed and len(values := listed[2].split(", ")) > SHOWN:
+            total = TOTAL.get(listed[1])
+            line = (f"{listed[1]} values: {len(values)}" + (f", {total} the total" if total else "")
+                    + "; name one as the task does: the analyses find it, and list the closest if they can't")
         out.append(line)
     return "\n".join(out)
 
@@ -181,6 +193,7 @@ async def run_analyst(analyses, finding_id, task, context, transcript=None):
     times over) are headed off in `value`'s description and PERSONA, not refused at hand-in: a
     refusal there would cost the analyst more calls, not fewer."""
     async def build(report: Report):
+        report.results = analyses.cited_ids(report.results)
         check_numbers(analyses, report.results, report.claim)
         check_settings(analyses, report.results, report.claim)
         return Finding(finding_id, task, report.claim, report.results,

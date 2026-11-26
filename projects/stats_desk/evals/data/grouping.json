@@ -1,0 +1,1180 @@
+{
+ "about": "The task check's grouping call (agents/grouping.py), tested on its own: tasks naming groups of two fields or more, with the groups each really asks figures for, labelled by hand. G: every such task a lead wrote in the saved span and eval runs to 2026-11-25. C: written to set the same names together and against each other. H: written harder: several fields split at once, several values of one field, names that apply to some groups only. Like golden.json, nothing here may appear in any agent's instructions.",
+ "cases": [
+  {
+   "id": "G1",
+   "task": "Find the unemployment rate (UR) for Muslim women in Kerala for 2025 annual data.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G2",
+   "task": "Retrieve the annual unemployment rate (UR) for women in Kerala for 2025 (measure PS+SS).",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G3",
+   "task": "Retrieve the annual unemployment rate (UR) for Muslim women nationwide for 2025 (measure PS+SS).",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G4",
+   "task": "Find the unemployment rate (UR) for women and for men in Nagaland for 2025 (measure PS+SS), and the difference (women minus men) in percentage points.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Nagaland"
+    },
+    {
+     "gender": "male",
+     "state": "Nagaland"
+    }
+   ]
+  },
+  {
+   "id": "G5",
+   "task": "Find the unemployment rate for women and men in Nagaland for 2024, and the change in the gender gap between 2024 and 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Nagaland"
+    },
+    {
+     "gender": "male",
+     "state": "Nagaland"
+    }
+   ]
+  },
+  {
+   "id": "G6",
+   "task": "Find the unemployment rate (UR) for urban female youth (age 15-29) and compare it to urban male youth and to rural female youth, noting the gap and any change since 2024.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    },
+    {
+     "sector": "rural",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G7",
+   "task": "Find the labour force participation rate (LFPR) for urban female youth (age 15-29) and compare it to urban male youth and to rural female youth, noting the gap and any change since 2024.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    },
+    {
+     "sector": "rural",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G8",
+   "task": "Find the annual unemployment rate (UR) for women of Muslim religion (all states) for 2025, using PS+SS measure.",
+   "groups": [
+    {
+     "gender": "female",
+     "religion": "Islam"
+    }
+   ]
+  },
+  {
+   "id": "G9",
+   "task": "Find the annual unemployment rate (UR) for women in Kerala state for 2025, using PS+SS measure.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G10",
+   "task": "Find the LFPR for age 15-29, sector urban, by gender and state for 2025 and 2024; compute the gender gap (women minus men) overall and list states with the largest negative gaps; note change in the gap since 2024.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    }
+   ]
+  },
+  {
+   "id": "G11",
+   "task": "Find the UR for age 15-29, sector urban, by gender and state for 2025 and 2024; compute the gender gap (women minus men) overall and list states with the largest positive gaps (higher female unemployment); note change in the gap since 2024.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    }
+   ]
+  },
+  {
+   "id": "G12",
+   "task": "Get UR for religion=Muslim, gender=Female (both urban and rural combined) from the annual 2025 release.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G13",
+   "task": "Get UR for state=Kerala, gender=Female (both urban and rural combined) from the annual 2025 release.",
+   "groups": [
+    {
+     "state": "Kerala",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G14",
+   "task": "Find unemployment rate (UR) for age 15-29, gender female, sector urban for 2025 and change since 2024.",
+   "groups": [
+    {
+     "gender": "female",
+     "sector": "urban"
+    }
+   ]
+  },
+  {
+   "id": "G15",
+   "task": "Find labour force participation rate (LFPR) for age 15-29, gender female, sector urban for 2025 and change since 2024.",
+   "groups": [
+    {
+     "gender": "female",
+     "sector": "urban"
+    }
+   ]
+  },
+  {
+   "id": "G16",
+   "task": "Find the same UR and LFPR for age 15-29, gender male, sector urban for 2025 and change since 2024.",
+   "groups": [
+    {
+     "gender": "male",
+     "sector": "urban"
+    }
+   ]
+  },
+  {
+   "id": "G17",
+   "task": "Find the annual unemployment rate (UR, PS+SS) for women of Muslim religion for 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "religion": "Islam"
+    }
+   ]
+  },
+  {
+   "id": "G18",
+   "task": "Find the annual unemployment rate (UR, PS+SS) for women in Kerala for 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G19",
+   "task": "Find the unemployment rate (UR) for men and women in Nagaland for 2025 (annual, PS+SS) and the difference women‑minus‑men; also give the same difference for All India.",
+   "groups": [
+    {
+     "gender": "male",
+     "state": "Nagaland"
+    },
+    {
+     "gender": "female",
+     "state": "Nagaland"
+    },
+    {
+     "gender": "male"
+    },
+    {
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G20",
+   "task": "Find the change in the women‑minus‑men UR gap in Nagaland between 2024 and 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Nagaland"
+    },
+    {
+     "gender": "male",
+     "state": "Nagaland"
+    }
+   ]
+  },
+  {
+   "id": "G21",
+   "task": "Find the labour force participation rate (LFTR) for urban females aged 15-29 in 2025, and compare it to urban males same age and to rural females same age. Report the difference in percentage points.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    },
+    {
+     "sector": "rural",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G22",
+   "task": "Find the unemployment rate (UR) for urban females aged 15-29 in 2025, and compare it to urban males same age and to rural females same age. Report the difference in percentage points.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    },
+    {
+     "sector": "rural",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G23",
+   "task": "Identify which states have the largest negative gap for urban female youth LFPR relative to the all‑India average, and note if these states also show high urban female youth UR.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G24",
+   "task": "Retrieve the unemployment rate (UR) for Muslim women in Kerala for 2025 (annual, PS+SS measure). Also get the same for 2024 to see change.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G25",
+   "task": "Check the unemployment rate for all women in Kerala 2025 (PS+SS) to compare the religious gap.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G26",
+   "task": "Provide the unemployment rate (UR) for Nagaland for males and females for the 2025 annual release (PS+SS measure), including the percentages.",
+   "groups": [
+    {
+     "state": "Nagaland",
+     "gender": "male"
+    },
+    {
+     "state": "Nagaland",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G27",
+   "task": "Find the unemployment rate (UR) for women aged 15-29 in urban areas and compare it to rural women same age group for 2025. Report the gap in percentage points.",
+   "groups": [
+    {
+     "gender": "female",
+     "sector": "urban"
+    },
+    {
+     "gender": "female",
+     "sector": "rural"
+    }
+   ]
+  },
+  {
+   "id": "G28",
+   "task": "Find the labour force participation rate (LFPR) for women aged 15-29 in urban areas and compare it to rural women same age group for 2025. Report the gap in percentage points.",
+   "groups": [
+    {
+     "gender": "female",
+     "sector": "urban"
+    },
+    {
+     "gender": "female",
+     "sector": "rural"
+    }
+   ]
+  },
+  {
+   "id": "G29",
+   "task": "Identify the change in UR for urban women aged 15-29 between 2024 and 2025. Report the change in percentage points.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G30",
+   "task": "Find the unemployment rate (UR) for Muslim women in Kerala for 2025 (annual, PS+SS measure).",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G31",
+   "task": "Find the unemployment rate (UR) for women and for men in Nagaland for the year 2025 (annual, PS+SS measure).",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Nagaland"
+    },
+    {
+     "gender": "male",
+     "state": "Nagaland"
+    }
+   ]
+  },
+  {
+   "id": "G32",
+   "task": "Calculate the difference in UR between the graduate group and the lowest‑education group (no schooling) for 2025, and also give the same difference for males and females separately.",
+   "groups": [
+    {
+     "education": "7.graduate"
+    },
+    {
+     "education": "1.not literate"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "male"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "female"
+    },
+    {
+     "education": "1.not literate",
+     "gender": "male"
+    },
+    {
+     "education": "1.not literate",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G33",
+   "task": "Find the unemployment rate (UR) by education level and gender, especially for 8.post graduate & above, to see if women have higher UR, using the UR_annual_2025 data.",
+   "groups": [
+    {
+     "education": "8.post graduate & above",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G34",
+   "task": "UR_annual_2025: get unemployment rate (UR) for Kerala, gender women, religion Muslim (measure PS+SS, latest year)",
+   "groups": [
+    {
+     "state": "Kerala",
+     "gender": "female",
+     "religion": "Islam"
+    }
+   ]
+  },
+  {
+   "id": "G35",
+   "task": "UR_annual_2025: get unemployment rate (UR) for Kerala, gender women (all religions, measure PS+SS, latest year)",
+   "groups": [
+    {
+     "state": "Kerala",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G36",
+   "task": "Find the annual unemployment rate (UR) for women in Kerala for 2025 (measure PS+SS).",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G37",
+   "task": "Find the annual unemployment rate (UR) for Muslim women for 2025 (measure PS+SS).",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G38",
+   "task": "Find the unemployment rate (UR) for education level 7.graduate and 8.post graduate & above by gender (male, female) for all India, 2025, and compare gaps between genders.",
+   "groups": [
+    {
+     "education": "7.graduate",
+     "gender": "male"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "female"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "male"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G39",
+   "task": "UR annual 2025: find UR for Muslim women in Kerala (measure PS+SS, all ages).",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G40",
+   "task": "UR annual 2025: find UR for women in Kerala (measure PS+SS, all ages).",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G41",
+   "task": "Find UR (PS+SS) for women by religion (Muslim) for all states (all India total) for latest year 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "religion": "Islam"
+    }
+   ]
+  },
+  {
+   "id": "G42",
+   "task": "Find UR (PS+SS) for women by state (Kerala) for all religions for latest year 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G43",
+   "task": "Find the unemployment rate (UR) for each education category (graduate, post graduate & above, and others) for the latest year 2025, using the PS+SS measure, and compare each to the All India overall UR 2025.",
+   "groups": [
+    {
+     "education": "7.graduate"
+    },
+    {
+     "education": "8.post graduate & above"
+    }
+   ]
+  },
+  {
+   "id": "G44",
+   "task": "Find the change in UR from 2024 to 2025 for each education category (graduate, post graduate & above, others) using the PS+SS measure.",
+   "groups": [
+    {
+     "education": "7.graduate"
+    },
+    {
+     "education": "8.post graduate & above"
+    }
+   ]
+  },
+  {
+   "id": "G45",
+   "task": "Find the unemployment rate by education category (graduate, post graduate & above, others) split by gender for 2025, using the PS+SS measure, and compare male vs female gaps within each education level.",
+   "groups": [
+    {
+     "education": "7.graduate",
+     "gender": "male"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "female"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "male"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G46",
+   "task": "Find unemployment rate (UR) for education levels graduate and post graduate by gender (male and female combined) for 2024 and 2025, and note any gender differences in the gap to overall UR.",
+   "groups": [
+    {
+     "education": "7.graduate",
+     "gender": "male"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "female"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "male"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G47",
+   "task": "Find the unemployment rate (UR) for graduate and post‑graduate education by gender (male, female) (PS+SS, ages 15 +), and the overall gender gap in UR for all education combined.",
+   "groups": [
+    {
+     "education": "7.graduate",
+     "gender": "male"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "female"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "male"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "female"
+    },
+    {
+     "gender": "male"
+    },
+    {
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G48",
+   "task": "UR_annual_2025: get UR for gender=Female, religion=Muslim, state=Kerala",
+   "groups": [
+    {
+     "gender": "female",
+     "religion": "Islam",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G49",
+   "task": "UR_annual_2025: get UR for gender=Female, state=Kerala (all religions)",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G50",
+   "task": "Find UR (PS+SS) for women in Kerala (all religions, all sectors) for 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G51",
+   "task": "Find UR (PS+SS) for Muslim women in India (all states, all sectors) for 2025.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G52",
+   "task": "Find unemployment rate (UR) for urban women aged 15-29 years in 2025 and compare with urban men 15-29 and rural women 15-29, plus overall UR urban women.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    },
+    {
+     "sector": "rural",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G53",
+   "task": "Find labour force participation rate (LFPR) for urban women aged 15-29 years in 2025 and compare with urban men 15-29 and rural women 15-29, plus overall LFPR urban women.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    },
+    {
+     "sector": "rural",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G54",
+   "task": "Find UR 2025 for urban women aged 15-29 and compare to urban men 15-29, and to rural women 15-29; note gaps and change since 2024.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    },
+    {
+     "sector": "rural",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G55",
+   "task": "Find LFPR 2025 for urban women aged 15-29 and compare to urban men 15-29, and to rural women 15-29; note gaps and change since 2024.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "urban",
+     "gender": "male"
+    },
+    {
+     "sector": "rural",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G56",
+   "task": "Check how the gap between women and men varies for education level 8.post graduate & above in 2025 versus 2024.",
+   "groups": [
+    {
+     "gender": "female",
+     "education": "8.post graduate & above"
+    },
+    {
+     "gender": "male",
+     "education": "8.post graduate & above"
+    }
+   ]
+  },
+  {
+   "id": "G57",
+   "task": "Find the unemployment rate (UR, PS+SS) for Muslim women (all states) for 2025.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G58",
+   "task": "Find the unemployment rate (UR, PS+SS) for women in Kerala for 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G59",
+   "task": "Find unemployment rate (UR) annual 2025 for Muslim women (gender female, religion Muslim) using PS+SS measure.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "G60",
+   "task": "Find unemployment rate (UR) annual 2025 for women in Kerala (gender female, state Kerala) using PS+SS measure.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "G61",
+   "task": "Retrieve the unemployment rate (UR) for education levels graduate and post‑graduate (PS+SS measure, ages 15+), overall and broken down by gender (male, female).",
+   "groups": [
+    {
+     "education": "7.graduate"
+    },
+    {
+     "education": "8.post graduate & above"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "male"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "female"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "male"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "C1",
+   "task": "Compare unemployment among Muslim women with unemployment among women in Kerala in 2025.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female"
+    },
+    {
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "C2",
+   "task": "How does unemployment of urban women compare with that of rural men in 2025?",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "female"
+    },
+    {
+     "sector": "rural",
+     "gender": "male"
+    }
+   ]
+  },
+  {
+   "id": "C3",
+   "task": "Find women's unemployment in Kerala and in Tamil Nadu for 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    },
+    {
+     "gender": "female",
+     "state": "Tamil Nadu"
+    }
+   ]
+  },
+  {
+   "id": "C4",
+   "task": "Find the unemployment rate of scheduled tribe women in rural areas in 2025.",
+   "groups": [
+    {
+     "social": "scheduled tribe",
+     "gender": "female",
+     "sector": "rural"
+    }
+   ]
+  },
+  {
+   "id": "C5",
+   "task": "Compare Muslim women in Kerala with Hindu women in Kerala on unemployment in 2025.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female",
+     "state": "Kerala"
+    },
+    {
+     "religion": "Hinduism",
+     "gender": "female",
+     "state": "Kerala"
+    }
+   ]
+  },
+  {
+   "id": "C6",
+   "task": "How does unemployment of women in Kerala compare with men in Tamil Nadu?",
+   "groups": [
+    {
+     "gender": "female",
+     "state": "Kerala"
+    },
+    {
+     "gender": "male",
+     "state": "Tamil Nadu"
+    }
+   ]
+  },
+  {
+   "id": "H1",
+   "task": "Compare unemployment of women in cities and men in villages, in Kerala and in Tamil Nadu, for 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "sector": "urban",
+     "state": "Kerala"
+    },
+    {
+     "gender": "male",
+     "sector": "rural",
+     "state": "Kerala"
+    },
+    {
+     "gender": "female",
+     "sector": "urban",
+     "state": "Tamil Nadu"
+    },
+    {
+     "gender": "male",
+     "sector": "rural",
+     "state": "Tamil Nadu"
+    }
+   ]
+  },
+  {
+   "id": "H2",
+   "task": "Find unemployment for scheduled caste and scheduled tribe women in rural areas, against all rural women, for 2025.",
+   "groups": [
+    {
+     "social": "scheduled caste",
+     "gender": "female",
+     "sector": "rural"
+    },
+    {
+     "social": "scheduled tribe",
+     "gender": "female",
+     "sector": "rural"
+    },
+    {
+     "gender": "female",
+     "sector": "rural"
+    }
+   ]
+  },
+  {
+   "id": "H3",
+   "task": "Find the unemployment rate of Muslim and Hindu women in rural and urban areas for 2025.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female",
+     "sector": "rural"
+    },
+    {
+     "religion": "Islam",
+     "gender": "female",
+     "sector": "urban"
+    },
+    {
+     "religion": "Hinduism",
+     "gender": "female",
+     "sector": "rural"
+    },
+    {
+     "religion": "Hinduism",
+     "gender": "female",
+     "sector": "urban"
+    }
+   ]
+  },
+  {
+   "id": "H4",
+   "task": "Find the unemployment rate of Muslim women in Kerala and of Hindu women in Tamil Nadu in 2025.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female",
+     "state": "Kerala"
+    },
+    {
+     "religion": "Hinduism",
+     "gender": "female",
+     "state": "Tamil Nadu"
+    }
+   ]
+  },
+  {
+   "id": "H5",
+   "task": "Compare unemployment of Muslims in Kerala with unemployment of women in Tamil Nadu, for 2025.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "state": "Kerala"
+    },
+    {
+     "gender": "female",
+     "state": "Tamil Nadu"
+    }
+   ]
+  },
+  {
+   "id": "H6",
+   "task": "Find unemployment of graduates and post graduates, for women in urban areas and for men in rural areas, in 2025.",
+   "groups": [
+    {
+     "education": "7.graduate",
+     "gender": "female",
+     "sector": "urban"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "female",
+     "sector": "urban"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "male",
+     "sector": "rural"
+    },
+    {
+     "education": "8.post graduate & above",
+     "gender": "male",
+     "sector": "rural"
+    }
+   ]
+  },
+  {
+   "id": "H7",
+   "task": "Find the unemployment rate for Kerala, and separately for Muslim women across India, in 2025.",
+   "groups": [
+    {
+     "state": "Kerala"
+    },
+    {
+     "religion": "Islam",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "H8",
+   "task": "Find unemployment among scheduled tribe graduates in 2025.",
+   "groups": [
+    {
+     "social": "scheduled tribe",
+     "education": "7.graduate"
+    }
+   ]
+  },
+  {
+   "id": "H9",
+   "task": "How does unemployment of graduate women in Kerala compare with graduate women across India in 2025?",
+   "groups": [
+    {
+     "education": "7.graduate",
+     "gender": "female",
+     "state": "Kerala"
+    },
+    {
+     "education": "7.graduate",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "H10",
+   "task": "Find unemployment of rural women in Kerala, Tamil Nadu and Odisha in 2025.",
+   "groups": [
+    {
+     "sector": "rural",
+     "gender": "female",
+     "state": "Kerala"
+    },
+    {
+     "sector": "rural",
+     "gender": "female",
+     "state": "Tamil Nadu"
+    },
+    {
+     "sector": "rural",
+     "gender": "female",
+     "state": "Odisha"
+    }
+   ]
+  },
+  {
+   "id": "H11",
+   "task": "Find unemployment of Muslim women, and of all women in Kerala, and of rural men, in 2025.",
+   "groups": [
+    {
+     "religion": "Islam",
+     "gender": "female"
+    },
+    {
+     "gender": "female",
+     "state": "Kerala"
+    },
+    {
+     "sector": "rural",
+     "gender": "male"
+    }
+   ]
+  },
+  {
+   "id": "H12",
+   "task": "Find unemployment of Hindu scheduled caste women in 2025.",
+   "groups": [
+    {
+     "religion": "Hinduism",
+     "social": "scheduled caste",
+     "gender": "female"
+    }
+   ]
+  },
+  {
+   "id": "H13",
+   "task": "Compare unemployment of urban men with rural men, and of urban women with rural women, in Odisha in 2025.",
+   "groups": [
+    {
+     "sector": "urban",
+     "gender": "male",
+     "state": "Odisha"
+    },
+    {
+     "sector": "rural",
+     "gender": "male",
+     "state": "Odisha"
+    },
+    {
+     "sector": "urban",
+     "gender": "female",
+     "state": "Odisha"
+    },
+    {
+     "sector": "rural",
+     "gender": "female",
+     "state": "Odisha"
+    }
+   ]
+  },
+  {
+   "id": "H14",
+   "task": "Find unemployment of men in Tamil Nadu and of Muslim men in 2025.",
+   "groups": [
+    {
+     "gender": "male",
+     "state": "Tamil Nadu"
+    },
+    {
+     "religion": "Islam",
+     "gender": "male"
+    }
+   ]
+  },
+  {
+   "id": "H15",
+   "task": "Find unemployment among women who are graduates in cities of Kerala in 2025.",
+   "groups": [
+    {
+     "gender": "female",
+     "education": "7.graduate",
+     "sector": "urban",
+     "state": "Kerala"
+    }
+   ]
+  }
+ ]
+}

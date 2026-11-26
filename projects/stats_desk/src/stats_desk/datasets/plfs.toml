@@ -81,30 +81,39 @@ missing_in = "education"      # MoSPI's education rows give no age: the band is 
 "15-29 years" = ["15-29", "15–29", "15 to 29"]
 "15-59 years" = ["15-59", "15–59", "15 to 59"]
 
+# `synonyms`: other words for a value, matched by code (an analysis asked for "women", a task
+# naming "cities"); never shown to an agent
 [dimensions.gender]
 total = "person"
+synonyms = { female = ["women", "woman", "females"], male = ["men", "man", "males"] }
 
 [dimensions.sector]
 total = "rural + urban"
+synonyms = { rural = ["rural areas", "villages"], urban = ["urban areas", "towns", "cities", "towns and cities"] }
 
 [dimensions.state]
 total = "All India"
 plural = "states"
 across = true          # correlations (relate) run across its groups
 small_groups = true    # a far-off group may be a small, noisy sample: set apart as an outlier
+synonyms = { Odisha = ["Orissa"], Puducherry = ["Pondicherry"], "Jammu & Kashmir" = ["J&K"] }
 
 [dimensions.religion]
 total = "all"
 empty_is_total = true
+# the data names the religion; people are usually named by its followers
+synonyms = { Hinduism = ["Hindu", "Hindus"], Islam = ["Muslim", "Muslims"], Christianity = ["Christian", "Christians"], Sikhism = ["Sikh", "Sikhs"] }
 
 [dimensions.social]
 total = "all"
 empty_is_total = true
+synonyms = { "scheduled caste" = ["SC", "scheduled castes"], "scheduled tribe" = ["ST", "scheduled tribes"], "other backward class" = ["OBC", "other backward classes"] }
 
 [dimensions.education]
 total = "all"
 empty_is_total = true
 contains = { "9.secondary & above" = "contains 4.secondary to 8.post graduate" }
+synonyms = { "8.post graduate & above" = ["post graduate", "postgraduate", "post graduates", "postgraduates"], "7.graduate" = ["graduates"], "1.not literate" = ["illiterate", "no schooling"] }
 
 # gaps the profiles follow across the other dimensions and states
 [[contrasts]]

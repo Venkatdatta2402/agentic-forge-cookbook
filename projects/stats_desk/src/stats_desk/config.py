@@ -17,6 +17,12 @@ LEAD_MODEL = os.environ.get("STATS_DESK_LEAD_MODEL", "openai/gpt-oss-120b")
 # 120b, not 20b: on day 1's live runs gpt-oss-20b failed the analyst workflow 4 times out of 4
 # (ignored refusals, never passed the codes it was shown); 120b followed it 5 out of 5.
 ANALYST_MODEL = os.environ.get("STATS_DESK_ANALYST_MODEL", "openai/gpt-oss-120b")
+# the one small call that groups a question's or task's names (agents/grouping.py). 120b, not
+# 20b: on the 82 cases of evals/grouping.py (2 runs) 120b had 162 of 164 groups right, every
+# hard case, and none refused by Groq; 20b at low effort had ~85-90% on the easier 67, up to 2
+# valid tasks refused, and up to 1 reply in 9 refused by Groq as malformed
+GROUPING_MODEL = os.environ.get("STATS_DESK_GROUPING_MODEL", "openai/gpt-oss-120b")
+GROUPING_EFFORT = os.environ.get("STATS_DESK_GROUPING_EFFORT", "low")
 
 # set only for load tests, which point the app at a stand-in for Groq
 GROQ_BASE_URL = os.environ.get("STATS_DESK_GROQ_BASE_URL", "https://api.groq.com/openai/v1")

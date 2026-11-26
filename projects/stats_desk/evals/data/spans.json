@@ -2,7 +2,7 @@
  "about": "Fixed inputs for testing each step of the desk on its own (evals/spans.py). The lead's steps use the eval questions (golden.json); the analyst's tasks are separate, written to need different analyses; the brief step's findings are written here and their figures produced by code from the release file. Like golden.json, nothing here may appear in any agent's instructions.",
  "pick": [
   {"id": "Q1", "needed": ["UR_annual_2025", "LFPR_annual_2025"]},
-  {"id": "Q2", "needed": ["UR_monthly_2026-09"]},
+  {"id": "Q2", "needed": ["UR_monthly"]},
   {"id": "Q3", "needed": ["LFPR_annual_2025"]},
   {"id": "Q4", "needed": ["UR_annual_2025"]},
   {"id": "Q5", "needed": ["LFPR_annual_2025", "WPR_annual_2025"]},
@@ -20,7 +20,13 @@
   {"id": "A4", "task": "How has unemployment among 15-29 year olds moved month by month?", "fits": ["series"]},
   {"id": "A5", "task": "Do states where more women are in work also have lower unemployment among women?", "fits": ["relate"]},
   {"id": "A6", "task": "For men's labour force participation, which way of splitting the figures shows the biggest differences?", "fits": ["drill", "compare"]},
-  {"id": "A7", "task": "Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above and the overall UR for all ages, state All India, measure CWS, for years 2024 and 2025; give the gap between each education level and overall and whether the gap widened or narrowed.", "fits": ["gap"]}
+  {"id": "A7", "task": "Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above and the overall UR for all ages, state All India, measure CWS, for years 2024 and 2025; give the gap between each education level and overall and whether the gap widened or narrowed.", "fits": ["gap"]},
+  {"id": "A8", "task": "Compare unemployment among Muslim women and Hindu women in 2025, against all women.", "fits": ["value", "compare", "gap"],
+   "about": "groups named by their followers, not as the data does (Islam, Hinduism): matched by the server, the tables list no longer spells them out"},
+  {"id": "A9", "task": "How does women's labour force participation in Jammu and Kashmir compare with Tamil Nadu and Orissa in 2025?", "fits": ["value", "compare"],
+   "about": "states named as people write them ('and' for '&', an old name): the tables list gives the states as a count only"},
+  {"id": "A10", "task": "UR_annual_2025: get UR for gender=Female, religion=Muslim, state=Kerala", "fits": ["value"],
+   "about": "a task a lead wrote in the tasks span (2026-11-25) for a combination that isn't published (religion x state): does the analyst say so, or pass off a nearer figure as it (the first eval, 2026-11-11)?"}
  ],
  "brief": [
   {"id": "Q1", "findings": [
@@ -68,6 +74,11 @@
    "about": "A plan the lead wrote in the tasks span (2026-11-25), refused by code's task check: graduates on all ages and CWS, neither published for education.",
    "plan": {"approach": "Test whether higher education levels (degree, graduate, post-graduate) are associated with higher unemployment rates and whether this pattern differs by gender or urban-rural location.",
             "tasks": ["Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above compared with the overall UR, using PS+SS measure, all ages, latest year 2025, and also provide the same figures for the other measure (CWS) where available.",
-                      "Find the unemployment rate (UR) by gender for the same education levels (graduate and post-graduate) and compare the gender gap at those education levels with the overall gender gap in UR."]}}
+                      "Find the unemployment rate (UR) by gender for the same education levels (graduate and post-graduate) and compare the gender gap at those education levels with the overall gender gap in UR."]}},
+  {"id": "R2", "question_of": "Q4", "needed": ["UR_annual_2025"],
+   "about": "A plan the lead wrote in the tasks span (2026-11-25), refused by code's task check: Muslim women in Kerala as one group, religion x state not published together.",
+   "plan": {"approach": "Get the figure for the group asked about, and for women in the state, to compare.",
+            "tasks": ["UR_annual_2025: get UR for gender=Female, religion=Muslim, state=Kerala",
+                      "UR_annual_2025: get UR for gender=Female, state=Kerala (all religions)"]}}
  ]
 }

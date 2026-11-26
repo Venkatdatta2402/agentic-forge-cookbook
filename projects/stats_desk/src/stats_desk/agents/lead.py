@@ -46,6 +46,7 @@ from .agent import FORM, Agent, Stopped, answer
 from .analyst import BUDGET as ANALYST_BUDGET
 from .analyst import INDICATORS, Finding, check_numbers, run_analyst, tables_for, ways_to_say
 from .checks import check, outliers_in
+from .grouping import groups_in
 from .record import Record, now
 
 # a brief saying something isn't published (matched on plain()), and the server's refusals that say so
@@ -224,19 +225,45 @@ def without_ids(text: str) -> str:
     return FINDING_IDS.sub("", text or "")
 
 
-def profile_list(tables_text):
-    """The profiles, each with the table it comes from and what that table holds, from the
-    `tables` result: what the lead needs to choose which to read, and no more."""
+def _table_lines(tables_text) -> dict:
+    """{table: [title, periods, measure, fields, published together (if any)]} from the tables list."""
     tables = {}
     for line in tables_text.split("\n"):
         m = re.match(r"(\w+_(?:annual|monthly)): (.*)$", line)
         if m:
-            tables[m[1]] = m[2]
+            tables[m[1]] = m[2].split("; ", 4)
+    return tables
+
+
+def _table_of(profile_name):
+    return "_".join(profile_name.split("_")[:2]).lower()
+
+
+def published(tables_text) -> str:
+    """What the tables with limits publish together, in one line; tables split alike say it once
+    (the three annual tables). A table without limits isn't named: said of the monthly tables
+    ("age, gender, sector, each with every other"), it made them look the fullest, and the lead
+    read every profile for a question about young urban women (span tests: 2 of 2)."""
+    said = {}
+    for table, (*_, together) in ((t, parts) for t, parts in _table_lines(tables_text).items() if len(parts) > 4):
+        said.setdefault(together.removeprefix("published together: "), []).append(table)
+    return "published together: " + " | ".join(f"{', '.join(ts)}: {text}" for text, ts in said.items()) if said else ""
+
+
+def profile_list(tables_text):
+    """The profiles, each with the table it comes from, its periods and fields, from the
+    `tables` result, and what the tables publish together, said once for tables split alike:
+    what the lead needs to choose which to read, and no more. Each table's line used to carry its
+    own (683 tokens on every lead call, the three annual tables saying the same). Moved to the
+    profile replies instead, the lead couldn't tell which table holds the question's groups
+    together and read all six profiles (span tests: 2 of 2, 3 annual ones with it in the list)."""
+    tables = _table_lines(tables_text)
     names = next(line for line in tables_text.split("\n") if line.startswith("profiles: "))
     out = ["Profiles you can read:"]
     for name in names.removeprefix("profiles: ").split(", "):
-        table = "_".join(name.split("_")[:2]).lower()
-        out.append(f"- {name}: from table {table} -- {tables.get(table, '')}")
+        title, periods, measure, fields, *_ = tables.get(_table_of(name), ["", "", "", ""])
+        out.append(f"- {name}: from table {_table_of(name)} -- {title}; {periods}; {measure}; {fields}")
+    out += [line for line in [published(tables_text)] if line]
     out += [line for line in tables_text.split("\n") if line.startswith("what the groups mean: ")]
     return "\n".join(out)
 
@@ -271,14 +298,73 @@ def named_in(task, values):
     settings = [(f, v) for f in SETTINGS for v in values.get(f, [])
                 if any(w in said for w in ways_to_say(f, v))]
     groups = {}
+    for f, v in names_in(task, values):
+        groups.setdefault(f, v)
+    return settings, groups
+
+
+def names_in(task, values) -> list[tuple[str, str]]:
+    """Every group a task names, [(field, value)] in the order the task names them: as written in
+    the data, with "and" for "&", or in the description's other words (span tests: a task naming
+    the followers of a religion went unchecked). A name inside a longer one that is matched too
+    doesn't count ("graduate" in "post graduate"). Settings and totals are no group."""
+    said = re.sub(r"(?<=\w)-(?=\w)", " ", _words(task))          # "post-graduate" as "post graduate"
+    spans = []                                                 # (start, end, field, value)
     for f, vs in values.items():
         if f in SETTINGS:
             continue
         for v in vs:
+            if v == TOTAL.get(f):
+                continue
             name = re.sub(r"^\d+\.", "", v).lower()
-            if v != TOTAL.get(f) and re.search(rf"(?<!\w){re.escape(name)}(?!\w)", said):
-                groups.setdefault(f, v)
-    return settings, groups
+            names = {name, name.replace(" & ", " and "), *(_words(s).replace("-", " ") for s in DATASET.synonyms(f, v))}
+            spans += [(m.start(), m.end(), f, v) for n in names
+                      for m in re.finditer(rf"(?<!\w){re.escape(n)}(?!\w)", said)]
+    kept = [s for s in spans if not any(o[0] <= s[0] and s[1] <= o[1] and o[1] - o[0] > s[1] - s[0] for o in spans)]
+    first = {}
+    for start, _, f, v in sorted(kept):
+        first.setdefault((f, v), start)
+    return [fv for fv, _ in sorted(first.items(), key=lambda x: x[1])]
+
+
+def tables_of_task(fields, task) -> list[str]:
+    """The tables a task can mean: its indicator's (all if it names none), annual or monthly when
+    the task's own words say which (a year alone: annual)."""
+    wanted = {i for i, pattern in INDICATORS.items() if re.search(pattern, task, re.I)} or set(INDICATORS)
+    months = r"\bmonth|\b\d{4}-\d{2}\b|\b(?:" + "|".join(m[:3] for m in MONTHS) + r")[a-z]*\b"
+    kind = ("monthly" if re.search(months, task, re.I) else
+            "annual" if re.search(r"\bannual|\byears?\b|\b20\d\d\b", task, re.I) else None)
+    return [t for t in fields if t.split("_")[0] in wanted and (kind is None or t.endswith(kind))]
+
+
+def _named(group: dict) -> str:
+    return ", ".join(f"{v} ({f})" for f, v in group.items())
+
+
+async def unpublished_group(analyses, tables_text, task, group: dict):
+    """The server's refusal of one group of a task (e.g. {religion, gender, state}) as not
+    published together in any table the task can mean, else None. Code's calls, no tokens; the
+    probes are not kept as results. A group published only on another age group or measure is
+    published: that is `unpublished_settings`'s to say."""
+    fields, _ = catalogue(tables_text)
+    refusals = []
+    for table in tables_of_task(fields, task):
+        if any(k not in fields[table] for k in group):
+            continue
+        try:
+            text = await analyses.call("value", table=table, where=group)
+        except ToolError as refused:
+            if "not published together" not in str(refused):
+                return None                    # refused for something else: not this check's to say
+            refusals.append(str(refused))
+            continue
+        rid = text.partition("\n")[0].removeprefix("result ").strip()
+        analyses.results.pop(rid, None)
+        analyses.calls.pop(rid, None)
+        return None
+    if not refusals:
+        return None
+    return f"{_named(group)} as one group: {refusals[0]}"
 
 
 async def unpublished_settings(analyses, tables_text, task):
@@ -295,13 +381,7 @@ async def unpublished_settings(analyses, tables_text, task):
     measure_field, band_field = DATASET.measure, DATASET.band
     measures = [v for f, v in settings if f == measure_field] or [None]
     ages = [v for f, v in settings if f == band_field] or [None]
-    wanted = {i for i, pattern in INDICATORS.items() if re.search(pattern, task, re.I)} or set(INDICATORS)
-    tables = [t for t in fields if t.split("_")[0] in wanted]
-    # annual or monthly, when the task's own words say which (a year alone: annual)
-    months = r"\bmonth|\b\d{4}-\d{2}\b|\b(?:" + "|".join(m[:3] for m in MONTHS) + r")[a-z]*\b"
-    kind = ("monthly" if re.search(months, task, re.I) else
-            "annual" if re.search(r"\bannual|\byears?\b|\b20\d\d\b", task, re.I) else None)
-    tables = [t for t in tables if kind is None or t.endswith(kind)]
+    tables = tables_of_task(fields, task)
     for field, group in [*groups.items(), (None, None)]:
         for measure in measures:
             for age in ages:
@@ -394,6 +474,7 @@ class Investigation:
         self.usage = None
         self.tables = ""
         self.probed_unpublished = ""      # the server's refusal of the question's groups taken together
+        self.question_note = ""           # the question's groups that aren't published (read_question)
         self.unfinished: dict = {}        # a resumed question's tasks that never finished
 
     @property
@@ -458,16 +539,74 @@ class Investigation:
 
     async def check_tasks(self, tasks: list):
         """Refuse the tasks, none given out, when one names a measure or age group its groups aren't
-        published on (`unpublished_settings`)."""
-        problems = []
-        for n, task in enumerate(tasks, 1):
-            found = await unpublished_settings(self.analyses, self.tables, task)
-            if found:
-                problems.append(f"task {n}: {found}")
-        if problems:
-            raise ToolError("No task was given out: " + "; ".join(problems) + ". Give the tasks again without "
-                            f"the {DATASET.measure} or {DATASET.band} group the question doesn't ask about: "
-                            "analysts use the published one.")
+        published on (`unpublished_settings`), or a group whose names aren't published together
+        (`unpublished_groups`)."""
+        settings = [await unpublished_settings(self.analyses, self.tables, task) for task in tasks]
+        groups = await asyncio.gather(*(self.unpublished_groups(task) for task in tasks))
+        problems = [f"task {n}: {p}" for n, (s, g) in enumerate(zip(settings, groups), 1) for p in [s, *g] if p]
+        if not problems:
+            return
+        fixes = []
+        if any(settings):
+            fixes.append(f"without the {DATASET.measure} or {DATASET.band} group the question doesn't ask about: "
+                         "analysts use the published one")
+        if any(groups):
+            fixes.append("with the nearest groups that are published, each on its own, and say in the brief "
+                         "that the combination itself isn't published")
+        raise ToolError("No task was given out: " + "; ".join(problems) + ". Give the tasks again "
+                        + "; and ".join(fixes) + ".")
+
+    async def read_question(self):
+        """Before the lead's first call: the question's groups whose names aren't published
+        together, and the nearest that are, said to the lead in one note with the question
+        (`question_note`), so it plans from them rather than be refused for them. The same small
+        call as the task check's (grouping.py), on the question: the asker's words say which
+        groups are meant; the task check, on each task, stays, as what the analyst will act on.
+        Nothing is said when every group is published. Its refusal is the evidence a brief needs
+        to say the combination isn't published (`_refused_as_unpublished`)."""
+        self.question_note = ""
+        _, values = catalogue(self.tables)
+        names = names_in(self.question or "", values)
+        if len({f for f, _ in names}) < 2:
+            return
+        lines = []
+        for group in await groups_in(self.question, names) or []:
+            if len(group) < 2:
+                continue
+            refused = await unpublished_group(self.analyses, self.tables, self.question, group)
+            if not refused:
+                continue
+            self.probed_unpublished = self.probed_unpublished or refused
+            # the nearest: the group with one of its names left out, each published one
+            nearest = []
+            for f in group:
+                part = {k: v for k, v in group.items() if k != f}
+                if not await unpublished_group(self.analyses, self.tables, self.question, part):
+                    nearest.append(part)
+            lines.append(f"- {_named(group)}: not published together. The nearest that are, each on its own: "
+                         + ("; ".join(_named(p) for p in nearest) or "none"))
+        if lines:
+            self.question_note = "\n".join(["The question's groups, as code checked them with the server:", *lines])
+
+    async def unpublished_groups(self, task) -> list[str]:
+        """The server's refusal of each group a task asks figures for whose names aren't published
+        together. Code finds the names (`names_in`); how the task puts them together is read by one
+        small call (grouping.py), made only when the names come from two fields or more. Span
+        tests: a lead put "Muslim women" and "Kerala" in one task in 1 of 4 plans, a combination
+        not published; a check on the names alone couldn't tell it from "Muslim women against women
+        in Kerala", which is. Eval (evals/grouping.py, every such task leads wrote): see DESIGN.md."""
+        _, values = catalogue(self.tables)
+        names = names_in(task, values)
+        if len({f for f, _ in names}) < 2:
+            return []
+        found = await groups_in(task, names) or []
+        out = []
+        for group in found:
+            if len(group) > 1:
+                refused = await unpublished_group(self.analyses, self.tables, task, group)
+                if refused:
+                    out.append(refused)
+        return out
 
     async def _task(self, fid, task):
         """One analyst on one task, then code's checks on its finding."""
@@ -676,7 +815,7 @@ class Investigation:
         """What the lead is shown before the question: the profiles by name and table, for a
         follow-up what code writes of the earlier question, and for a resumed question what it
         had found before it stopped -- all from the record."""
-        parts = [profile_list(self.tables), follow_up_context(self.record), self.resume_context()]
+        parts = [profile_list(self.tables), self.question_note, follow_up_context(self.record), self.resume_context()]
         return "\n\n".join(p for p in parts if p)
 
     def resume_context(self) -> str:
@@ -716,6 +855,7 @@ class Investigation:
         try:
             with meter.metered() as usage:
                 self.usage = usage
+                await self.read_question()            # inside the meter: its call is the question's
                 result = await answer(self.lead(), self.question, BriefForm, context=self.context(),
                                       transcript=self.transcripts.setdefault("lead", []))
         finally:                    # also when stopped halfway: the record keeps what was spent

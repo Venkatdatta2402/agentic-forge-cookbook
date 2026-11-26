@@ -10,7 +10,7 @@ import json
 import re
 
 import pytest
-from stubs import call, calls, plan
+from stubs import call, calls, plan, say
 
 from stats_desk.agents.agent import Stopped
 from stats_desk.agents.lead import MAX_ANALYSTS, Investigation, investigate, profile_list
@@ -22,15 +22,21 @@ from stats_desk.core.tools import ToolError
 
 
 class Routed:
-    """Replies from one script per agent: 'lead', 'analyst <task>'."""
+    """Replies from one script per agent: 'lead', 'analyst <task>', and 'task check' (the task
+    check's grouping call; without a script it finds no groups, so every task goes through)."""
 
     def __init__(self, scripts):
         self.scripts = scripts
         self.asked = []
 
     async def create(self, **request):
+        from stats_desk.agents.grouping import INSTRUCTIONS
         messages = request["messages"]
         system, users = messages[0]["content"], [m["content"] for m in messages if m["role"] == "user"]
+        if system == INSTRUCTIONS:
+            self.asked.append(("task check", request))
+            script = self.scripts.get("task check")
+            return (script.pop(0) if script else call("groups", groups=[])), {}
         if system.startswith("You are the lead"):
             key = "lead"
         else:
@@ -166,20 +172,74 @@ async def test_the_plan_is_kept_and_its_later_tasks_come_back_with_the_findings(
 
 
 async def test_the_lead_plans_from_what_is_published_together(release_path):
-    """The list of profiles says which fields MoSPI splits together (span tests:
-    without it 2 of 3 plans asked for young people by education, which isn't published), and
-    what the groups mean (live run: "cities" taken to be unpublished), and which measure a split
-    is limited to (span test: a lead's task asked for education on CWS)."""
+    """The list of profiles says which fields MoSPI splits together (span tests: without it 2
+    of 3 plans asked for young people by education, which isn't published; and the lead read
+    every profile to find which table holds the question's groups), which measure a split is
+    limited to (span test: a lead's task asked for education on CWS), and what the groups mean
+    (live run: "cities" taken to be unpublished). Said once for tables split alike."""
     async with connect(server=create(release_path)) as analyses:
         listed = profile_list(await analyses.call("tables"))
-    assert "published together: " in listed and "education: only by" in listed
     assert "sector urban = towns and cities" in listed
-    ur = next(line for line in listed.split("\n") if "from table ur_annual" in line)
+    together = next(line for line in listed.split("\n") if line.startswith("published together: "))
+    assert together.startswith("published together: ur_annual, wpr_annual: age group")
     # the test release has CWS only in its totals: every split is on PS+SS only
-    assert "education: only by gender, sector (ages 15 years and above, measure PS+SS only)" in ur
-    assert "age group 15-29 years: only by gender, sector, state (measure PS+SS only)" in ur
+    assert "education: only by gender, sector (ages 15 years and above, measure PS+SS only)" in together
+    assert "age group 15-29 years: only by gender, sector, state (measure PS+SS only)" in together
+    assert together.count("education: only by") == 1
     monthly = next(line for line in listed.split("\n") if "from table ur_monthly" in line)
-    assert "(measure" not in monthly          # one measure: nothing to limit
+    assert "measure CWS;" in monthly
+
+
+async def test_a_task_whose_group_isnt_published_together_is_refused_and_a_comparison_isnt(release_path, model):
+    """The same names, put together two ways: one group (religion x state isn't published) or
+    two groups set against each other (both are). The grouping call reads which; code asks the
+    server. A reply that can't be read refuses nothing."""
+    one = "Find the UR for Muslim women in Kerala for 2025."
+    two = "Compare the UR of Muslim women with that of women in Kerala for 2025."
+    model.steps += [call("groups", groups=[{"religion": "Islam", "gender": "female", "state": "Kerala"}]),
+                    call("groups", groups=[{"religion": "Islam", "gender": "female"}, {"gender": "female", "state": "Kerala"}]),
+                    say("no idea")]
+    async with connect(server=create(release_path)) as analyses:
+        run = Investigation(analyses, "q")
+        run.tables = await analyses.call("tables")
+        before = set(analyses.results)
+        with pytest.raises(ToolError, match=r"task 1: Islam \(religion\), female \(gender\), Kerala \(state\) as one group: "
+                                            r"ur_annual: gender x religion x state is not published together.*"
+                                            "the nearest groups that are published, each on its own"):
+            await run.check_tasks([one])
+        await run.check_tasks([two])
+        await run.check_tasks([one])                     # unreadable reply: let through
+        assert set(analyses.results) == before           # the probes are not kept as results
+    assert "Kerala" in model.requests[0]["messages"][1]["content"]
+    # a task naming one field only needs no call
+    async with connect(server=create(release_path)) as analyses:
+        run = Investigation(analyses, "q")
+        run.tables = await analyses.call("tables")
+        await run.check_tasks(["Find the UR in Kerala and Tamil Nadu for 2025."])
+    assert len(model.requests) == 3
+
+
+async def test_the_lead_is_told_up_front_which_of_the_questions_groups_arent_published(release_path, model):
+    """Before the lead's first call: the question's groups, read by the same small call, checked
+    with the server, and the nearest published ones for any that aren't, in the lead's context.
+    Nothing is said, and no call made, when the question names one field only."""
+    model.steps += [call("groups", groups=[{"religion": "Islam", "gender": "female", "state": "Kerala"}])]
+    async with connect(server=create(release_path)) as analyses:
+        run = Investigation(analyses, "Is unemployment higher among Muslim women in Kerala?")
+        run.tables = await analyses.call("tables")
+        before = set(analyses.results)
+        await run.read_question()
+        assert set(analyses.results) == before              # the probes are not kept as results
+        note = run.question_note
+        assert note.startswith("The question's groups, as code checked them with the server:")
+        assert ("- Islam (religion), female (gender), Kerala (state): not published together. The nearest that are, "
+                "each on its own: female (gender), Kerala (state); Islam (religion), female (gender)") in note
+        assert note in run.context() and run._refused_as_unpublished()      # its refusal is the brief's evidence
+        # one field only: no call, no note
+        other = Investigation(analyses, "Is unemployment higher among women than men?")
+        other.tables = run.tables
+        await other.read_question()
+        assert other.question_note == "" and len(model.requests) == 1
 
 
 async def test_a_task_naming_a_setting_its_groups_arent_published_on_is_caught(release_path):
@@ -344,7 +404,9 @@ async def test_an_analyst_gets_only_the_tables_of_the_indicator_its_task_names(r
         tables = await analyses.call("tables")
     unemployment = tables_for(tables, "How did unemployment of young women change since 2024?")
     assert "ur_annual:" in unemployment and "wpr_annual:" not in unemployment and "profiles:" not in unemployment
-    assert "state values:" in unemployment                            # the spellings stay
+    # a long list as a count (the analyses match the name); a short one spelled out
+    assert "state values: 37, All India the total; name one as the task does" in unemployment
+    assert "Kerala" not in unemployment and "education values: 1.not literate" in unemployment
     # "unemployed" is not "employed": only the unemployment tables
     assert "wpr_annual:" not in tables_for(tables, "Which groups are most often unemployed?")
     assert "wpr_annual:" in tables_for(tables, "How many women are employed in cities?")

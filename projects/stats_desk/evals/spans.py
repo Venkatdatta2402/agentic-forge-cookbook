@@ -57,6 +57,20 @@ def _call(name, args, result, kind="ok"):
             {"role": "tool", "tool_call_id": cid, "name": name, "kind": kind, "content": result}]
 
 
+async def _current(analyses, names):
+    """Profile names as the release now has them: a monthly profile is named for its latest month,
+    so spans.json writes it without one ("UR_monthly")."""
+    tables = await analyses.call("tables")
+    have = next(line for line in tables.split("\n") if line.startswith("profiles: ")).removeprefix("profiles: ").split(", ")
+    return [n if n in have else next((p for p in have if p.startswith("_".join(n.split("_")[:2]) + "_")), n)
+            for n in names]
+
+
+async def _profiles(analyses, names):
+    """The lead's profile call and its reply."""
+    return _call("profile", {"names": names}, await analyses.call("profile", names=names))
+
+
 async def _lead_turn(analyses, question, history):
     """One call of the lead, as the investigation would make it at that point."""
     from stats_desk.agents.agent import form_tool, system
@@ -66,6 +80,7 @@ async def _lead_turn(analyses, question, history):
     from stats_desk.core.tools import Registry
     run = Investigation(analyses, question)
     run.tables = await analyses.call("tables")
+    await run.read_question()
     lead = run.lead()
     holder = []
     form = form_tool(BriefForm, holder, build=lead.form_build)
@@ -95,8 +110,7 @@ async def tasks(analyses, case, question):
     plan. No analyst runs."""
     from stats_desk.agents.lead import FIRST_ROUND
     from stats_desk.core.tools import ToolError
-    profiles = await analyses.call("profile", names=case["needed"])
-    history = _call("profile", {"names": case["needed"]}, profiles)
+    history = await _profiles(analyses, case["needed"])
     decision, _, run = await _lead_turn(analyses, question, history)
     calls = _decision_calls(decision)
     asked = [args for name, args in calls if name == "ask_analysts"]
@@ -134,8 +148,7 @@ async def retask(analyses, case, question):
     sent a fixed plan (spans.json, a plan a lead really wrote) and code's task check refused it,
     the refusal written by that check now. Checked: it gives the tasks again, and code passes them."""
     from stats_desk.core.tools import ToolError
-    profiles = await analyses.call("profile", names=case["needed"])
-    history = _call("profile", {"names": case["needed"]}, profiles)
+    history = await _profiles(analyses, case["needed"])
     from stats_desk.agents.lead import Investigation
     run = Investigation(analyses, question)
     run.tables = await analyses.call("tables")
@@ -202,15 +215,15 @@ async def brief(analyses, case, question):
         finding = Finding(f"f{n}", spec["task"], spec["claim"], ids,
                           figures={i: compact(analyses.results[i]) for i in ids})
         findings.append(await check(analyses, finding))
-    needed = next(p for p in cases()["pick"] if p["id"] == case["id"])["needed"]
-    profiles = await analyses.call("profile", names=needed)
-    history = (_call("profile", {"names": needed}, profiles)
+    needed = await _current(analyses, next(p for p in cases()["pick"] if p["id"] == case["id"])["needed"])
+    history = (await _profiles(analyses, needed)
                + _call("ask_analysts", {"approach": "Test what the question asks.", "tasks": [f.task for f in findings]},
                        "\n\n".join(f.text() for f in findings)))
     # the lead's real hand-in loop from here: refusals handed back, a brief written as text read
     # as one, up to 3 tries. Its tasks are all used, so it can't start analysts in a test.
     run = Investigation(analyses, question)
     run.tables = await analyses.call("tables")
+    await run.read_question()
     run.findings = {f.id: f for f in findings}
     run.findings.update({f"f{n}": None for n in range(len(findings) + 1, MAX_ANALYSTS + 1)})
     transcript = []
@@ -248,6 +261,8 @@ async def run_case(span, case, question):
     from stats_desk.core import meter, trace
     began = time.monotonic()
     async with connect() as analyses:
+        if case.get("needed"):
+            case = {**case, "needed": await _current(analyses, case["needed"])}
         with meter.metered() as usage, trace.Trace(f"span {span}: {case['id']}", via="span",
                                                    tags=[span, case["id"]]) as recorded:
             out = await STEPS[span](analyses, case, question)

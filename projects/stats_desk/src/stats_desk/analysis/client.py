@@ -77,6 +77,18 @@ class Analyses:
                 raise
             return observed.output
 
+    def cited_ids(self, cited: list[str]) -> list[str]:
+        """The result ids a hand-in cites, read by their shape (analysis-6 hex), not by how they
+        were written. Saved runs: all 12 ids refused as unknown were real ones written as the
+        result's first line ("result value-760a28"), 8 of them two to an entry ("result
+        series-e62483, result trend-ef6079"). An entry with no known id is kept as written, to be
+        refused: a made-up id must not pass."""
+        out = []
+        for entry in cited:
+            known = [i for i in RESULT_ID.findall(entry) if i in self.results]
+            out += known or [entry]
+        return list(dict.fromkeys(out))
+
     def unbacked(self, summary: str, cited: list[str]) -> list[str]:
         """The numbers in `summary` that no cited result shows (signs aside: "fell 0.1" is
         backed by "-0.1"). A number the agent worked out itself is unbacked on purpose: the

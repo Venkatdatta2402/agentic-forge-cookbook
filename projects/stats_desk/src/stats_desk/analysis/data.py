@@ -7,6 +7,7 @@ get a stated default. So a request always points at MoSPI's own published rows. 
 computes a rate; when a combination isn't published, the answer says what is.
 """
 
+import difflib
 import re
 from dataclasses import dataclass, field
 
@@ -39,9 +40,14 @@ def _period(value):
 
 def _bare(value) -> str:
     """A value as matched against what was asked: no number in front ("7.graduate" -> "graduate"),
-    any case, hyphens as spaces."""
+    any case, hyphens as spaces, "&" as "and"."""
     text = re.sub(r"^\s*\d+\s*\.\s*", "", str(value)).lower()
+    text = re.sub(r"\s*&\s*", " and ", text)
     return " ".join(re.sub(r"[-‐‑–]", " ", text).split())
+
+
+SHOWN = 12          # a field with more values than this is shown to analysts as a count (analyst.py)
+CLOSE = 0.9         # a misspelling this close to one value only is read as that value
 
 
 @dataclass
@@ -109,7 +115,10 @@ class Table:
     def _check(self, f, value):
         """A value as published, or the one it plainly means: MoSPI numbers some groups
         ("7.graduate"), and an analyst asking for "graduate" means that one, not "8.post graduate
-        & above" -- a live run lost two analysts to that refusal, each repeating it."""
+        & above" -- a live run lost two analysts to that refusal, each repeating it. Also a value
+        in other words the dataset's description gives (a religion's people for the religion, women
+        for female), "and" for "&", and a misspelling close to one value only. Analysts are shown
+        a long list of values as a count only, so the match is made here."""
         if value in self.values[f]:
             return value
         total = f"; its total is '{TOTAL[f]}' (or write total)" if f in TOTAL else "; it has no total"
@@ -120,14 +129,21 @@ class Table:
                 return TOTAL[f]
             raise Refusal(f"{self.name}: {f} has no total. Values: {', '.join(map(str, self.values[f]))}")
         want = _bare(value)
-        exact = [v for v in self.values[f] if _bare(v) == want]
+        exact = [v for v in self.values[f] if want in {_bare(v), *map(_bare, DATASET.synonyms(f, v))}]
         close = exact or [v for v in self.values[f] if want and want in _bare(v)]
         if len(close) == 1:
             return close[0]
         if close:
             raise Refusal(f"{self.name}: {f} '{value}' could be any of {', '.join(map(str, close))}: "
                           "give one of them exactly as written here")
-        listed = self.values[f] if len(self.values[f]) <= 40 else self.values[f][:40] + ["..."]
+        bare = {_bare(v): v for v in self.values[f]}
+        spelled = difflib.get_close_matches(want, bare, n=2, cutoff=CLOSE)
+        if len(spelled) == 1:
+            return bare[spelled[0]]
+        # the closest first, then the rest (a long list cut, with the closest kept)
+        nearest = [bare[b] for b in difflib.get_close_matches(want, bare, n=5, cutoff=0.6)]
+        rest = [v for v in self.values[f] if v not in nearest]
+        listed = nearest + rest if len(self.values[f]) <= 40 else nearest + rest[:40 - len(nearest)] + ["..."]
         # a value of another field put under this one (span test: "All ages", an age group, given
         # as the education to compare against, where education's total "all" was meant)
         other = next((g for g in self.fields if g != f and want

@@ -45,6 +45,24 @@ def test_a_group_asked_for_without_mospis_number_is_the_one_it_names(release):
     assert figures("Post Graduate") == figures("8.post graduate & above")
 
 
+def test_a_group_in_other_words_or_misspelled_is_the_one_it_names(release):
+    """Analysts are shown a long list of values as a count only (analyst.tables_for): the name
+    is matched here. Other words from the dataset's description, "and" for "&", a misspelling
+    close to one value only; else the closest come first in the refusal."""
+    def figures(**asked):
+        return A.value(release, "ur_annual", asked).split("\n", 1)[1]
+    assert figures(religion="Muslims", gender="women") == figures(religion="Islam", gender="female")
+    assert figures(sector="cities") == figures(sector="urban")
+    assert figures(state="Jammu and Kashmir") == figures(state="Jammu & Kashmir")
+    assert figures(state="Orissa") == figures(state="Odisha")
+    assert figures(state="Maharastra") == figures(state="Maharashtra")
+    assert figures(measure="usual status") == figures(measure="PS+SS")
+    with pytest.raises(Refusal, match=r"no state 'Tamilnad'.*Values: Tamil Nadu, "):     # not close enough to take
+        figures(state="Tamilnad")
+    with pytest.raises(Refusal, match="no gender 'man and woman'"):     # not a near spelling of one
+        figures(gender="man and woman")
+
+
 def test_what_is_published_only_for_another_age_group_comes_on_that_one_said_so(release):
     """Eval: told "published only for age 15 years and above", an analyst reported the figures by
     education as not published, and the brief said MoSPI doesn't publish them."""
@@ -319,6 +337,11 @@ async def test_a_hand_in_number_not_in_its_cited_results_is_caught(release_path)
         assert analyses.unbacked("Women 18.9% vs men 11.8%, a gap of 7.0 points.", [rid]) == ["7.0"]
         with pytest.raises(Exception, match="no result value-000000"):
             analyses.unbacked("3.1%", ["value-000000"])
+        # ids read by their shape, however written (saved runs: "result <id>", two to an entry);
+        # an entry with no real id is kept, to be refused
+        other = (await invoke(tools["value"], {"table": "ur_annual"})).content.split("\n")[0].removeprefix("result ")
+        assert analyses.cited_ids([f"result {rid}, result {other}", f"[{rid}]"]) == [rid, other]
+        assert analyses.cited_ids(["value-000000", "my gap"]) == ["value-000000", "my gap"]
 
 
 @pytest.mark.skipif(not RELEASE_PATH.exists(), reason="no release file built")

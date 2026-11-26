@@ -164,6 +164,84 @@ Still PLFS-shaped, for Phase 3 (a second dataset) to settle: exactly two setting
 an overlapping band (`role` in the file); one dimension to correlate across; rates in %; annual
 and monthly tables; MoSPI's own per-dataset selectors in `release/mospi.py`; the web page's text.
 
+**Phase 2: what each call carries no longer grows with every value and table** (2026-11-25).
+Tokens per call, measured with no model call:
+
+| | before | after |
+|---|---|---|
+| lead's list of profiles (every lead call) | 683 | 479 |
+| analyst's tables list (every analyst call) | 709 | 615 |
+
+- **Long value lists are matched, not shown.** A field with more than 12 values (the 37 states;
+  CPI's items later) is given to analysts as a count. The server matches what they write
+  (`Table._check`): the description's synonyms (a religion's followers for the religion, "women"
+  for female, "cities" for urban, old state names), "and" for "&", a misspelling close to one
+  value only; on a miss the refusal lists the closest values first. This is how semantic layers
+  handle fields with many values (Cortex Analyst's synonyms and value search). The lead's task
+  check matches the same synonyms, so a task naming "Muslim women" on CWS is now caught; before,
+  only "Islam" was. Span tests (2 each): an analyst asked about "Muslim" and "Hindu" women, and
+  one about "Jammu and Kashmir", "Tamil Nadu" and "Orissa", each handed in on the right groups
+  (4 of 4), with no refused name.
+- **What is published together is said once for tables split alike** (the three annual tables
+  repeated it, ~165 tokens each), and only for tables with limits. Two tries that didn't work,
+  both span-tested. Moving it into the profile replies: the lead read all six profiles, Q8 in 3
+  of 4 picks while the list said it would come with them, and Q1 in 2 of 2 after that line went
+  (2 of 2 read only the annual three on the old list): it couldn't tell which table held the
+  question's groups together. Saying of the monthly tables that every field goes with every
+  other made them look the fullest: Q1 read all six, 2 of 2. As built: pick Q1 and Q8 without
+  all six, 4 of 4; tasks Q4 and retask R1 pass code's task check, 4 of 4 (tasks Q1 and Q8, 4 of
+  4, on the list before its monthly entry went).
+- No lookup tools were added: each use would be a model call (~3k tokens), more than the lists
+  it replaces.
+- **A task asking for a group whose names aren't published together is refused** (Q4's lead put
+  Muslim women and Kerala in one task in 1 of 4 span plans on 2026-11-25, and in 1 of 5 eval
+  runs; given it, an analyst said so, 2 of 2, at ~11k tokens, and in the first eval passed off the
+  all-India figure as Kerala's). Code finds the names (`names_in`; a name inside a longer one
+  doesn't count, so "post graduate" is not also "graduate"), but not how the sentence puts them
+  together: "Muslim women in Kerala" is one group, "Muslim women against women in Kerala" two.
+  One small call (`agents/grouping.py`, gpt-oss-20b, ~430 tokens) reads that, only for tasks
+  naming two fields or more (61 of the 207 tasks leads have written); code then asks the server
+  whether each group is published (no tokens). A reply it can't read, or a failed call, lets the
+  task through: a misread must never block a valid task.
+  Measured on every such task leads wrote, labelled by hand, plus 6 written to set the same
+  names together and apart (`evals/grouping.py`, 67 cases): what the reply looks like mattered
+  most. A list of names was read two ways (one group, or one field's names): 117 and then 106 of
+  134 right, 2 valid tasks refused. Each group as an object, one value per field from the names
+  found: 61 of 67 right, none refused wrongly, none missed; with the groups read past a stray
+  quote that made Groq refuse 4 replies, 62 of 67 on the same replies scored offline. The rest
+  give fewer combinations than meant ("women and men in Nagaland" as women, men, Nagaland), never
+  a wrong one. Retask span R2 (the lead's plan with that task, refused): the lead gave published
+  groups instead, 2 of 2.
+  Which names go together is left to the model: a rule in code joining names the reply left
+  apart (female, male and Nagaland each alone as female and male in Nagaland) fixed the 2 saved
+  replies it applied to, but it reads the reply's shape, not the sentence, and with several
+  fields split at once it would guess, and could refuse a valid task. Dropped.
+- **The lead is told up front which of the question's groups aren't published** (`Investigation.
+  read_question`): the same call, on the question, before the lead's first call; for a group
+  that isn't published together, code finds the nearest that are (one name left out at a time,
+  asked of the server), and the lead gets one note with the question. Nothing is said when every
+  group is published. The question's words are the asker's meaning; the task check stays, on
+  each task, as what the analyst will act on. Its refusal is also the evidence a brief needs to
+  say the combination isn't published.
+- **The call runs on gpt-oss-120b.** 15 harder cases added (H: several fields split at once,
+  several values of one field, names that apply to some groups only; 4 not published), 82 in all.
+  120b, 2 runs: 162 of 164 groups right, every hard case (30 of 30), no valid task refused, none
+  missed, no reply refused by Groq, ~440 tokens a call; its 2 misses are tasks whose label is
+  arguable ("and others"; "by gender (male and female combined)"). 20b at low effort had had
+  ~85-90% on the 67 easier cases, up to 2 valid tasks refused. 20b at medium effort was not run.
+  On the same model as the agents, a free question's calls may be spread over the desk's free
+  keys by room in their minute (QuestionKeys.pick), as the agents' are.
+- Span tests with the up-front note (2026-11-26): tasks Q4, 4 of 4 asked for the nearest
+  published groups (women in Kerala; Muslim women in all of India), none for the combination
+  (1 of 4 the day before, without the note), none refused by code. Pick and tasks on Q1 and Q8,
+  2 each: as before (needed profiles, not all six; tasks pass code's checks). Tokens: ~370 for
+  the question's call, ~480 for each task naming two fields or more (Q1's plan: ~1.3k more).
+- An analyst's hand-in cites result ids read by their shape (`Analyses.cited_ids`), however
+  written: in saved runs all 12 ids refused as unknown were real ones written as "result
+  value-760a28", 8 of them two to an entry. A made-up id is still refused. The lead's brief cites
+  finding ids the same strict way as before: its 9 refusals in saved runs were real mistakes
+  (a profile cited as a finding, a finding that didn't exist).
+
 ### 3.5 Honesty rules built into the text
 
 - Correlations across states describe **states**: people's chances there, not why. "A woman

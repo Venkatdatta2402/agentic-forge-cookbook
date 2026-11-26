@@ -109,7 +109,9 @@ async def test_a_question_streams_its_steps_and_saves_its_whole_record(release_p
         # what the page draws: every model call starts and ends, code's reruns, the finding's figures
         updates = [d for e, d in got if e == "step"]
         thoughts = [d for d in updates if d["kind"] == "thought"]
-        assert len(thoughts) == len([d for d in updates if d["kind"] == "thinking"]) == 5
+        # the lead's 3, the grouping calls on the question and the task (both name a gender and a
+        # sector), the analyst's 2
+        assert len(thoughts) == len([d for d in updates if d["kind"] == "thinking"]) == 7
         assert {d["who"] for d in thoughts} == {"lead", "f1"}
         assert any(d["kind"] == "call" and d["who"] == "code" and d["tool"] == "recheck" for d in updates)
         found = next(d for d in updates if d["kind"] == "finding")
@@ -124,7 +126,7 @@ async def test_a_question_streams_its_steps_and_saves_its_whole_record(release_p
     record = Record.from_doc(store.docs[brief_id])
     assert set(record.transcripts) == {"lead", "analyst f1"} and record.tasks == {"f1": GAP}
     assert record.plan[0]["approach"] and record.plan[0]["tasks"] == {"f1": GAP}           # the plan, kept
-    assert any(i.startswith("gap-") for i in record.results) and record.usage["calls"] == 5
+    assert any(i.startswith("gap-") for i in record.results) and record.usage["calls"] == 7       # the two grouping calls too
     assert KEY not in json.dumps(store.docs)                     # the key is never kept
     assert app.state.desk.active == 0 and store.leases == {}     # its slot and its key are free again
 
@@ -141,7 +143,7 @@ async def test_a_follow_up_can_cite_the_earlier_findings_without_asking_again(re
                          headers={"X-Groq-Key": KEY})
     got = events_of(r.text)
     assert got[-1][0] == "brief", got[-1]
-    seen = model.asked[0][1]["messages"][1]["content"]
+    seen = next(r for who, r in model.asked if who == "lead")["messages"][1]["content"]
     assert "This is a follow-up" in seen and f"last question: {QUESTION}" in seen
     assert "e1 -- task: " + GAP in seen and "cite them as e1" in seen
     record = Record.from_doc(store.docs[got[0][1]["id"]])
@@ -222,8 +224,11 @@ async def test_free_questions_start_on_the_key_with_most_left_and_count_what_the
         got = events_of((await c.post("/questions", json={"question": QUESTION})).text)
         assert got[-1][0] == "brief"
         left = (await c.get("/health")).json()["free_keys_tokens_left"]
-    # it ran on b (most left), and b's count went up by what its calls used (300 + 40 a call)
-    assert left == [50_000, 200_000 - 340]
+    # it started on b (most left): its first call, reading the question's groups (they name a
+    # gender and a sector), went on b; the lead's, on the same model, borrowed a, the idle free
+    # key with more room in its minute (QuestionKeys.pick). Each count went up by what its call
+    # used (300 + 40)
+    assert left == [50_000 - 340, 200_000 - 340]
     # a key under 20,000 left isn't started on; with both so, the free questions are used up
     await store.add_usage(f"tokens-{account_of(free[0])}", 40_000)
     await store.add_usage(f"tokens-{account_of(free[1])}", 190_000)
@@ -332,7 +337,7 @@ async def test_a_resumed_question_starts_from_what_it_had(release_path, routed):
     async with client(app) as c:
         got = events_of((await c.post(f"/briefs/{brief_id}/resume", headers={"X-Groq-Key": KEY})).text)
     assert got[-1][0] == "brief", got[-1]
-    seen = model.asked[0][1]["messages"][1]["content"]
+    seen = next(r for who, r in model.asked if who == "lead")["messages"][1]["content"]
     assert "had to stop partway" in seen and "f1 -- task: " + GAP in seen
     assert "- how did it change since 2024" in seen                   # unfinished: listed, not a finding
     async with client(app) as c:                                     # done now: nothing to carry on
