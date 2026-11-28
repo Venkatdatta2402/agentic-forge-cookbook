@@ -5,7 +5,9 @@ import pytest
 
 from conftest import REAL
 
-from stats_desk.release.store import StoreError, add_profiles, build_release, clean_annual
+from stats_desk.datasets import DATASETS
+from stats_desk.release.sources.plfs import clean_annual, tables
+from stats_desk.release.store import StoreError, add_profiles, write
 
 
 def row(value, age="15 years and above", education=None, state="Bihar"):
@@ -35,8 +37,8 @@ def test_rows_without_an_age_and_no_band_worked_out_stop_the_build():
 @pytest.fixture(scope="module")
 def release(tmp_path_factory):
     path = tmp_path_factory.mktemp("release") / "plfs.duckdb"
-    build_release(path, annual={"ur_annual": ("unemployment rate (UR), annual", REAL["2025"] + REAL["2024"])},
-                  monthly={}, unstated_age="15 years and above")
+    write(path, DATASETS["plfs"], tables(annual={"ur_annual": ("unemployment rate (UR), annual", REAL["2025"] + REAL["2024"])},
+                                         monthly={}, unstated_age="15 years and above"))
     add_profiles(path, {"UR_annual": "PROFILE ..."})
     con = duckdb.connect(str(path), read_only=True)
     yield con
@@ -64,9 +66,9 @@ def test_the_card_says_what_a_table_holds_from_the_table_itself(release):
     assert "measure: CWS, PS+SS   [no total: two different measures" in card
     assert "state x religion (NOT published)" in card
     assert "stored as '15 years and above', the band their totals match" in card
-    assert "each total lies between its parts (2025, usual status): gender " in card
+    assert "each total lies between its parts: gender " in card
     label, = release.execute("SELECT released FROM _release").fetchone()
-    assert label.startswith("annual 2025 (and 2024) · data ") and len(label.split("data ")[1]) == 6
+    assert label.startswith("PLFS annual 2025 (and 2024) · data ") and len(label.split("data ")[1]) == 6
     assert release.execute("SELECT profile FROM _profiles WHERE name = 'UR_annual'").fetchone() == ("PROFILE ...",)
 
 

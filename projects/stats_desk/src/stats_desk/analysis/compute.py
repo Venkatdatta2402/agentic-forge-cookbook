@@ -12,20 +12,21 @@ figure.
 
 from dataclasses import dataclass
 
-from ..datasets import DATASET
+from ..datasets import CATALOG
 from ..release.stats import correlate, outliers
-from .data import BAND, CONTAINS, TOTAL
+from . import periods
+from .data import BAND_FIELDS, CONTAINS, TOTAL
 
 # Where a far-off group may be noise: the small territories (Lakshadweep, Andaman & Nicobar,
 # Chandigarh) are states surveyed with small samples. In other fields a far-off group is a real,
 # large group and a finding: setting outliers apart in every field ranked "women minus men across
 # education" without its two graduate groups (+8.4, +10.6), hiding the widest gender gap there is.
-NOISY_SMALL_GROUPS = DATASET.small_groups
+NOISY_SMALL_GROUPS = CATALOG.small_groups
 
 # indicators computed from others (WPR = LFPR x (1 - UR/100)): across states, they move together
 # by construction. {pair of indicators: why}
-MECHANICAL = DATASET.identities
-ACROSS, ACROSS_PLURAL = DATASET.across, DATASET.across_plural
+MECHANICAL = CATALOG.identities
+ACROSS, ACROSS_PLURAL = CATALOG.across, CATALOG.across_plural
 
 
 def num(x):
@@ -66,11 +67,14 @@ class Spread:
         return line
 
 
-def spread(f, named: dict) -> Spread | None:
+def spread(f, named: dict, t=None) -> Spread | None:
+    """`t`: the table the groups are from, whose own dataset says whether a far-off group of `f`
+    may be a small sample (PLFS's states do, as a survey); without it, any dataset's word."""
     rankable = {k: x for k, x in named.items() if k not in CONTAINS.get(f, {})}
     if len(rankable) < 2:
         return None
-    odd = outliers(rankable) if f in NOISY_SMALL_GROUPS else []
+    small = t.small_groups if t is not None else NOISY_SMALL_GROUPS
+    odd = outliers(rankable) if f in small else []
     core = {k: x for k, x in rankable.items() if k not in odd} or rankable
     return Spread(named, rankable, odd, min(core, key=core.get), max(core, key=core.get))
 
@@ -82,15 +86,15 @@ def gaps_across(t, s, field, a, b, across) -> dict:
 
 
 def earlier(t, period) -> list:
-    """The periods to compare with: the previous stored one, and a year earlier (monthly)."""
+    """The periods to compare with: the previous stored one, and a year earlier (when a year
+    holds several periods)."""
     i = t.periods.index(period)
     refs = []
     if i > 0:
-        refs.append(("previous " + ("published month" if t.monthly else "year"), t.periods[i - 1]))
-    if t.monthly:
-        year_ago = f"{int(period[:4]) - 1}{period[4:]}"
-        if year_ago in t.periods and year_ago != t.periods[i - 1]:
-            refs.append(("a year earlier", year_ago))
+        refs.append(("previous " + (f"published {t.freq.unit}" if t.freq.within_year else t.freq.unit), t.periods[i - 1]))
+    year_ago = t.freq.year_ago(period)
+    if year_ago and year_ago in t.periods and year_ago != t.periods[i - 1]:
+        refs.append(("a year earlier", year_ago))
     return refs
 
 
@@ -100,29 +104,14 @@ def changes(t, s, by, period) -> dict:
     return {k: (before[k], now[k]) for k in now if k in before}
 
 
-def missing_months(periods) -> list:
-    """Months between the first and last that aren't in `periods` ("YYYY-MM", in order)."""
-    out, (y, m) = [], (int(periods[0][:4]), int(periods[0][5:]))
-    while f"{y}-{m:02d}" < periods[-1]:
-        if f"{y}-{m:02d}" not in periods:
-            out.append(f"{y}-{m:02d}")
-        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
-    return out
-
-
-def _next_month(period):
-    y, m = int(period[:4]), int(period[5:])
-    return f"{y + 1}-01" if m == 12 else f"{y}-{m + 1:02d}"
-
-
-def streak(values: dict, monthly) -> dict | None:
+def streak(values: dict) -> dict | None:
     """The run of moves in one direction that the latest period ends: {"direction", "moves",
-    "from"}. A month not published breaks it: what happened across it is not known."""
+    "from"}. A period not published breaks it: what happened across it is not known."""
     order = list(values)
     moves = 0
     direction = None
     for p, q in zip(reversed(order[:-1]), reversed(order[1:])):
-        if monthly and _next_month(p) != q:
+        if periods.of(p).next(p) != q:
             break
         d = values[q] - values[p]
         step = "rose" if d > 0 else "fell" if d < 0 else None
@@ -132,9 +121,8 @@ def streak(values: dict, monthly) -> dict | None:
     return {"direction": direction, "moves": moves, "from": start} if moves else None
 
 
-def step(period):
-    """A period's place on a time line: months for "YYYY-MM", years for "YYYY"."""
-    return int(period[:4]) * 12 + int(period[5:7]) if len(period) > 4 else int(period[:4])
+step = periods.step                 # a period's place on a time line, one apart from the next
+missing = periods.missing           # the periods not published between the first and last
 
 
 def trend_line(values: dict) -> dict:
@@ -194,11 +182,24 @@ def strength(r, n):
     return f"a {size} link: across {ACROSS_PLURAL} the two tend to go {way}"
 
 
+def line_up(columns: list[dict], within=None) -> tuple[list, list[list]]:
+    """Several tables' figures lined up by their groups, join's and relate's one pairing:
+    (the groups every table has, in the first's order; for each table, the groups others have and
+    it lacks). `within`: which groups count at all (join, over time: inside the stretch every
+    table covers)."""
+    shared = [k for k in columns[0] if all(k in c for c in columns[1:])]
+    every = [k for k in dict.fromkeys(k for c in columns for k in c) if within is None or within(k)]
+    return shared, [[k for k in every if k not in c] for c in columns]
+
+
 def relate(tx, sx, ty, sy) -> dict:
-    """The across-state correlation of two figures (stats.correlate), with each side's values
-    and why it's true by definition when it is."""
+    """The across-state correlation of two figures (stats.correlate) over the states both have,
+    lined up as join lines them up, with each side's values, the states only one side has, and
+    why it's true by definition when it is."""
     x, y = tx.groups(sx, ACROSS), ty.groups(sy, ACROSS)
-    return {**correlate(x, y), "x": x, "y": y, "built_in": built_in(tx, sx, ty, sy)}
+    shared, (only_y, only_x) = line_up([x, y])
+    return {**correlate({k: x[k] for k in shared}, {k: y[k] for k in shared}), "x": x, "y": y,
+            "only_x": only_x, "only_y": only_y, "built_in": built_in(tx, sx, ty, sy)}
 
 
 def built_in(tx, sx, ty, sy):
@@ -213,8 +214,8 @@ def built_in(tx, sx, ty, sy):
         return None
     f = diff[0]
     a, b = sx.values[f], sy.values[f]
-    if f == BAND:
-        return f"the {BAND} bands overlap ({a}, {b})"
+    if f in BAND_FIELDS:
+        return f"the {f} bands overlap ({a}, {b})"
     if TOTAL.get(f) in (a, b):
         return f"{b if a == TOTAL[f] else a} is part of {TOTAL[f]}"
     if a in CONTAINS.get(f, {}) or b in CONTAINS.get(f, {}):

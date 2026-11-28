@@ -6,9 +6,11 @@ import pytest
 from conftest import REAL
 
 from stats_desk.core.llm import count_tokens
-from stats_desk.release.build import build_profiles, infer_monthly_measure, interactions, monthly_text
-from stats_desk.release.cells import (Cells, ProfileShapeError, guard, unstated_age_band,
-                                      verify_totals)
+from stats_desk.release.build import build_profiles, interactions, profile
+from stats_desk.release.cells import ProfileShapeError, guard, verify_totals
+# PLFS's raw rows read with PLFS's column map (the checks themselves are every dataset's)
+from stats_desk.release.sources.plfs import cells as Cells
+from stats_desk.release.sources.plfs import infer_monthly_measure, unstated_age_band
 from stats_desk.release.stats import correlate, outliers, spearman
 
 
@@ -65,12 +67,28 @@ def test_the_age_range_of_tables_without_one_is_worked_out_from_their_totals():
 def test_a_release_with_a_new_shape_stops_the_build_instead_of_publishing():
     rows = [{"gender": g, "state": "All India", "value": v} for g, v in
             (("male", "4"), ("female", "6"), ("person", "5"))]
-    assert guard(rows, Cells(rows))["gender"]["holds"]            # the known shape: fine
+    guard(rows, Cells(rows))                                      # the known shape: fine
     with pytest.raises(ProfileShapeError, match="don't know: disability"):
         guard([{**r, "disability": "none"} for r in rows], Cells(rows))
-    broken = [{**r, "value": "9"} if r["gender"] == "person" else r for r in rows]
-    with pytest.raises(ProfileShapeError, match="total of gender is outside its parts"):
-        guard(broken, Cells(broken))
+
+
+@pytest.mark.parametrize("key", ["plfs", "cpi"])
+def test_every_datasets_store_stops_a_total_outside_its_parts(key):
+    """The check is the store's, so no dataset's build can skip it."""
+    from stats_desk.datasets import DATASETS
+    from stats_desk.release.store import StoreError, Table, check_totals
+    dataset = DATASETS[key]
+    field, totals = next((f, v) for f, v in dataset.total_values.items() if f != "state" and v - {None})
+    total = sorted(totals - {None})[0]
+    rows = [{"year": 2025, field: v, "value": x} for v, x in (("a", 4.0), ("b", 6.0), (total, 5.0))]
+    t = Table("t_annual", "t", ["year", field], rows)
+    assert check_totals(dataset, t) == f"each total lies between its parts: {field} 1/1"
+    t.rows = [{**r, "value": 9.0} if r[field] == total else r for r in rows]
+    with pytest.raises(StoreError, match=f"total of {field} is outside its parts in 1 of 1"):
+        check_totals(dataset, t)
+    t.rows = [r for r in rows if r[field] != total]
+    with pytest.raises(StoreError, match=f"no total row for {field}"):
+        check_totals(dataset, t)
 
 
 def test_outliers_are_set_apart_and_named():
@@ -101,17 +119,44 @@ def test_interactions_rank_without_outlier_states_and_name_them(release):
 
 
 def test_a_profile_is_built_from_the_stored_tables_in_a_few_hundred_tokens(release):
-    text = build_profiles(release, unstated_age="15 years and above")["UR_annual_2025"]
+    text = release.profiles["UR_annual_2025"]
     assert "headline (All India, everyone): 3.1%" in text and "(CWS): 5.3%" in text
     assert "previous year (2024): 3.2%" in text
     assert "education = 7.graduate: 11.2%" in text
     assert "not findings (true by definition)" in text and "because the age bands overlap" in text
     assert "UR vs WPR r = -1.00, because WPR is computed from LFPR and UR" in text
+    # the source's note (sources/plfs.py), right after the headline lines
+    lines = text.split("\n")
+    note = next(i for i, line in enumerate(lines) if "they match the 15 years and above figures" in line)
+    assert lines[note].startswith("education figures: MoSPI's table gives no age") and note <= 3
     assert count_tokens(text) < 800
 
 
+def test_one_writer_writes_each_section_only_when_the_table_has_what_it_needs(tmp_path):
+    """A table of one period a year without states gets no correlations across states (there
+    are none to make), and no setting it offers no choice of in its first line; the rest as any."""
+    from stats_desk.analysis.data import Release
+    from stats_desk.datasets import DATASETS
+    from stats_desk.release.store import Table, write
+    rows = [{"year": y, "measure": "PS+SS", "gender": g, "age": a, "value": v + d + (0.2 if y == 2025 else 0)}
+            for y in (2024, 2025) for g, d in (("person", 0), ("female", 1.0), ("male", -0.5))
+            for a, v in (("15 years and above", 3.0), ("15-29 years", 9.0))]
+    write(tmp_path / "plfs.duckdb", DATASETS["plfs"],
+          [Table("ur_annual", "unemployment rate (UR), annual", ["year", "measure", "gender", "age"], rows)])
+    release = Release(tmp_path / "plfs.duckdb")
+    try:
+        text = build_profiles(release)["UR_annual_2025"]
+    finally:
+        release.close()
+    first, headline, previous = text.split("\n")[:3]
+    assert first == "PROFILE unemployment rate (UR), annual, 2025, ages 15+ unless stated"     # one measure: no choice
+    assert headline == "headline (All India, everyone): 3.2%" and previous == "previous year (2024): 3%"
+    assert "gender = female: 4.2% vs 3.2% overall" in text
+    assert "correlations" not in text and "Across-state" not in text
+
+
 def test_a_monthly_profile_names_the_months_not_published(release):
-    text = monthly_text(release.table("ur_monthly"))
+    text = profile(release.table("ur_monthly"))
     assert "not published: 2025-07, 2025-08" in text and "2026-03" in text
     assert "vs a year earlier (2025-04): 5.1% -> 5.2%" in text
 
@@ -127,7 +172,7 @@ def test_the_monthly_profile_says_how_the_series_moves_with_the_trend_tools_own_
     a steady rise unless the question asked. Same rule as the trend tool, so they never disagree."""
     from stats_desk.analysis.analyses import trend
     t = release.table("ur_monthly")
-    text = monthly_text(t)
+    text = profile(t)
     tool = trend(release, "ur_monthly").split("\n")
     sits = next(i for i, line in enumerate(tool) if "usually sit" in line)
     verdict = tool[sits + 1].split(":")[0]               # the line after the scatter is the verdict

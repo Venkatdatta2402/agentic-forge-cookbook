@@ -1,0 +1,152 @@
+# CPI, described as data: the same layout as plfs.toml. What is published together is worked
+# out from the stored rows, as for PLFS. Probed at MoSPI's MCP server, 2026-11-26:
+#   - two bases, two lists of items and weights: 2024 (current; Jan 2025 on, inflation from Jan
+#     2026) and 2012 (to Dec 2025). Their groups differ (13 divisions against 8 groups): each is
+#     its own table. The 2024 base's tables also hold MoSPI's back series (2013-2024, general
+#     index, All India): the 2012 base's figures rescaled to 2024 = 100 (each sector's index
+#     divided by one factor, 1.88-1.92; inflation the same as the 2012 base's in all 390 months),
+#     so one line runs across 2025, as statistics offices publish across a change of base;
+#     a result on both sides of 2025 says so (`join`).
+#   - each row has an index (2024 = 100, or 2012 = 100) and inflation (% on the same month a
+#     year earlier): each is its own indicator, with its own unit.
+#   - the 2024 base's items are a five-level hierarchy, every name under one parent only.
+#   - an imputation flag on item rows: "N" on every one fetched, so it is not stored.
+
+key = "cpi"
+name = "CPI"
+publisher = "MoSPI"
+subject = "India's official consumer prices"
+holds = "consumer price inflation (% on a year earlier) and the consumer price index; monthly, by state (general index) and sector, and All India by division, group, class, sub-class and item"
+value_note = "a published index or rate; never add or average rows -- use the total rows"
+cannot = "give month-on-month change (not published), compare figures across the two bases"
+groups_mean = "division > group > class > sub_class > item: the items priced, each level inside the one before"
+describes = "prices there"
+describes_in = "prices in them"
+# what a figure at every total is about (PLFS's: everyone)
+everyone = "all items"
+
+[source]
+mcp = "CPI"
+# selectors MoSPI's get_data needs, which it otherwise quietly defaults (base_year to 2012, not
+# its current 2024): a request without them is refused
+required = ["base_year", "series"]
+# the dataset whose names this one's shared fields must use: a value PLFS's release doesn't have
+# (and isn't in own_values) stops the build (release/store.py)
+conform_to = "plfs"
+# how far rounding alone can move a published figure (indices to one decimal: half of 0.1); the
+# check that each total lies between its parts allows this much (release/store.py). An
+# indicator can say its own.
+rounding = 0.05
+# MoSPI's spelling -> ours, so a state or sector is the same in every dataset
+[source.conform.state]
+"Andaman And Nicobar Islands" = "Andaman & Nicobar Islands"
+"Jammu And Kashmir" = "Jammu & Kashmir"
+"NCT of Delhi" = "Delhi"
+"The Dadra And Nagar Haveli And Daman And Diu" = "Dadra & Nagar Haveli & Daman & Diu"
+# states only the 2012 base names: it keeps the two territories merged in 2020 apart, every year
+# to 2025; each has its own figures, so neither is renamed to the merged one
+[source.own_values.state]
+"Dadra & Nagar Haveli" = "a territory of its own in the 2012 base; merged with Daman & Diu in 2020"
+"Daman & Diu" = "a territory of its own in the 2012 base; merged with Dadra & Nagar Haveli in 2020"
+[source.conform.sector]
+Rural = "rural"
+Urban = "urban"
+Combined = "rural + urban"
+# the 2012 base's top level is the 2024 base's "division", its subgroup the "group"
+[source.conform.division]
+General = "CPI (General)"
+
+[tables.monthly]
+columns = ["year", "month", "period", "state", "sector", "division", "group", "class", "sub_class", "item"]
+source = "MoSPI CPI, monthly"
+
+[indicators.inflation]
+code = 1
+unit = "%"
+base = "2024"
+name = "consumer price inflation (% on a year earlier), 2024 base"
+# where the list of items and weights changes inside the table: a result on both sides says so;
+# `says`: this change's own words, besides any change of method's (agents/analyst.py), that
+# tell code a claim mentions it
+join = { at = "2025-01", note = "figures before 2025 are MoSPI's back series: the 2012 base's, measured on its list of items and weights and rescaled to 2024 = 100; from 2025 on, the 2024 list. Part of a change across 2025 can come from the change of list, not of prices", says = ["2012", "back series", "rescal", "linked"] }
+words = 'inflation|prices? (?:rise|rising|rose|went up)|price rise|\bCPI\b|cost of living'
+
+[indicators.priceindex]
+code = 2
+unit = ""
+base = "2024"
+name = "consumer price index (2024 = 100)"
+# where the list of items and weights changes inside the table: a result on both sides says so;
+# `says`: this change's own words, besides any change of method's (agents/analyst.py), that
+# tell code a claim mentions it
+join = { at = "2025-01", note = "figures before 2025 are MoSPI's back series: the 2012 base's, measured on its list of items and weights and rescaled to 2024 = 100; from 2025 on, the 2024 list. Part of a change across 2025 can come from the change of list, not of prices", says = ["2012", "back series", "rescal", "linked"] }
+words = 'price index|price level|index (?:value|level)|prices? (?:are|were|have|has) (?:now )?(?:above|higher|risen)'
+
+[indicators.inflation2012]
+code = 3
+unit = "%"
+base = "2012"
+name = "consumer price inflation (% on a year earlier), 2012 base, to 2025"
+# the same figure on another base: a period one table lacks, the other is named for (MoSPI
+# publishes 2025's inflation on the 2012 base only)
+same_as = "inflation"
+# worked out from the one-decimal indices (26,463 of 26,473 equal to that, measured 2026-11-28),
+# so their rounding moves it by up to 0.14 points; 9 totals of ~9,900 lie 0.05-0.06 outside
+rounding = 0.15
+words = 'inflation|prices? (?:rise|rising|rose|went up)|price rise|\bCPI\b|cost of living'
+
+[indicators.priceindex2012]
+code = 4
+unit = ""
+base = "2012"
+name = "consumer price index (2012 = 100), to 2025"
+same_as = "priceindex"
+words = 'price index|price level|index (?:value|level)|prices? (?:are|were|have|has) (?:now )?(?:above|higher|risen)'
+
+[[identities]]
+pairs = [["inflation", "priceindex"], ["inflation2012", "priceindex2012"]]
+because = "inflation is computed from the index (its change on the same month a year earlier)"
+
+# conformed with PLFS: the same values and total (plfs.toml)
+[dimensions.state]
+total = "All India"
+plural = "states"
+across = true
+# no small_groups: a far-off state's prices are a finding, not a small sample of people (PLFS's
+# reason to set its small territories apart); the rule is each dataset's own (Table.small_groups)
+
+[dimensions.sector]
+total = "rural + urban"
+synonyms = { rural = ["rural areas", "villages"], urban = ["urban areas", "towns", "cities", "towns and cities"] }
+
+# the items priced, as a hierarchy: an empty level is all of the one above it
+[dimensions.division]
+total = "CPI (General)"
+synonyms = { "CPI (General)" = ["general", "headline", "overall", "all items"], "Food and beverages" = ["food"] }
+contains = { "Consumer Food Price" = "a separate food price index of the 2012 base, overlapping Food and beverages" }
+
+[dimensions.group]
+total = "all"
+empty_is_total = true
+within = "division"
+
+[dimensions.class]
+total = "all"
+empty_is_total = true
+within = "group"
+
+[dimensions.sub_class]
+total = "all"
+empty_is_total = true
+within = "class"
+
+[dimensions.item]
+total = "all"
+empty_is_total = true
+within = "sub_class"
+
+[[contrasts]]
+field = "sector"
+a = "urban"
+b = "rural"
+label = "urban minus rural"

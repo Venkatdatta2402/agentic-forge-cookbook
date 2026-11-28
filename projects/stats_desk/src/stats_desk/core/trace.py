@@ -261,6 +261,8 @@ def _tool_label(name, arguments, by):
     on = args.get("table") or args.get("x_table") or args.get("analysis") or args.get("name") or ""
     if isinstance(args.get("names"), list):
         on = ", ".join(args["names"])
+    if isinstance(args.get("tables"), list):          # join
+        on = " + ".join(map(str, args["tables"]))
     return " ".join(p for p in (name, str(on), "(by code)" if by == "code" else "") if p)
 
 

@@ -19,7 +19,10 @@ from ..core.tools import Result, SchemaArgs, Tool, ToolError
 from .server import KIND
 
 NUMBER = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?")
-RESULT_ID = re.compile(r"\b[a-z]+-[0-9a-f]{6}\b")
+# any hyphen between kind and code (span test: "join‑7475f9", a non-breaking hyphen, wasn't read
+# as an id, and its "7475" was refused as a number no result shows)
+RESULT_ID = re.compile(r"\b[a-z]+[-‐‑–—][0-9a-f]{6}\b")
+HYPHENS = re.compile(r"[‐‑–—]")
 # an age group names people, it isn't a figure: "ages 15-29", "15‑29 year olds", "aged 15 and
 # above", "15+" (a live run: the lead's brief was refused three times for "29")
 DASH = r"\s*[-‐‑–—]\s*"
@@ -84,8 +87,13 @@ class Analyses:
         series-e62483, result trend-ef6079"). An entry with no known id is kept as written, to be
         refused: a made-up id must not pass."""
         out = []
+        by_code = {i.rsplit("-", 1)[-1]: i for i in self.results}
         for entry in cited:
-            known = [i for i in RESULT_ID.findall(entry) if i in self.results]
+            # the right code under the wrong kind (span test: "gap-4790ed" for value-4790ed): the
+            # code is the request's own hash, so it names one result
+            found = [HYPHENS.sub("-", i) for i in RESULT_ID.findall(entry)]
+            known = [i if i in self.results else by_code[i.rsplit("-", 1)[-1]] for i in found
+                     if i in self.results or i.rsplit("-", 1)[-1] in by_code]
             out += known or [entry]
         return list(dict.fromkeys(out))
 

@@ -1,9 +1,13 @@
-# Stats Desk: the daily data release. Asks MoSPI whether anything is newer than the raw tables
-# kept in projects/stats_desk/data/raw (three small requests); if so, fetches just that,
-# rebuilds the release file and profiles, tests, commits the data, and starts the deploy.
+# Stats Desk: the daily data release, for every dataset (scripts/release.py update). Asks
+# MoSPI whether anything is newer than the raw tables kept in projects/stats_desk/data/raw (a
+# few small requests per dataset); if so, fetches just that, rebuilds that dataset's release
+# file and profiles, tests, commits the data, and starts the deploy.
 #
 # A figure MoSPI revised replaces ours (its figures are the official ones), is listed in
 # projects/stats_desk/data/raw/REVISIONS.md, and is counted in the commit message.
+#
+# Each dataset on its own: one that fails (MoSPI down for it) fails the run, but another's new
+# figures are still tested, committed and deployed (the steps below run unless cancelled).
 #
 # A commit pushed with GITHUB_TOKEN doesn't start other workflows, so the deploy is started
 # explicitly (workflow_dispatch is the exception GitHub allows).
@@ -41,14 +45,14 @@ jobs:
 
       - name: Anything new at MoSPI?
         id: update
-        run: uv run python scripts/update_release.py
+        run: uv run python scripts/release.py update
 
       - name: Offline tests on the new release
-        if: steps.update.outputs.changed == 'true'
+        if: ${{ !cancelled() && steps.update.outputs.changed == 'true' }}
         run: uv run pytest -q
 
       - name: Commit the new data
-        if: steps.update.outputs.changed == 'true'
+        if: ${{ !cancelled() && steps.update.outputs.changed == 'true' }}
         env:
           SUMMARY: ${{ steps.update.outputs.summary }}
         run: |
@@ -59,7 +63,7 @@ jobs:
           git push
 
       - name: Deploy it
-        if: steps.update.outputs.changed == 'true'
+        if: ${{ !cancelled() && steps.update.outputs.changed == 'true' }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh workflow run stats-desk-deploy.yml --ref main

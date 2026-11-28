@@ -12,8 +12,10 @@ from stats_desk.analysis.data import Release  # noqa: E402
 from stats_desk.config import Limits  # noqa: E402
 from stats_desk.core import llm  # noqa: E402
 from stats_desk.core.governor import Governor  # noqa: E402
+from stats_desk.datasets import DATASETS  # noqa: E402
 from stats_desk.release.build import build_profiles  # noqa: E402
-from stats_desk.release.store import add_profiles, build_release  # noqa: E402
+from stats_desk.release.sources import plfs as plfs_source  # noqa: E402
+from stats_desk.release.store import add_profiles, write  # noqa: E402
 
 # real PLFS unemployment rows: a trimmed copy of the 2025 and 2024 annual tables
 REAL = json.loads((Path(__file__).parent / "fixtures" / "plfs_ur_annual_trimmed.json").read_text(encoding="utf-8"))
@@ -36,12 +38,14 @@ def release_path(tmp_path_factory):
     rows = REAL["2025"] + REAL["2024"]
     # any order-reversing change keeps every total between its parts
     wpr = [{**r, "value": str(round(100 - float(r["value"]), 1))} for r in rows]
-    build_release(path, annual={"ur_annual": ("unemployment rate (UR), annual", rows),
-                                "wpr_annual": ("worker population ratio (WPR), annual", wpr)},
-                  monthly={"ur_monthly": ("unemployment rate (UR), monthly", monthly_rows(), "CWS", "test")},
-                  unstated_age="15 years and above")
+    tables = plfs_source.tables(
+        annual={"ur_annual": ("unemployment rate (UR), annual", rows),
+                "wpr_annual": ("worker population ratio (WPR), annual", wpr)},
+        monthly={"ur_monthly": ("unemployment rate (UR), monthly", monthly_rows(), "CWS", "test")},
+        unstated_age="15 years and above")
+    write(path, DATASETS["plfs"], tables)
     release = Release(path)
-    profiles = build_profiles(release, unstated_age="15 years and above")
+    profiles = build_profiles(release, plfs_source.profile_notes(tables, "15 years and above"))
     release.close()
     add_profiles(path, profiles)
     return path
@@ -50,6 +54,44 @@ def release_path(tmp_path_factory):
 @pytest.fixture(scope="session")
 def release(release_path):
     r = Release(release_path)
+    yield r
+    r.close()
+
+
+# real CPI rows: a slice of every download (data/raw/cpi), All India for September and October
+# 2026 (and 2025: index only) on the general index and food, down to onion, tomato and rice
+CPI_RAW = json.loads((Path(__file__).parent / "fixtures" / "cpi_trimmed.json").read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="session")
+def releases_path(tmp_path_factory, release_path):
+    """A release folder as the server reads it: the PLFS test file and a CPI one built from the
+    slice, with its profiles."""
+    import shutil
+    from stats_desk.release.sources import cpi
+    folder = tmp_path_factory.mktemp("releases")
+    shutil.copy(release_path, folder / "plfs.duckdb")
+    path = folder / "cpi.duckdb"
+    raw = {"2024": CPI_RAW["all_india"] + CPI_RAW["general_states"] + CPI_RAW["back_general"],
+           "2012": CPI_RAW["b2012_states"] + CPI_RAW["b2012_all_india"]}
+    # its states and sectors checked against the PLFS file beside it, as the build does. Not its
+    # totals: a slice keeps 5 of 36 states and a few items per class, so All India or a class can
+    # lie outside the parts kept (it lies inside them all in the full download, checked on every
+    # build; the check itself: test_profile.py)
+    from stats_desk.release import store
+    with pytest.MonkeyPatch.context() as patch:
+        patch.setattr(store, "check_totals", lambda dataset, t: "")
+        write(path, DATASETS["cpi"], cpi.tables(raw), reference=folder / "plfs.duckdb")
+    r = Release(path)
+    profiles = build_profiles(r)
+    r.close()
+    add_profiles(path, profiles)
+    return folder
+
+
+@pytest.fixture(scope="session")
+def both(releases_path):
+    r = Release(releases_path)
     yield r
     r.close()
 

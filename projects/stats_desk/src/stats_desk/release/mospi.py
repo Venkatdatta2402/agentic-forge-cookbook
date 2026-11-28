@@ -21,13 +21,17 @@ import time
 from contextlib import AsyncExitStack
 from typing import Protocol
 
+from ..datasets import DATASETS
+
 PAGE_SIZE = 100
 CACHE_SECONDS = 24 * 3600
 BUSY_WAITS = (5.0, 15.0, 45.0)
 
-# selectors get_data needs inside `filters`, which MoSPI otherwise defaults (from its own schema)
-REQUIRED_IN_DATA = {"PLFS": ("frequency_code",), "ASUSE": ("frequency_code",), "NAS": ("base_year",),
-                    "CPI": ("base_year",), "IIP": ("base_year", "frequency"), "WPI": ("base_year",)}
+# selectors get_data needs inside `filters`, which MoSPI otherwise defaults: each description's
+# [source] required, read from MoSPI's own schema. Seen there for datasets not yet described
+# (for their descriptions): ASUSE frequency_code; NAS base_year; IIP base_year, frequency;
+# WPI base_year.
+REQUIRED_IN_DATA = {d.source["mcp"]: tuple(d.source.get("required", ())) for d in DATASETS.values()}
 
 
 class MospiError(Exception):

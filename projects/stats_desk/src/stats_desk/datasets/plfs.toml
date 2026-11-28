@@ -10,7 +10,6 @@ publisher = "MoSPI"
 subject = "India's official labour statistics"
 # the dataset in one line: what the lead is told the desk answers questions about
 holds = "the unemployment rate (UR), labour force participation rate (LFPR) and worker population ratio (WPR); annual by state, gender, sector, age, education, religion and social group, and monthly by gender, sector and age"
-unit = "%"
 # on every table's card
 value_note = "a published rate in %; never add or average rows -- use the total rows"
 # what the analysts can't give, beyond what no dataset gives (the lead's "They cannot" list)
@@ -25,9 +24,15 @@ describes_in = "people's chances in them"
 mcp = "PLFS"                                  # the dataset's name at MoSPI's MCP server
 frequencies = { annual = 1, monthly = 3 }     # MoSPI's frequency codes
 probe = "ur"                                  # the indicator the daily check asks about
+# selectors MoSPI's get_data needs, which it otherwise quietly defaults (without frequency_code
+# it answers the annual table when the monthly one was meant): a request without them is refused
+required = ["frequency_code"]
 # MoSPI's column -> ours
 columns = { AgeGroup = "age", weekly_status = "measure", socialGroup = "social", General_Education = "education", state = "state", gender = "gender", sector = "sector", religion = "religion", month = "month", year = "year", quarter = "quarter" }
 other_columns = ["value", "unit", "indicator", "frequency", "year_type"]
+# how far rounding alone can move a published figure (rates to one decimal: half of 0.1); the
+# check that each total lies between its parts allows this much (release/store.py)
+rounding = 0.05
 
 [tables.annual]
 columns = ["year", "measure", "state", "gender", "sector", "age", "education", "religion", "social"]
@@ -39,16 +44,19 @@ source = "MoSPI PLFS, monthly"
 
 [indicators.lfpr]
 code = 1
+unit = "%"
 name = "labour force participation rate (LFPR)"
 words = 'participat|labou?r force|\bLFPR\b'
 
 [indicators.wpr]
 code = 2
+unit = "%"
 name = "worker population ratio (WPR)"
 words = '\bworkers?\b|population ratio|\bWPR\b|\bemployed\b|\bemployment\b|in work\b|working'
 
 [indicators.ur]
 code = 3
+unit = "%"
 name = "unemployment rate (UR)"
 words = 'unemploy|\bUR\b'      # "unemployed" must not count as "employed"
 
@@ -57,8 +65,9 @@ pairs = [["lfpr", "wpr"], ["ur", "wpr"]]
 because = "WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))"
 
 # Dimensions. A dimension with a total can be left out of a request (it is at its total); one
-# without is a setting, with a default. `role`: which setting is the measure, and which the
-# overlapping bands (age).
+# without is a setting, with a default. A setting's `role` says its kind, any number of each:
+# "measure" (its values are different measures, never mixed; a finding is rechecked on the
+# others) or "band" (its values overlap: never ranked against each other).
 
 [dimensions.measure]
 role = "measure"

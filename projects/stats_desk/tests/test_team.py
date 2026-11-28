@@ -256,6 +256,18 @@ async def test_a_task_naming_a_setting_its_groups_arent_published_on_is_caught(r
         assert not [i for i in analyses.results if not i.startswith("tables")]
 
 
+async def test_the_task_checks_refusal_names_the_settings_the_task_named(release_path):
+    """Its wording comes from the task's own settings, not from a dataset's (it named "the
+    measure or age group" whatever the task said)."""
+    async with connect(server=create(release_path)) as analyses:
+        run = Investigation(analyses, "q")
+        run.tables = await analyses.call("tables")
+        with pytest.raises(ToolError, match="without the age group the question doesn't ask about"):
+            await run.check_tasks(["Find the UR for 7.graduate, age 15-29 years, for 2025"])
+        with pytest.raises(ToolError, match="without the measure or age group the question"):
+            await run.check_tasks(["Find the UR for 7.graduate on CWS, all ages, for 2025"])
+
+
 async def test_the_eval_weak_spots_are_caught_by_code(release_path):
     """The eval's misses, each now a check: a link true by definition said even when
     the brief cites another finding (Q5); an outlier named with an odd space (Q7); a month MoSPI

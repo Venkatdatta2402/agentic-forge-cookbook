@@ -26,11 +26,13 @@ def label(analysis: str, args) -> str:
     """An analysis call as a reader knows it: "change on ur_monthly by gender (2026-09)"."""
     args = args if isinstance(args, dict) else {}
     table = args.get("table") or args.get("x_table")
+    if isinstance(args.get("tables"), list):          # join: its tables side by side
+        table = " + ".join(map(str, args["tables"]))
     out = analysis + (f" on {table}" if isinstance(table, str) and table else "")
     if isinstance(args.get("y_table"), str) and args["y_table"] != table:
         out += f" against {args['y_table']}"
     if args.get("by"):
-        out += f" by {args['by']}"
+        out += f" by {', '.join(map(str, args['by'])) if isinstance(args['by'], list) else args['by']}"
     if args.get("field") and args.get("a") and args.get("b"):
         out += f", {args['a']} against {args['b']}"
     where = args.get("where") or args.get("x_where")

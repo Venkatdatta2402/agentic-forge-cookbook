@@ -1,122 +1,59 @@
-"""The release file: one DuckDB file with the stored tables, a card for each, and the profiles.
+"""The release file: one DuckDB file per dataset, with its stored tables, a card for each, the
+profiles, and a line saying what it covers. The same for every dataset: what is particular to
+one is its source module's (release/sources/), which hands this module clean tables.
 
 Built by code from what the release job downloaded; opened read-only by the analysis MCP server.
 Agents never call MoSPI, so every number they use comes from here, from one release, and the
 profiles and the drill-downs always agree.
 
-Cleaning, each step from a rule verified on the data (cells.py has the evidence):
-  - readable column names: state, gender, sector, age, education, religion, social, measure, value
-  - empty religion/social/education -> 'all' (empty and 'all' carried the same value 18 of 18)
-  - empty age -> the band the empty-age tables cover, worked out from their totals
-  - the same total published in several tables (the 3.1% headline appeared three times) becomes
-    one row; two copies that disagree stop the build
-  - annual 'PLFS 2025' -> year 2025; monthly gets year, month and a period date
+What every dataset's build gets here:
+  - each table stored as its source cleaned it, the time columns typed (year, month, quarter:
+    integers; period: a date)
+  - every total checked to lie between its parts (`check_totals`): a row wrongly taken for a
+    total stops the build
+  - a card per table, written from the table itself: its values, totals, which fields are
+    published together, the source's notes
+  - names that must match another dataset's (its [source] conform_to): a value that dataset
+    doesn't have stops the build, rather than become a second name for one state
+  - a line saying what the release covers, and a fingerprint of every figure
 """
 
 import hashlib
 import json
 import os
 import tempfile
-from collections import defaultdict
+from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
 import duckdb
 
-from ..datasets import DATASET
-from .cells import RENAME, TOTALS, Cells, guard
-
-MONTHS = {m: i for i, m in enumerate(
-    ["January", "February", "March", "April", "May", "June", "July", "August", "September",
-     "October", "November", "December"], start=1)}
-ANNUAL_COLUMNS = DATASET.tables["annual"]["columns"]
-MONTHLY_COLUMNS = DATASET.tables["monthly"]["columns"]
-NO_TOTAL = {"year": "one year per row", "month": "one month per row", "period": "one month per row",
-            **DATASET.no_total}
-TIME_COLUMNS = ("year", "month", "period")
+from ..analysis.periods import FREQUENCIES, TIME, of_columns
+from .cells import Rows, totals_problems
 
 
 class StoreError(Exception):
     """The downloaded rows can't be stored as they are; the build stops."""
 
 
-def _year(text):
-    digits = "".join(ch for ch in str(text) if ch.isdigit())
-    return int(digits[:4]) if len(digits) >= 4 else None
+@dataclass
+class Table:
+    """One table as a source hands it over: clean rows, one per published combination."""
+    name: str                   # <indicator>_<frequency>: ur_annual, inflation_monthly
+    title: str                  # what it holds: "unemployment rate (UR), annual"
+    columns: list               # in order, time first; each row also has "value"
+    rows: list
+    notes: list = field(default_factory=list)       # for its card: what the source found or did
 
 
-COPY_TOLERANCE = 0.5     # points; beyond rounding, two copies disagreeing is a real mismatch
+def _types(columns) -> dict:
+    return {c: ("DATE" if c == "period" else "INTEGER" if c in TIME else "VARCHAR") for c in columns}
 
 
-def clean_annual(rows, unstated_age):
-    """Raw annual rows of one indicator (any years, both measures) -> (unique clean rows, notes).
-
-    A combination can be published in several tables. Measured on PLFS: 339 combinations appear
-    twice per indicator-year; copies agree except a few between the main table and the
-    education table (LFPR 2025: 4, by 0.1-0.3; WPR 2025: 2; none in UR or 2024). The table that
-    states its age range wins over the education table (whose age is only inferred); each
-    difference is reported in the card; a difference above COPY_TOLERANCE stops the build.
-    """
-    seen, rank, differ = {}, {}, []
-    for raw in rows:
-        r = {RENAME[k]: v for k, v in raw.items() if k in RENAME}
-        try:
-            value = float(raw["value"])
-        except (TypeError, ValueError, KeyError):
-            continue
-        row = {"year": _year(r.get("year"))}
-        for c in ANNUAL_COLUMNS:
-            if c in TIME_COLUMNS:
-                continue
-            row[c] = r.get(c)
-            if not row[c] and None in TOTALS.get(c, ()):         # an empty religion is "all"
-                row[c] = DATASET.totals[c]
-        band = DATASET.band
-        row[band] = row[band] or unstated_age
-        if row[band] is None:
-            raise StoreError(f"rows without an {band}, and no band could be worked out for them")
-        key = tuple(row[c] for c in ANNUAL_COLUMNS)
-        stated = 0 if r.get(band) is None else 1          # a table that states its age wins
-        if key in seen:
-            gap = abs(seen[key] - value)
-            if gap > COPY_TOLERANCE:
-                raise StoreError(f"two published copies of {dict(zip(ANNUAL_COLUMNS, key))} differ by "
-                                 f"{gap:.2f} points ({seen[key]} and {value})")
-            if gap > 1e-9:
-                differ.append(gap)
-            if stated <= rank[key]:
-                continue
-        seen[key], rank[key] = value, stated
-    notes = []
-    if differ:
-        notes.append(f"{len(differ)} combinations are published in both the main table and the "
-                     f"education table with values {min(differ):.1f}-{max(differ):.1f} points apart; "
-                     "the main table's value (age stated) is stored")
-    return [{**dict(zip(ANNUAL_COLUMNS, k)), "value": v} for k, v in seen.items()], notes
-
-
-def clean_monthly(rows, measure):
-    seen = {}
-    for raw in rows:
-        try:
-            value = float(raw["value"])
-        except (TypeError, ValueError, KeyError):
-            continue
-        r = {RENAME[k]: v for k, v in raw.items() if k in RENAME}
-        year, month = _year(r.get("year")), MONTHS.get(str(r.get("month")))
-        row = {"year": year, "month": month, "period": date(year, month, 1),
-               **{c: r.get(c) for c in MONTHLY_COLUMNS if c not in TIME_COLUMNS}, DATASET.measure: measure}
-        key = tuple(row[c] for c in MONTHLY_COLUMNS)
-        if key in seen and abs(seen[key] - value) > 1e-9:
-            raise StoreError(f"two published copies of {dict(zip(MONTHLY_COLUMNS, key))} disagree")
-        seen[key] = value
-    return [{**dict(zip(MONTHLY_COLUMNS, k)), "value": v} for k, v in seen.items()]
-
-
-def _create(con, name, columns, rows, types):
+def _create(con, name, columns, rows):
     """Load rows through a temporary JSON-lines file. Measured: inserting 5,124 rows with
     parameters took ~60 s (row by row or 500 at a time alike); DuckDB reads the file at once."""
-    spec = {**{c: types[c] for c in columns}, "value": "DOUBLE"}
+    spec = {**_types(columns), "value": "DOUBLE"}
     with tempfile.NamedTemporaryFile("w", suffix=".jsonl", delete=False, encoding="utf-8") as f:
         for r in rows:
             f.write(json.dumps({c: (r[c].isoformat() if isinstance(r[c], date) else r[c])
@@ -129,38 +66,95 @@ def _create(con, name, columns, rows, types):
         os.unlink(path)
 
 
-def card(con, name, title, source, notes=()):
-    """What a table holds, written from the table itself."""
+def no_total(dataset, freq) -> dict:
+    """Why a field has no total, for a card: the time columns' (a period is one of the table's
+    frequency), then the dataset's own."""
+    time = {"year": "one year per row", **{f.part: f"one {f.unit} per row" for f in FREQUENCIES if f.part},
+            "period": f"one {freq.unit} per row"}
+    return {**time, **dataset.no_total}
+
+
+def card(con, name, title, source, dataset, notes=()):
+    """What a table holds, written from the table itself, in its dataset's terms."""
     columns = [c for c, in con.execute(
         f"SELECT column_name FROM duckdb_columns() WHERE table_name = '{name}' ORDER BY column_index").fetchall()]
+    totals, why = dataset.total_values, no_total(dataset, of_columns(columns))
     rows = con.execute(f'SELECT count(*) FROM "{name}"').fetchone()[0]
     lines = [f"table {name}: {title}", f"source: {source}; {rows:,} rows, one per published combination"]
     for c in columns:
         if c == "value":
             continue
-        values = [v for v, in con.execute(f'SELECT DISTINCT {c} FROM "{name}" ORDER BY 1').fetchall()]
+        values = [v for v, in con.execute(f'SELECT DISTINCT "{c}" FROM "{name}" ORDER BY 1').fetchall()]
         shown = ", ".join(map(str, values[:12])) + (f", ... ({len(values)} in all)" if len(values) > 12 else "")
-        total = next((t for t in sorted(TOTALS.get(c, set()) - {None}) if t in values), None)
-        rule = (f"total = '{total}'" if total else f"no total: {NO_TOTAL[c]}" if c in NO_TOTAL else "")
+        total = next((t for t in sorted(totals.get(c, set()) - {None}) if t in values), None)
+        rule = (f"total = '{total}'" if total else f"no total: {why[c]}" if c in why else "")
         lines.append(f"  {c}: {shown}" + (f"   [{rule}]" if rule else ""))
-    split = [c for c in columns if c in TOTALS]
+    split = [c for c in columns if c in totals]
     if len(split) > 1:
         pairs = []
         for i, a in enumerate(split):
             for b in split[i + 1:]:
-                ta, tb = sorted(TOTALS[a] - {None})[0], sorted(TOTALS[b] - {None})[0]
-                n = con.execute(f'SELECT count(*) FROM "{name}" WHERE {a} <> ? AND {b} <> ?', [ta, tb]).fetchone()[0]
+                ta, tb = sorted(totals[a] - {None})[0], sorted(totals[b] - {None})[0]
+                n = con.execute(f'SELECT count(*) FROM "{name}" WHERE "{a}" <> ? AND "{b}" <> ?', [ta, tb]).fetchone()[0]
                 pairs.append(f"{a} x {b}" + ("" if n else " (NOT published)"))
         lines.append("  split together: " + "; ".join(pairs))
     lines += [f"  note: {n}" for n in notes]
-    lines.append(f"  value: {DATASET.value_note}")
+    lines.append(f"  value: {dataset.value_note}")
     return "\n".join(lines)
 
 
-def build_release(path, annual: dict, monthly: dict, unstated_age):
-    """annual: {table: (title, raw rows of all years)}; monthly: {table: (title, raw rows, measure,
-    how the measure was inferred)}. Writes a fresh DuckDB file with the tables and their cards;
-    the profiles are built from it next and added with `add_profiles`."""
+def check_conformed(dataset, tables, reference):
+    """Every value of a field this dataset shares with the one it is conformed to (its [source]
+    conform_to: CPI's states and sectors are PLFS's) is one that dataset's release names, or one
+    of its own ([source.own_values]): a new spelling at MoSPI stops the build rather than become
+    a second name for one state. `reference`: that dataset's release file, or None to skip."""
+    other = dataset.source.get("conform_to")
+    if not other or reference is None or not Path(reference).exists():
+        return
+    con = duckdb.connect(str(reference), read_only=True)
+    try:
+        theirs = {}
+        for (name,) in con.execute("SELECT name FROM _cards").fetchall():
+            cols = [c for c, in con.execute(
+                "SELECT column_name FROM duckdb_columns() WHERE table_name = ?", [name]).fetchall()]
+            for c in cols:
+                if c in dataset.dimensions and c not in TIME and c != "value":
+                    theirs.setdefault(c, set()).update(
+                        v for v, in con.execute(f'SELECT DISTINCT "{c}" FROM "{name}"').fetchall())
+    finally:
+        con.close()
+    own = dataset.source.get("own_values", {})
+    for f, known in theirs.items():
+        unknown = sorted({r[f] for t in tables if f in t.columns for r in t.rows} - known - set(own.get(f, {})))
+        if unknown:
+            plural = dataset.dimensions[f].get("plural", f"{f} values")
+            raise StoreError(f"{plural} not spelt as in {other.upper()}: {', '.join(map(str, unknown))}; add them to "
+                             f"[source.conform.{f}] in datasets/{dataset.key}.toml")
+
+
+def check_totals(dataset, t: Table) -> str:
+    """Every total of the table lies between its parts, in every group of the other fields (each
+    period, each measure apart): a row wrongly taken for a total (a renamed total, a shifted
+    column, a blank read as 'all') stops the build, beyond what rounding can do (the description's
+    `rounding`: its indicator's, or its source's). Returns the line for the table's card."""
+    indicator = dataset.indicators.get(t.name.rsplit("_", 1)[0], {})
+    rounding = indicator.get("rounding", dataset.source["rounding"])
+    checks, problems = totals_problems(Rows(t.rows, t.columns, dataset), rounding)
+    if problems:
+        raise StoreError(f"{t.name}: " + "; ".join(problems))
+    checked = {f: c for f, c in checks.items() if c["groups"]}
+    if not checked:
+        return ""
+    return "each total lies between its parts: " + ", ".join(
+        f"{f} {c['inside']}/{c['groups']}" for f, c in checked.items())
+
+
+def write(path, dataset, tables: list[Table], reference=None) -> dict:
+    """A fresh release file for one dataset: its tables, their cards, what it covers. The
+    profiles are built from it next and added with `add_profiles`. {table: rows stored}
+    Every check runs before the old file is replaced, so a failed build leaves it in use."""
+    check_conformed(dataset, tables, reference)
+    checked = {t.name: check_totals(dataset, t) for t in tables}
     # a fresh file every build: DuckDB keeps the space of dropped tables, so rebuilding in place
     # grew the file from 2.9 to 5.3 MB
     Path(path).unlink(missing_ok=True)
@@ -169,51 +163,50 @@ def build_release(path, annual: dict, monthly: dict, unstated_age):
         con.execute("CREATE TABLE _cards (name VARCHAR, card VARCHAR)")
         con.execute("CREATE TABLE _profiles (name VARCHAR, profile VARCHAR)")
         con.execute("CREATE TABLE _release (built DATE, released VARCHAR)")
-        types = defaultdict(lambda: "VARCHAR", year="INTEGER", month="INTEGER", period="DATE")
-        measure, band = DATASET.measure, DATASET.band
-        default = DATASET.defaults[measure]
-        for name, (title, rows) in annual.items():
-            years = sorted({r.get("year") for r in rows})
-            for year in years:
-                checks = guard([r for r in rows if r.get("year") == year],
-                               Cells([r for r in rows if r.get("year") == year],
-                                     pinned={measure: default, "year": year}))
-            cleaned, notes = clean_annual(rows, unstated_age)
-            _create(con, name, ANNUAL_COLUMNS, cleaned, types)
-            if unstated_age:
-                missing_in = DATASET.dimensions[band]["missing_in"]
-                notes.insert(0, f"{missing_in} rows give no {band} in {DATASET.publisher}'s table; stored as "
-                                f"'{unstated_age}', the band their totals match")
-            short = DATASET.measure_names.get(default, default).split(" (")[0]
-            notes.append(f"each total lies between its parts ({_year(years[-1])}, {short}): " + ", ".join(
-                f"{f} {c['inside']}/{c['groups']}" for f, c in checks.items()))
-            con.execute("INSERT INTO _cards VALUES (?, ?)", [name, card(con, name, title, DATASET.tables["annual"]["source"], notes)])
-        for name, (title, rows, used, how) in monthly.items():
-            _create(con, name, MONTHLY_COLUMNS, clean_monthly(rows, used), types)
-            con.execute("INSERT INTO _cards VALUES (?, ?)", [name, card(
-                con, name, title, DATASET.tables["monthly"]["source"], [f"{measure} {used}: {how}"])])
-        con.execute("INSERT INTO _release VALUES (?, ?)", [date.today(), _released(con, annual, monthly)])
+        for t in tables:
+            _create(con, t.name, t.columns, t.rows)
+            source = dataset.tables[of_columns(t.columns).name]["source"]
+            notes = [*t.notes, checked[t.name]] if checked[t.name] else t.notes
+            con.execute("INSERT INTO _cards VALUES (?, ?)", [t.name, card(con, t.name, t.title, source, dataset, notes)])
+        con.execute("INSERT INTO _release VALUES (?, ?)", [date.today(), released(con, dataset, [t.name for t in tables])])
     finally:
         con.close()
+    return {t.name: len(t.rows) for t in tables}
 
 
-def _released(con, annual, monthly):
+def released(con, dataset, names) -> str:
     """What this release covers, from the tables themselves, and a fingerprint of every figure in
-    them, e.g. "annual 2025 (and 2024); monthly to 2026-09 · data 3f2a91". The fingerprint changes
-    when MoSPI corrects a figure even though no new period came: a follow-up then
-    knows the earlier brief's figures may differ from today's tables."""
+    them, e.g. "PLFS annual 2025 (and 2024); monthly to 2026-10 · data 3f2a91", "CPI monthly to
+    2026-10 (2012 base to 2025-12) · data 1c1399": per frequency its latest period, and tables
+    ending sooner (a base no longer published) named by their base. The fingerprint changes when
+    MoSPI corrects a figure even though no new period came: a follow-up then knows the earlier
+    brief's figures may differ from today's tables."""
     parts = []
-    if annual:
-        years = sorted({y for t in annual for y, in con.execute(f'SELECT DISTINCT year FROM "{t}"').fetchall()})
-        parts.append(f"annual {years[-1]}" + (f" (and {', '.join(map(str, years[:-1]))})" if len(years) > 1 else ""))
-    if monthly:
-        last = max(con.execute(f'SELECT max(period) FROM "{t}"').fetchone()[0] for t in monthly)
-        parts.append(f"monthly to {last:%Y-%m}")
+    for f in sorted(FREQUENCIES, key=lambda f: f.per_year):
+        mine = []
+        for name in names:
+            cols = [c for c, in con.execute(
+                "SELECT column_name FROM duckdb_columns() WHERE table_name = ?", [name]).fetchall()]
+            if of_columns(cols) is f:
+                mine.append((name, [p for p, in con.execute(f'SELECT DISTINCT {f.sql()} FROM "{name}" ORDER BY 1').fetchall()]))
+        if not mine:
+            continue
+        if not f.within_year:
+            years = sorted({p for _, ps in mine for p in ps})
+            parts.append(f"{f.name} {years[-1]}" + (f" (and {', '.join(years[:-1])})" if len(years) > 1 else ""))
+            continue
+        last = max(ps[-1] for _, ps in mine)
+        sooner = {}
+        for name, ps in mine:
+            if ps[-1] < last:
+                base = (dataset.indicators.get(name.rsplit("_", 1)[0]) or {}).get("base")
+                sooner.setdefault((f"{base} base" if base else name, ps[-1]), None)
+        parts.append(f"{f.name} to {last}" + "".join(f" ({what} to {end})" for what, end in sooner))
     digest = hashlib.sha256()
-    for t in sorted([*annual, *monthly]):
+    for t in sorted(names):
         for row in con.execute(f'SELECT * FROM "{t}" ORDER BY ALL').fetchall():
             digest.update(repr(row).encode())
-    return "; ".join(parts) + f" · data {digest.hexdigest()[:6]}"
+    return f"{dataset.name} " + "; ".join(parts) + f" · data {digest.hexdigest()[:6]}"
 
 
 def add_profiles(path, profiles: dict):

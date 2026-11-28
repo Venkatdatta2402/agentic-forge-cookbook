@@ -17,15 +17,18 @@ from pydantic import BaseModel, Field
 
 from .. import config
 from ..analysis.analyses import NOTE
-from ..analysis.data import SHOWN, TOTAL
+from ..analysis.data import MEASURE_FIELDS, SHOWN, TOTAL, value_list
+from ..analysis.periods import NAMES as FREQUENCY_NAMES
 from ..core.tools import Registry, ToolError
-from ..datasets import DATASET, indicator_pattern
+from ..datasets import CATALOG, DATASET, WORDS, Words, indicator_pattern
 from .agent import FORM, Agent, Stopped, answer
 
-TOOLS = ("value", "compare", "gap", "change", "series", "average", "trend", "relate", "drill", "tables")
+TOOLS = ("value", "compare", "gap", "change", "series", "average", "trend", "relate", "join", "drill", "tables")
 BUDGET = 16_000        # tokens for one task: ~5 calls at ~2.9k each before results (12k fitted 3)
 
-PERSONA = f"""You are an analyst of {DATASET.subject} ({DATASET.publisher}'s {DATASET.name}). You carry out ONE task from the lead analyst with the analysis tools, then hand in what you found.
+def analyst_persona(w: Words) -> str:
+    """An analyst's instructions, in the words of the datasets the desk answers from."""
+    return f"""You are an analyst of {w.analyst_about}. You carry out ONE task from the lead analyst with the analysis tools, then hand in what you found.
 
 How to work:
 - Pick the analysis whose description fits the task. One analysis that answers it beats several lookups: put every group the task names in that one call, chosen as the tables list says (one group, `by`, a list as a field's value, or a list of groups).
@@ -41,6 +44,9 @@ Hand in with {FORM}:
 - claim: one sentence answering the task: what the results show, which way and how much. Quote numbers exactly as a result shows them. The lead also gets the figures themselves from code, so don't list them all.
 - results: the ids of the results the claim rests on (each result's first line, e.g. gap-83c1ba).
 Say what the figures show, not why: the data has no causes in it."""
+
+
+PERSONA = analyst_persona(WORDS)
 
 
 class Report(BaseModel):
@@ -67,7 +73,7 @@ class Finding:
         lines += [f"claim: {self.claim}", "figures:"]
         lines += [f"  [{i}] " + figures.replace("\n", "\n    ") for i, figures in self.figures.items()]
         if self.elsewhere:
-            lines.append("the same, rerun by code in the other period and on the other measure:")
+            lines.append(f"the same, rerun by code {WORDS.rerun}:")
             lines += [f"  [{i}] " + figures.replace("\n", "\n    ") for i, figures in self.elsewhere.items()]
         if not self.flags:
             lines.append("warnings from code: none")
@@ -100,8 +106,8 @@ def compact(text):
 
 # which indicator a task is about, by its words (datasets/plfs.toml): "unemployed" must not count
 # as "employed"
-INDICATORS = DATASET.words
-TABLE_LINE = re.compile(rf"({indicator_pattern()})_(annual|monthly): ")
+INDICATORS = CATALOG.words
+TABLE_LINE = re.compile(rf"({indicator_pattern()})_({FREQUENCY_NAMES}): ")
 
 
 VALUES_LINE = re.compile(r"(\w+) values: (.*)$")
@@ -115,13 +121,24 @@ def tables_for(tables_text, task):
     and list the closest on a miss (data.py), so the list was paid for on every call to spare a
     refusal that rarely comes, and a dataset with hundreds of values couldn't be listed at all."""
     wanted = {i for i, pattern in INDICATORS.items() if re.search(pattern, task, re.I)} or set(INDICATORS)
+    lines = tables_text.split("\n")[1:]
+    # the fields of the tables kept: a CPI task isn't shown PLFS's ages and religions, nor the reverse
+    fields = set()
+    for line in lines:
+        table = TABLE_LINE.match(line)
+        if table and table[1] in wanted:
+            found = re.search(r"; fields ([^;]+)", line)
+            fields |= {f.strip() for f in found[1].split(",")} if found else set()
+            fields |= {m for m in MEASURE_FIELDS if f"; {m} " in line}     # named before the fields
     out = []
-    for line in tables_text.split("\n")[1:]:
+    for line in lines:
         table = TABLE_LINE.match(line)
         if (table and table[1] not in wanted) or line.startswith("profiles: "):
             continue
         listed = VALUES_LINE.match(line)
-        if listed and len(values := listed[2].split(", ")) > SHOWN:
+        if listed and fields and listed[1] not in fields:
+            continue
+        if listed and len(values := value_list(listed[2])) > SHOWN:
             total = TOTAL.get(listed[1])
             line = (f"{listed[1]} values: {len(values)}" + (f", {total} the total" if total else "")
                     + "; name one as the task does: the analyses find it, and list the closest if they can't")
@@ -142,7 +159,7 @@ def check_numbers(analyses, cited, *texts):
 def ways_to_say(field, used):
     """The words that name a setting in a claim or a task: as published, or any of its synonyms in
     the dataset's description (usual status for PS+SS; 15+, 15 and above for 15 years and above)."""
-    return {used.lower()} | {w.lower() for w in DATASET.synonyms(field, used)}
+    return {used.lower()} | {w.lower() for w in CATALOG.synonyms(field, used)}
 
 
 def check_settings(analyses, cited, claim):
@@ -160,6 +177,30 @@ def check_settings(analyses, cited, claim):
             "Results you cited are on another setting than the task asked: "
             f"{'; '.join(dict.fromkeys(unsaid))}. Say so in the claim, so the lead doesn't read "
             "them as what was asked.")
+
+
+# the note on a result whose periods sit on both sides of a change of base (analyses.across_join),
+# and the words that say it in a claim
+JOIN_NOTE = re.compile(r"^note: across (\d{4}), ", re.M)
+# any of the ways a claim says it (span test: "a change of CPI list in 2025" was refused under a
+# narrower list, though it says so): the words of any change of method, and each dataset's own
+# for its change (cpi.toml's `says`: "2012", "back series", ...)
+_OWN = [w for i in CATALOG.indicators.values() for w in (i.get("join") or {}).get("says", [])]
+SAYS_JOIN = re.compile("|".join([r"\bbase\b", "method", "basket", r"\blists?\b", "weights", "series break",
+                                 r"not (?:directly |strictly )?comparable", *map(re.escape, dict.fromkeys(_OWN))]),
+                       re.I)
+
+
+def check_join(analyses, cited, claim):
+    """Refuse a hand-in whose claim doesn't say a cited result's figures sit on both sides of a
+    change of base. Span test: told so by the note at the end of the result, an analyst wrote
+    "6.09% versus 6.21%" for October 2026 against October 2024, the 2024 figure the 2012 base's."""
+    years = sorted({y for i in cited for y in JOIN_NOTE.findall(analyses.results.get(i, ""))})
+    if years and not SAYS_JOIN.search(claim or ""):
+        raise ToolError(
+            f"Results you cited compare figures from both sides of {', '.join(years)}, where the list of "
+            "items and weights changed (each result's last line says so). Say so in the claim, so the "
+            "lead doesn't read the difference as prices alone.")
 
 
 CUT_SHORT = ("no claim: the analyst was stopped ({reason}) before writing one. Its figures below are "
@@ -196,6 +237,7 @@ async def run_analyst(analyses, finding_id, task, context, transcript=None):
         report.results = analyses.cited_ids(report.results)
         check_numbers(analyses, report.results, report.claim)
         check_settings(analyses, report.results, report.claim)
+        check_join(analyses, report.results, report.claim)
         return Finding(finding_id, task, report.claim, report.results,
                        figures={i: compact(analyses.results[i]) for i in report.results})
 

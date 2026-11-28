@@ -94,10 +94,11 @@ Paced one page at a time (0.4 s apart); a 429 is waited out (5, 15, 45 s) and ne
 
 ### 3.2 Order of the build, and reading a figure
 
-1. **Checks on the raw download** (`release/cells.py`): every total lies between its parts, the
-   shape is the known one (the guard), which age band the age-less tables cover, which measure
-   the monthly series uses.
-2. **The stored tables and their cards** (`release/store.py`).
+1. **Checks on the raw download** (the source module, `release/sources/<key>.py`): the shape is
+   the known one (the guard), which age band the age-less tables cover, which measure the
+   monthly series uses.
+2. **The stored tables and their cards** (`release/store.py`), after every total of every
+   dataset is checked to lie between its parts (since 2026-11-28; before, PLFS's raw rows only).
 3. **The profiles, from the stored tables** (`release/build.py`), with the same calculations
    the agents' tools use (`analysis/compute.py`): the profile is those analyses run at the
    default settings, with the most striking results kept. One copy of each rule, so a profile
@@ -163,6 +164,236 @@ replayed and the task check on 174 saved tasks: 512 entries, byte-identical befo
 Still PLFS-shaped, for Phase 3 (a second dataset) to settle: exactly two settings, a measure and
 an overlapping band (`role` in the file); one dimension to correlate across; rates in %; annual
 and monthly tables; MoSPI's own per-dataset selectors in `release/mospi.py`; the web page's text.
+
+**Phase 4: a dataset is a description and a source, nothing else** (planned 2026-11-27). Adding
+CPI showed where the engine is still PLFS's: the agents and analyses read the descriptions, but
+the release side doesn't. What still assumes one dataset (≈60 places read `DATASET`, i.e. PLFS):
+
+| Part | State | What is PLFS's |
+|---|---|---|
+| agents (lead, analyst, checks) | mostly general | ~10 places: the publisher, the age and measure settings in one lead rule |
+| analyses | mostly general | examples and wording from PLFS's file |
+| storing tables (`store.py`, `cells.py`) | PLFS only | its annual layout and cell rules; CPI got its own module (`release/cpi.py`) |
+| profiles (`build.py`) | half | the annual profile assumes a measure and an age band |
+| fetching, daily update | one copy per dataset | PLFS: fetch_release_data, build_release, update_release; CPI: fetch_cpi, build_cpi; only PLFS checked daily |
+| time | hard-wired | a table is annual or monthly (a yes/no); a quarterly dataset (GDP) has nowhere to go |
+| settings | hard-wired | exactly two, a measure and an overlapping band (`role`), named so in a lead rule; CPI has none, so it fits; GDP's current or constant prices would not |
+| MoSPI's selectors | one file for all | per-dataset request options in `release/mospi.py` |
+| web page | PLFS's | its title from PLFS's file |
+| evals | PLFS's | golden questions and the leak test's banned terms |
+
+What a dataset is to be: (a) its description file (`datasets/<key>.toml`): tables, fields,
+totals, synonyms, units, words, joins, same-figure links, outlier rule, examples; (b) one small
+source module with two jobs, what to ask MoSPI for and how its raw rows become clean rows
+(renames, conformed names, quirks such as CPI's "X-Overall"); (c) a slice of real rows for tests
+and two span cases. Everything else general. The steps:
+
+1. **Time as data** (first: everything else touches it): each table's frequency (annual,
+   quarterly, monthly) from the description and its columns, with what a period looks like,
+   its unit word, the period before and a year before; no yes/no for monthly.
+2. **One release builder, symmetric**: the general parts of `store.py` and `cells.py` (storing
+   clean rows as tables, cards, the release line, the test that a total lies between its parts)
+   shared; each dataset's quirks in its own source module of the same shape, `sources/plfs.py`
+   (unstated ages, how its totals are found) as `sources/cpi.py` (conformed names, "X-Overall",
+   two bases), with MoSPI's request options for it (out of `mospi.py`). Neither dataset special.
+3. **Settings as a list**: a dataset's settings (fields with no total that every figure states)
+   listed in its description, each with its own properties (overlapping values, never ranked;
+   a default); code and wording name the settings of the tables a task is about, and a dataset
+   with none never meets the rule (today: exactly a measure and an age band, named so in the
+   lead's task-check refusal).
+4. **One profile writer**, each section written when the table has what it needs (settings, a
+   hierarchy, states).
+5. **One command and one daily job for all datasets** (`release.py fetch|build|update
+   --dataset <key>`), the daily check looping over the descriptions.
+6. **The last singular-dataset uses** read from the combined description: the agents' wording,
+   the web page's title; relate refusing cleanly for a dataset with no states.
+7. **A check every dataset must pass before any quota is spent**: it loads, shared fields
+   agree, it builds from its slice, profiles under a token limit, every tool description fills,
+   the leak test with the dataset's own banned terms, its span cases present.
+8. **A template and a checklist**: `datasets/_template.toml` with comments, and the steps of
+   adding one (explore MoSPI's tool, description and source, fetch and build offline, the check,
+   read the profiles, two span cases run twice).
+
+Checked as in Phase 1: PLFS's and CPI's prompts, tool descriptions, results and profiles
+byte-identical before and after each step; no model calls. The check (scratchpad
+phase4/baseline.py): both datasets' prompts, tool descriptions and schemas, the tables list and
+every table's card, all profiles, 251 saved tasks through the task check and tables_for, 195
+analysis calls (the eval runs', every analyst call in the span runs, and fixed calls covering
+time in every shape and the join), and both releases rebuilt from data/raw: 755 entries; taken
+twice, identical.
+
+- **Step 1 done (2026-11-27): time as data** (`analysis/periods.py`). A table's frequency comes
+  from its columns (`month`: monthly, `quarter`: quarterly, neither: annual); each frequency
+  says how its periods are written ("2025", "2025-Q3", "2025-10"), its unit word, the next
+  period and a year earlier, which part of a year a period is, what in a task's words names
+  it, and whether a series is smoothed (3 months). The yes/no `Table.monthly` is gone from
+  every module: the previous period and a year earlier, missing periods, streaks, the trend
+  line, 3-month averages, the join's year mode ("one month of each year", or a quarter), the
+  recheck's other period, profile names, the task check's choice of tables, the brief's check
+  that skipped periods are said. Byte-identical (755 of 755). Storing a quarterly table (a
+  `quarter` column) is step 2's.
+- **Step 2 done (2026-11-27): one release builder, symmetric.** `release/store.py` stores any
+  dataset's clean tables (`store.Table`): the tables, time columns typed from the frequency,
+  the cards in the dataset's own terms, the release line, and the check that names shared with
+  the dataset it is conformed to are that dataset's (`[source] conform_to = "plfs"` and
+  `[source.own_values]` in cpi.toml; the check now covers every shared field, sectors too, not
+  states alone). `release/cells.py` (the raw-row checks: shape, totals between parts) takes the
+  dataset. Each dataset's quirks are its source's, one shape: `release/sources/<key>.py` with
+  `build(raw) -> Built` (its tables, what its profiles need, a log). `sources/plfs.py`: copies in
+  two tables, unstated ages, the monthly measure inferred, MoSPI's year labels (from store.py,
+  cells.py, build.py and scripts/build_release.py); `sources/cpi.py`: two bases, MoSPI's
+  spellings, "X-Overall" (was release/cpi.py), its card's "2025 has an index but no inflation"
+  now worked out from the rows. `release/builder.py`: `build(key)` for any dataset;
+  `scripts/build_release.py [plfs|cpi]` replaces build_cpi.py. One deliberate change: every
+  release line names its dataset ("PLFS annual 2025 ...", as CPI's already did). Checked: of
+  755 entries 255 changed, every one the release line (in every tables list) or relate's
+  unpaired states; both releases rebuilt from data/raw with the same fingerprints.
+  Fetching and the daily check are step 5's.
+- **The between-parts check for every dataset (2026-11-28, the user's yes).** It ran on PLFS's
+  raw rows only (one year, usual status); now `store.check_totals` runs it on every table's
+  clean rows before the old file is replaced, every period and measure apart, so no dataset's
+  build can skip it. A field with nothing to compare (one state) is no failure. The allowance
+  is the description's `rounding` (how far rounding alone moves a figure): `[source]` 0.05 for
+  both, CPI's 2012-base inflation 0.15. Measured: on the full CPI history 9 totals of ~9,900
+  lay 0.05-0.06 outside (only the first and latest months had been checked); that inflation is
+  worked out from MoSPI's one-decimal indices (26,463 of 26,473 equal to that), whose rounding
+  moves it by up to 0.14 points, so rounding, not a wrong total. The 2024 base holds at 0.05.
+  PLFS's counts on the cards changed (gender 1,598 -> 3,416): both years and measures now, and
+  an education-table row (no age) and its 15+ copy are one group once cleaned, not two (filling
+  the empty age alone takes 1,598 to 1,488). The download-shape guard (unknown fields) stays
+  PLFS's raw-row check, now on the monthly rows too. The CPI test slice skips the check (5 of
+  36 states, a few items per class: a total can lie outside the parts kept). Checked: of 755
+  entries 16 changed, 14 only the cards' totals line, 2 the release's build date; fingerprints
+  962dfe and 1c1399 unchanged.
+- **Step 3 done (2026-11-28): settings as a list.** A setting (a field with no total) has a
+  kind, its `role`: "measure" (different measures, never mixed; a finding rechecked on the
+  others) or "band" (overlapping values, never ranked), any number of each in a dataset, or
+  none (CPI). `Dataset.measures` / `.bands` and the catalogue's replace the one `measure` and one
+  `band`, and two datasets may now have different ones (a field shared by two keeps one role in
+  both). Every general rule reads the lists: a table's settings (`Table.measures`, `.bands`),
+  what is published together and why a split isn't (per band value, per measure limit, any
+  number of each), its description line, the tables list, the recheck on each other value of
+  each measure, `nearest`, the true-by-definition bands, the profiles' first lines, the task
+  check (every combination of the settings a task names). Wording: the lead's instructions
+  and the finding's header say "and on the other measure", and a figure is quoted with its
+  measure, only when a dataset has one (`Words.rerun`, `.quoted_with`); the task check's
+  refusal names the settings the refused tasks named ("without the age group ...", before
+  always "the measure or age group"). PLFS's own source names its one measure and band
+  itself. Checked: 755 entries, one changed, the deliberate one: CPI's recheck says "no other
+  period is stored", not "period or measure"; the refusal's wording is tested (no saved task
+  named one setting alone). Tests: any number of each kind; one field with two roles refused.
+- **Step 4 done (2026-11-28): one profile writer.** `build.profile(t, correlations, notes)`
+  for every table of every dataset (it was `annual_text`, written for PLFS, and `monthly_text`).
+  Every table: its title and latest period, each setting it offers a choice of at its default
+  (a measure with one value, PLFS's monthly CWS, is no choice: the source's note names it), the
+  headline in its own unit, the other measure, the source's notes. Then a series (several
+  periods a year) gets the over-time sections, a table of one period a year the previous year
+  and the most striking of each kind; correlations across states only for a table with states;
+  a hierarchy's middle levels left out in both. What only a source knows now reaches the
+  profiles one general way, `Built.notes` ({table: [line]}): PLFS's band of the age-less rows
+  and its monthly measure (`sources/plfs.profile_notes`), before two PLFS-only arguments
+  (`unstated_age`, `measure_notes`). No "%" written in (the table's unit), no "everyone" (its
+  dataset's), no PLFS `DATASET` in build.py. Checked: 755 entries, 11 changed, each the same
+  lines reordered: the education note in PLFS's three annual profiles moved from the end to
+  after the headline lines, as a source's notes now sit; token counts unchanged. Test: a table
+  of one period a year without states gets no correlations, and no setting it has no choice of.
+- **Step 5 done (2026-11-28): one command and one daily job for all datasets.**
+  `scripts/release.py update | check | fetch | build [--dataset <key>]` replaces four scripts
+  (fetch_release_data, build_release, update_release for PLFS; fetch_cpi). What's shared
+  (`release/update.py`): a download is a `Job` (a name, get_data's filters, a label), kept as
+  data/raw/<key>/<name>.json, `{dataset, each filter, rows}` (PLFS's files' shape, so its
+  committed files stay as they are; CPI's local files rewritten to it once, rows untouched);
+  fetching, comparing, revisions in REVISIONS.md, a first download kept job by job. Each
+  source says the rest: `jobs(mospi)` (its first download; PLFS's newest two years of each
+  frequency from MoSPI's metadata, no years written in) and `check(mospi, raw)` (what's new).
+  PLFS's check moved from update.py into sources/plfs.py unchanged; CPI has one of its own (two
+  requests, verified live). MoSPI's required selectors are each description's `[source]
+  required` (out of mospi.py). The datasets run in build order (CPI after PLFS, whose names it
+  is conformed to); the workflow's later steps run unless cancelled, so one dataset's failure
+  doesn't hold back another's update. Checked: 755 of 755 identical, fingerprints unchanged;
+  `check` run live: both "nothing new" (as expected: November's figures come mid-December).
+  Open for the user: commit data/raw/cpi (24 MB) so the daily job can update CPI.
+- **relate built on join's pairing** (`compute.line_up`, used by join, relate and the
+  profiles' correlations): identical, then one deliberate change, relate naming the states
+  only one side has (before, dropped unsaid): of 195 replayed calls one changed, the relate
+  across datasets ("not in y (ur_annual): Dadra & Nagar Haveli; Daman & Diu").
+
+**Phase 3: CPI, the second dataset** (2026-11-26; stages 1-3 of 4 done). Probed at MoSPI first
+(no model calls): two bases with different lists of items and weights, 2024 (current: Jan 2025
+on, inflation from 2026) and 2012 (to Dec 2025); each row an index and inflation; the 2024
+base's items a five-level hierarchy (13 divisions > 43 groups > 92 classes > 162 sub-classes >
+358 items), each name under one parent; all of it 1.5M rows, and get_data can't ask for one
+level, so fetched: All India at every level, the general index in every state, and the 2012
+base's general index by state and groups All India (~75k rows). MoSPI's defaults that would
+have fetched the wrong table: base year 2012, series Current; All India is state 1, not the 99
+its help says (both refused before sending, `REQUIRED_IN_DATA`).
+- **The engine reads one description of every dataset** (`datasets.CATALOG`): a field means
+  the same in each dataset that has it, so state and sector are written as PLFS writes them
+  (four states, and Rural/Urban/Combined, mapped in `cpi.toml`); loading refuses two datasets
+  that describe one field differently. Each table carries its unit (an index has none: "value:
+  110.05") and its own settings (CPI has no measure or age band). One file per dataset
+  (plfs.duckdb, cpi.duckdb), each built by its own job; the server attaches the folder and reads
+  them as one release. With CPI loaded, every PLFS output byte-identical (638 entries).
+- **A hierarchy is nested fields**, an empty level "all": an item named alone gets its parents
+  from the rows ("onion" -> Food and beverages > Food > Vegetables... > Onion); a level compared
+  with its parents left out is each in its own, with the one overall total. Said once in what is
+  published together ("division > group > class > sub_class > item: only by sector"); profiles
+  show its top and finest levels only (the middle ones repeated the same movers: 1.7k -> 1.4k tokens).
+- **The two bases are separate tables, joined only where MoSPI joins them.** Its "back series"
+  of the 2024 base (2013-2024, general index, All India) turned out to be the 2012 base's figures
+  rescaled to 2024 = 100: inflation identical in all 390 months, each sector's index divided by
+  one factor (1.88-1.92). Kept, as statistics offices publish a linked series across a change of
+  base, and a result whose periods sit on both sides of 2025 gets a note from code
+  (`analyses.across_join`, the `join` in `cpi.toml`), as does the profile.
+- The 2012 base keeps the two territories merged in 2020 (Dadra & Nagar Haveli; Daman & Diu)
+  apart: kept as its own (`own_states`); the build stops on any other state PLFS doesn't name.
+- **Stage 4: the agents' words for two datasets** (`datasets.Words`): the lead's and analysts'
+  instructions and the tool descriptions are written from the datasets the desk answers from,
+  each named, with what each can't give, its units and what a correlation across states
+  describes; of PLFS alone they read as before (checked: identical), so with CPI only those two
+  instructions changed (4 of 638 entries). What the groups mean, and the defaults, come from the
+  release's own tables. An analyst's tables list keeps only the fields of its task's tables (a
+  CPI task isn't shown PLFS's ages). A field whose values hold commas is listed with "; " between
+  them (split on commas, CPI's 359 items read as 474, and the task check read "tur" as an item).
+  The server reads the release folder by default; the image carries both files.
+- **Results across the change of base, said:** an analyst's claim citing a result with the note
+  must say so, and so must a brief (span test: "6.09% versus 6.21%" for October 2026 against
+  October 2024, the note passed over; with the check, the claim was sent back and said so, 2 of
+  the 2 runs that handed in). The refusal for asking a period of an analysis that takes none now
+  names value with a list of periods (told only of series and change, an analyst repeated the
+  refused call until stopped, 2 of 4); an id cited under the wrong kind with its own code is read.
+- Span tests (2026-11-26, two runs each): pick on "Is inflation rising?" and "Which items push
+  food prices up?" found the inflation profile 4 of 4; the lead's tasks on them passed code's
+  checks 4 of 4; analysts on food items 2 of 2, states and towns against villages 2 of 2 (15-18k
+  tokens: 72 figures asked at once and refused before the gap across states), across 2025 see
+  above. Groq's daily limit for 120b stopped the last run.
+- **Tables side by side, at question time (`join`)**, not a joined table in the release nor a
+  profile per pair of tables (their number grows with every pair; most pairs no question asks
+  for). 2-4 tables, any datasets, lined up on any fields they all have (state, sector) and on
+  time: period for monthly with monthly or annual with annual; year for annual with monthly,
+  the monthly table at one month of each year, which the analyst names (e.g. December). A
+  survey year against a code-made average of 12 months was turned down: a figure MoSPI
+  doesn't publish. Rows only some tables have are listed, not dropped (relate drops them),
+  over time only inside the stretch every table covers; at most 40 rows. Each table's
+  period is named, and when they differ the result says so; the note on the change of base
+  applies to it as to any result. ~320 tokens of tool on every analyst call. relate keeps its
+  own pairing for now. Found by it: CPI's 2024 base has no inflation for 2025 (MoSPI
+  publishes 2025's on the 2012 base only).
+- Span tests of join (2026-11-27, A14 towns month by month, A15 states' 2025 unemployment
+  with December 2025 inflation; two runs each). First round 1 of 4 handed in; each failure a
+  class, fixed in general: `by "month"` (both A14 runs, the refused call resent unchanged)
+  read as period when every table is monthly; a missing period's refusal listed 142 months
+  (~700 tokens) and said nothing of the 2012 base's table, so one analyst answered "not
+  published" -- stored periods are now written as runs, and a table of the same figure on
+  another base (`same_as` in cpi.toml) that has the period is named; an id written with a
+  non-breaking hyphen ("join‑7475f9") is read as an id. Then 4 of 4 handed in, each with join
+  (A14 one call, ~7-9k tokens; A15 found the 2012 base from the refusal, ~11-15k). One A15
+  claim named the second lowest state as the lowest, read off 37 rows: join now writes each
+  column's lowest and highest as compare does; then the claim's extremes were right.
+- Small-sample outliers by each table's own dataset (`Table.small_groups`): the catalogue
+  merged them by field name, so PLFS's rule would apply to CPI's states whatever cpi.toml says.
+- Not done: CPI's profiles are 1.3-1.6k tokens, twice PLFS's; whether CPI's states should be set
+  apart as outliers at all (they are now: Kerala's 9.49% in December 2025).
 
 **Phase 2: what each call carries no longer grows with every value and table** (2026-11-25).
 Tokens per call, measured with no model call:
@@ -257,12 +488,20 @@ Tokens per call, measured with no model call:
 ### 3.6 The release job (built 2026-11-14)
 
 **GitHub Actions, daily at 19:00 India time, free, no tokens**
-(`.github/workflows/stats-desk-release.yml`, `scripts/update_release.py`, `release/update.py`):
+(`.github/workflows/stats-desk-release.yml`, `scripts/release.py update`, `release/update.py`;
+every dataset since 2026-11-28, each on its own: one failing fails the run, another's new
+figures are still tested, committed and deployed):
 
 - **The raw downloads live in the repository** (`data/raw/plfs`, 11.4 MB; user's choice
   2026-11-14), so the job fetches only what's new and builds from the rest. A new month changes
-  three ~50 KB monthly files; a new annual year adds ~6 MB once a year.
-- **The check: three small requests**, measured 2026-11-14: the annual years and the monthly
+  three ~50 KB monthly files; a new annual year adds ~6 MB once a year. `data/raw/cpi` (24 MB,
+  30 files) is not committed yet: until it is, CPI's daily check fails loudly (no downloads
+  kept) rather than read as nothing new.
+- **CPI's check: two small requests** (measured live 2026-11-28): the row count of our newest
+  2024-base All India year (20,040 at MoSPI, 20,040 kept; more = a new month) and of the year
+  after (2027: "No Data Found", read as 0). Either fetches that year's All India rows again and
+  the states' general index. The 2012 base (ended Dec 2025) and the back series don't change.
+- **PLFS's check: three small requests**, measured 2026-11-14: the annual years and the monthly
   years MoSPI lists in its metadata (newest first: a year newer than ours is new, whatever
   MoSPI calls it), and the row count of our newest monthly year (more rows = a new month;
   the metadata's months are pooled across years, so they can't show it). "No Data Found" means
@@ -961,7 +1200,7 @@ projects/stats_desk/
 │   └── api/        the web layer (app); questions: starting, running, keys, carrying on
 │                   (desk); the machine's analysis server (analysis_server); records, key
 │                   leases, visitor counts, key usage (store); progress lines (progress)
-├── scripts/        fetch_release_data, build_release, ask (one live question)
+├── scripts/        release (update | check | fetch | build, every dataset or --dataset), ask (one live question)
 ├── runs/           saved live runs: brief, transcripts, results, usage
 ├── data/
 │   ├── raw/        downloads from MoSPI (not committed)

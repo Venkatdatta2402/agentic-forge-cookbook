@@ -42,8 +42,9 @@ FREE_PER_VISITOR_PER_DAY = int(os.environ.get("STATS_DESK_FREE_PER_VISITOR_PER_D
 FREE_TOKENS_PER_DAY = int(os.environ.get("STATS_DESK_FREE_TOKENS_PER_DAY", 200_000))
 FREE_MIN_LEFT = int(os.environ.get("STATS_DESK_FREE_MIN_LEFT", 20_000))
 MOSPI_URL = os.environ.get("STATS_DESK_MOSPI_URL", "https://mcp.mospi.gov.in/mcp")
-# the release file the analysis server reads (built by scripts/build_release.py)
-RELEASE_PATH = Path(os.environ.get("STATS_DESK_RELEASE", PROJECT / "data" / "release" / "plfs.duckdb"))
+# the release file the analysis server reads (built by scripts/release.py build)
+# the release folder: one file per dataset (plfs.duckdb, cpi.duckdb), read as one (analysis/data.py)
+RELEASE_PATH = Path(os.environ.get("STATS_DESK_RELEASE", PROJECT / "data" / "release"))
 
 
 @dataclass(frozen=True)

@@ -31,8 +31,8 @@ from stats_desk.agents.lead import plain
 HERE = Path(__file__).resolve().parent
 GOLDEN = HERE / "data" / "golden.json"
 NUMBER = re.compile(r"(?<![\w.])-?\d+(?:\.\d+)?")
-RESULT_ID = re.compile(r"\b[a-z]+-[0-9a-f]{6}\b")
-ANALYSES = {"value", "compare", "gap", "change", "series", "relate", "drill", "tables"}
+RESULT_ID = re.compile(r"\b[a-z]+[-‐‑–—][0-9a-f]{6}\b")
+ANALYSES = {"value", "compare", "gap", "change", "series", "relate", "join", "drill", "tables"}
 
 
 def load(path):

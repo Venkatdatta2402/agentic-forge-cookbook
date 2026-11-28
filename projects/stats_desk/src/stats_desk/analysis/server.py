@@ -29,8 +29,8 @@ import mcp.types as types
 from mcp.server.mcpserver import MCPServer
 
 from ..config import RELEASE_PATH
-from ..datasets import DATASET
-from .analyses import ANALYSES, nearest
+from ..datasets import DATASET, words_for
+from .analyses import ANALYSES, across_join, nearest
 from .data import Refusal, Release
 
 KIND = "stats_desk/kind"
@@ -45,8 +45,8 @@ def _reply(text, kind):
 def description(release, analysis) -> str:
     """What the model reads to choose a tool: the docstring as one paragraph, its $names filled in
     from the dataset's description (its examples, what it calls its units) and the release."""
-    annual = [t for t in release.tables.values() if not t.monthly]
-    return DATASET.fill(" ".join(analysis.__doc__.split()),
+    annual = [t for t in release.tables.values() if not t.freq.within_year]
+    return words_for(release.tables.values()).fill(" ".join(analysis.__doc__.split()),
                         annual_years=len(annual[0].periods) if annual else 0)
 
 
@@ -56,8 +56,9 @@ def _bind(release, analysis):
 
     def call(**kwargs) -> types.CallToolResult:
         try:
-            # published only for another age group or measure: the nearest one, said so (analyses.nearest)
-            return _reply(nearest(release, analysis, kwargs), "ok")
+            # published only for another age group or measure: the nearest one, said so (analyses.nearest);
+            # figures on both sides of a change of base, said so (analyses.across_join)
+            return _reply(across_join(release, kwargs, nearest(release, analysis, kwargs)), "ok")
         except Refusal as e:
             return _reply(str(e), "refused")
         except Exception:  # noqa: BLE001 -- ours to fix: logged, not shown to the model

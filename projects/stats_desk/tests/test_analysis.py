@@ -342,6 +342,12 @@ async def test_a_hand_in_number_not_in_its_cited_results_is_caught(release_path)
         other = (await invoke(tools["value"], {"table": "ur_annual"})).content.split("\n")[0].removeprefix("result ")
         assert analyses.cited_ids([f"result {rid}, result {other}", f"[{rid}]"]) == [rid, other]
         assert analyses.cited_ids(["value-000000", "my gap"]) == ["value-000000", "my gap"]
+        # the right code under the wrong kind (span test): the code names one result
+        assert analyses.cited_ids([f"value-{rid.rsplit('-', 1)[1]}"]) == [rid]
+        # any hyphen (span test: "join‑7475f9", its "7475" refused as a number)
+        odd = rid.replace("-", "‑")
+        assert analyses.cited_ids([odd]) == [rid]
+        assert analyses.unbacked(f"18.9% vs 11.8% ({odd})", [rid]) == []
 
 
 @pytest.mark.skipif(not RELEASE_PATH.exists(), reason="no release file built")
@@ -368,11 +374,14 @@ def test_a_recheck_reruns_the_analysis_in_the_other_period_and_on_the_other_meas
 def test_a_series_gives_the_latest_streak_and_the_latest_against_its_own_history():
     from stats_desk.analysis.compute import against_history, streak
     rising = {"2025-04": 5.0, "2025-05": 5.1, "2025-06": 5.3, "2025-07": 5.6}
-    assert streak(rising, monthly=True) == {"direction": "rose", "moves": 3, "from": "2025-04"}
-    # a month not published breaks a streak: what happened across it is not known
-    assert streak({"2026-01": 5.0, "2026-02": 5.1, "2026-04": 5.3}, monthly=True) is None
-    assert streak({"2026-01": 5.0, "2026-02": 5.1, "2026-04": 5.3, "2026-05": 5.4, "2026-06": 5.6},
-                  monthly=True) == {"direction": "rose", "moves": 2, "from": "2026-04"}
+    assert streak(rising) == {"direction": "rose", "moves": 3, "from": "2025-04"}
+    # a period not published breaks a streak: what happened across it is not known
+    assert streak({"2026-01": 5.0, "2026-02": 5.1, "2026-04": 5.3}) is None
+    assert streak({"2026-01": 5.0, "2026-02": 5.1, "2026-04": 5.3, "2026-05": 5.4, "2026-06": 5.6}
+                  ) == {"direction": "rose", "moves": 2, "from": "2026-04"}
+    # any frequency: quarters and years alike
+    assert streak({"2025-Q3": 1.0, "2025-Q4": 1.2, "2026-Q1": 1.5}) == {"direction": "rose", "moves": 2, "from": "2025-Q3"}
+    assert streak({"2022": 3.0, "2024": 2.0, "2025": 1.0}) == {"direction": "fell", "moves": 1, "from": "2024"}
     assert against_history({"a": 6.0, "b": 4.0, "c": 5.0, "d": 5.5}) == "the highest since a (6)"
     assert against_history({"a": 6.0, "b": 7.0, "c": 5.0}) == "the lowest of the series"
     assert against_history({"a": 6.0, "b": 6.0}) is None

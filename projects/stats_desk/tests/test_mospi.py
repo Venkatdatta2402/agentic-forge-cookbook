@@ -37,7 +37,17 @@ async def test_an_error_returned_as_success_is_raised_with_mospis_hint():
             "valid_params": ["base_year", "series", "year"]}
     m, _ = mospi(lambda t, a: body)
     with pytest.raises(MospiError, match="valid_params: base_year, series, year"):
-        await m.data("CPI", {"base_year": "2024", "level": "Group"})
+        await m.data("CPI", {"base_year": "2024", "series": "Current", "level": "Group"})
+
+
+async def test_cpi_without_its_base_year_or_series_is_refused_before_mospi_can_default_them():
+    # MoSPI defaults base_year to 2012 (its current one is 2024) and series to Current
+    m, fake = mospi(lambda t, a: {"data": []})
+    with pytest.raises(MospiError, match="CPI needs series in filters"):
+        await m.data("CPI", {"base_year": "2024"})
+    with pytest.raises(MospiError, match="CPI needs base_year, series"):
+        await m.data("CPI", {})
+    assert fake.calls == []
 
 
 async def test_plfs_without_frequency_is_refused_before_mospi_can_default_it():

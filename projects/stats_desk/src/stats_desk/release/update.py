@@ -1,31 +1,23 @@
-"""The daily release check: is anything newer at MoSPI than the raw tables we keep, and if so,
-fetch just that -- never changing a figure we already published without a person looking.
+"""The release job's MoSPI side, the same for every dataset: what a release is built from is a
+list of downloads (`Job`), each one get_data request (all its pages) kept as one file in
+data/raw/<key>/, MoSPI's rows as they came:
 
-The raw downloads live in the repository (data/raw/plfs), so a day with
-nothing new costs MoSPI three small requests, measured that day:
+    data/raw/<key>/<job name>.json   {"dataset": <MoSPI's name>, <each filter>: ..., "rows": [...]}
 
-  1. the annual years MoSPI lists (its metadata, newest first: "PLFS 2025", "PLFS 2024", ...);
-     a year listed above our newest is new, whatever it's called
-  2. the monthly years it lists ("2026", "2025"): likewise
-  3. how many rows our newest monthly year has now: more than we keep means a new month (the
-     metadata's months are pooled across years, so they can't show it)
+What each dataset downloads, and what is new at MoSPI since, is its source's to say
+(release/sources/<key>.py: `jobs`, `check`); fetching them, writing them and logging revisions
+is here. A day with nothing new costs MoSPI a few small requests per dataset (PLFS three, CPI
+two); "No Data Found" (not published yet) counts as nothing, and an outage raises: the job fails
+rather than read it as "nothing new".
 
-Not published yet comes back as "No Data Found", which counts as nothing; an outage raises, and
-the job fails rather than reading it as "nothing new".
-
-What's new is fetched for all three indicators (LFPR, WPR, UR), one table per (indicator,
-frequency, year): a new month means its year's monthly table again (MoSPI serves a year as one
-table), a new year its tables for the first time. The 1.9 MB annual tables are fetched once.
-
-**Revisions: MoSPI's figure wins, and it's logged**. MoSPI publishes no
-revision policy we could find; re-downloading the 2025 and 2026 monthly unemployment tables on
-2026-11-14 matched all 459 rows saved on 11-09 (nothing had been released in between, so that
-proves little). A re-fetched table replaces ours whole -- MoSPI's figures are the official
-ones -- and every figure it changed or dropped is written to data/raw/REVISIONS.md (date,
-table, row, old -> new) and counted in the commit message. The release's fingerprint changes
-with it (release/store.py), so a follow-up to a brief made before knows not to mix the two.
-Revisions are seen when a table is fetched again: a year's monthly table with each new month;
-the annual tables only once, when their year first appears.
+**Revisions: MoSPI's figure wins, and it's logged**. MoSPI publishes no revision policy we
+could find; re-downloading the 2025 and 2026 monthly unemployment tables on 2026-11-14 matched
+all 459 rows saved on 11-09 (nothing had been released in between, so that proves little). A
+re-fetched table replaces ours whole -- MoSPI's figures are the official ones -- and every
+figure it changed or dropped is written to data/raw/REVISIONS.md (date, table, row, old -> new)
+and counted in the commit message. The release's fingerprint changes with it
+(release/store.py), so a follow-up to a brief made before knows not to mix the two. Revisions
+are seen when a table is fetched again: each source fetches again what a new period touches.
 """
 
 import json
@@ -33,43 +25,42 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
-from ..datasets import DATASET
-
-# MoSPI's indicator codes -> short names, in code order (datasets/plfs.toml)
-INDICATORS = {i["code"]: k.upper() for k, i in sorted(DATASET.indicators.items(), key=lambda kv: kv[1]["code"])}
-PROBE = DATASET.indicators[DATASET.source["probe"]]["code"]   # all indicators are released together
-ANNUAL, MONTHLY = DATASET.source["frequencies"]["annual"], DATASET.source["frequencies"]["monthly"]
-MCP_NAME = DATASET.source["mcp"]          # the dataset's name at MoSPI
+# a safety net, not a budget: CPI's largest download is ~30k rows; a wrong filter (no level of
+# CPI's hierarchy can be asked for) would ask for millions
+MAX_ROWS = 50_000
 
 
 @dataclass
 class Job:
-    frequency: int
-    year: str
-    why: str
+    """One download: get_data with these filters, kept as data/raw/<key>/<name>.json."""
+    name: str
+    filters: dict
+    label: str = ""             # how messages name it: "UR 2026 (monthly)"
+    why: str = ""               # why it is fetched now: "new monthly year 2026"
 
 
 @dataclass
-class Stored:
-    """What data/raw holds: the years of each frequency, and the rows of each table."""
-    raw: Path
-    years: dict = field(default_factory=dict)       # frequency -> [year], newest first
-    rows: dict = field(default_factory=dict)        # (indicator, frequency, year) -> rows
+class Raw:
+    """What data/raw/<key> holds: each download's filters and rows, by its name."""
+    folder: Path
+    filters: dict = field(default_factory=dict)     # name -> {filter: value}
+    rows: dict = field(default_factory=dict)        # name -> [row]
 
     @classmethod
-    def read(cls, raw: Path) -> "Stored":
-        stored = cls(raw)
-        for path in sorted(raw.glob("*_f*_*.json")):
+    def read(cls, folder: Path) -> "Raw":
+        raw = cls(Path(folder))
+        for path in sorted(raw.folder.glob("*.json")):
             body = json.loads(path.read_text(encoding="utf-8"))
-            key = (body["indicator_code"], body["frequency_code"], body["year"])
-            stored.rows[key] = body["rows"]
-        for freq in (ANNUAL, MONTHLY):
-            years = {y for (_, f, y) in stored.rows if f == freq}
-            stored.years[freq] = sorted(years, key=year_order, reverse=True)
-        return stored
+            raw.rows[path.stem] = body.pop("rows")
+            body.pop("dataset", None)
+            raw.filters[path.stem] = body
+        return raw
 
-    def path(self, indicator, frequency, year) -> Path:
-        return self.raw / f"{INDICATORS[indicator]}_f{frequency}_{year.replace(' ', '')}.json"
+    def save(self, dataset, job: Job, rows):
+        self.folder.mkdir(parents=True, exist_ok=True)
+        (self.folder / f"{job.name}.json").write_text(json.dumps(
+            {"dataset": dataset.source["mcp"], **job.filters, "rows": rows}, ensure_ascii=False), encoding="utf-8")
+        self.filters[job.name], self.rows[job.name] = dict(job.filters), rows
 
 
 def year_order(label: str):
@@ -82,21 +73,6 @@ def newer(listed: list[str], ours: list[str]) -> list[str]:
     """Years MoSPI lists that are newer than every one we keep."""
     newest = max((year_order(y) for y in ours), default=0)
     return [y for y in listed if year_order(y) > newest and y not in ours]
-
-
-async def check(mospi, stored: Stored) -> list[Job]:
-    """What to fetch: three small requests to MoSPI, whatever the answer."""
-    jobs = []
-    for freq, label in ((ANNUAL, "annual"), (MONTHLY, "monthly")):
-        listed = await mospi.years(MCP_NAME, indicator_code=PROBE, frequency_code=freq)
-        jobs += [Job(freq, y, f"new {label} year {y}") for y in newer(listed, stored.years[freq])]
-    if stored.years[MONTHLY]:
-        latest = stored.years[MONTHLY][0]
-        have = len(stored.rows.get((PROBE, MONTHLY, latest), []))
-        now = await mospi.count(MCP_NAME, {"indicator_code": PROBE, "frequency_code": MONTHLY, "year": latest})
-        if now > have:
-            jobs.append(Job(MONTHLY, latest, f"monthly {latest}: {now - have} more rows than we keep (a new month)"))
-    return jobs
 
 
 def _key(row) -> str:
@@ -121,35 +97,47 @@ class Fetched:
     details: list = field(default_factory=list)    # each revised or dropped figure, old -> new
 
 
-async def fetch(mospi, stored: Stored, jobs: list[Job], pace=0.4) -> Fetched:
-    """Fetch each job's tables for all three indicators and write them: MoSPI's figures replace
-    ours whole. What it added, and what it revised or dropped, is returned; revisions are also
-    appended to REVISIONS.md beside the raw tables."""
-    out, tables = Fetched(), {}
+async def fetch(mospi, dataset, raw: Raw, jobs: list[Job], pace=0.4, log=print) -> Fetched:
+    """Fetch each job and keep it: MoSPI's figures replace ours whole, written only once every
+    job has been fetched. What it added, and what it revised or dropped, is returned; revisions
+    are also appended to REVISIONS.md beside the datasets' raw folders."""
+    out, got = Fetched(), {}
     for job in jobs:
-        for code in INDICATORS:
-            rows = await mospi.data(MCP_NAME, {"indicator_code": code, "frequency_code": job.frequency, "year": job.year},
-                                    max_rows=20_000, pace=pace)
-            tables[(code, job.frequency, job.year)] = rows
-            added, gone, changed = compare(stored.rows.get((code, job.frequency, job.year)) or [], rows)
-            name = f"{INDICATORS[code]} {job.year} ({'annual' if job.frequency == ANNUAL else 'monthly'})"
-            months = sorted({r.get("month") for r in added if r.get("month")})
-            if added:
-                out.added.append(f"{name}: {len(added)} rows added" + (f" ({', '.join(months)})" if months else ""))
-            if gone or changed:
-                out.revised.append(f"{name}: {len(changed)} figures revised, {len(gone)} rows dropped")
-                out.details += [f"{name}: {_short(r)}: {a} -> {b}" for r, a, b in changed]
-                out.details += [f"{name}: {_short(r)}: {r['value']} -> dropped" for r in gone]
-    for (code, freq, year), rows in tables.items():          # only once every fetch has succeeded
-        stored.path(code, freq, year).write_text(json.dumps(
-            {"dataset": MCP_NAME, "indicator_code": code, "frequency_code": freq, "year": year, "rows": rows},
-            ensure_ascii=False), encoding="utf-8")
+        rows = await mospi.data(dataset.source["mcp"], job.filters, max_rows=MAX_ROWS, pace=pace)
+        got[job.name] = (job, rows)
+        log(f"fetched {job.name}: {len(rows):,} rows")
+        added, gone, changed = compare(raw.rows.get(job.name) or [], rows)
+        name = job.label or job.name
+        months = sorted({r.get("month") for r in added if r.get("month")})
+        if added:
+            out.added.append(f"{name}: {len(added)} rows added" + (f" ({', '.join(months)})" if months else ""))
+        if gone or changed:
+            out.revised.append(f"{name}: {len(changed)} figures revised, {len(gone)} rows dropped")
+            out.details += [f"{name}: {_short(r)}: {a} -> {b}" for r, a, b in changed]
+            out.details += [f"{name}: {_short(r)}: {r['value']} -> dropped" for r in gone]
+    for job, rows in got.values():
+        raw.save(dataset, job, rows)
     if out.details:
-        log = stored.raw.parent / "REVISIONS.md"
-        head = "" if log.exists() else "# Figures MoSPI revised or dropped after we had them\n\nOld -> new; MoSPI's figure replaced ours.\n"
-        with log.open("a", encoding="utf-8") as f:
+        path = raw.folder.parent / "REVISIONS.md"
+        head = "" if path.exists() else "# Figures MoSPI revised or dropped after we had them\n\nOld -> new; MoSPI's figure replaced ours.\n"
+        with path.open("a", encoding="utf-8") as f:
             f.write(head + f"\n## {date.today().isoformat()}\n\n" + "".join(f"- {d}\n" for d in out.details))
     return out
+
+
+async def download(mospi, dataset, raw: Raw, jobs: list[Job], pace=0.4, log=print) -> list[str]:
+    """A first download: each job not kept yet, kept as it comes (CPI's ~30 take a while; a
+    failure keeps what came before it). The names fetched."""
+    done = []
+    for job in jobs:
+        if job.name in raw.rows:
+            log(f"have  {job.name}")
+            continue
+        rows = await mospi.data(dataset.source["mcp"], job.filters, max_rows=MAX_ROWS, pace=pace)
+        raw.save(dataset, job, rows)
+        done.append(job.name)
+        log(f"saved {job.name}: {len(rows):,} rows")
+    return done
 
 
 def _short(row) -> str:

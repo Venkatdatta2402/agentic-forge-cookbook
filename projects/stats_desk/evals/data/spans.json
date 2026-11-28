@@ -1,84 +1,443 @@
 {
  "about": "Fixed inputs for testing each step of the desk on its own (evals/spans.py). The lead's steps use the eval questions (golden.json); the analyst's tasks are separate, written to need different analyses; the brief step's findings are written here and their figures produced by code from the release file. Like golden.json, nothing here may appear in any agent's instructions.",
  "pick": [
-  {"id": "Q1", "needed": ["UR_annual_2025", "LFPR_annual_2025"]},
-  {"id": "Q2", "needed": ["UR_monthly"]},
-  {"id": "Q3", "needed": ["LFPR_annual_2025"]},
-  {"id": "Q4", "needed": ["UR_annual_2025"]},
-  {"id": "Q5", "needed": ["LFPR_annual_2025", "WPR_annual_2025"]},
-  {"id": "Q6", "needed": ["UR_annual_2025"]},
-  {"id": "Q7", "needed": ["UR_annual_2025"]},
-  {"id": "Q8", "needed": ["UR_annual_2025"]},
-  {"id": "E1", "question": "Why is unemployment so high among educated young people in India?",
-   "needed": ["UR_annual_2025", "LFPR_annual_2025", "WPR_annual_2025"], "names": ["7.graduate"],
-   "note": "live run 2026-11-14: 4 tasks at once, groups named 'graduate', three analysts stopped"}
+  {
+   "id": "Q1",
+   "needed": [
+    "UR_annual_2025",
+    "LFPR_annual_2025"
+   ]
+  },
+  {
+   "id": "Q2",
+   "needed": [
+    "UR_monthly"
+   ]
+  },
+  {
+   "id": "Q3",
+   "needed": [
+    "LFPR_annual_2025"
+   ]
+  },
+  {
+   "id": "Q4",
+   "needed": [
+    "UR_annual_2025"
+   ]
+  },
+  {
+   "id": "Q5",
+   "needed": [
+    "LFPR_annual_2025",
+    "WPR_annual_2025"
+   ]
+  },
+  {
+   "id": "Q6",
+   "needed": [
+    "UR_annual_2025"
+   ]
+  },
+  {
+   "id": "Q7",
+   "needed": [
+    "UR_annual_2025"
+   ]
+  },
+  {
+   "id": "Q8",
+   "needed": [
+    "UR_annual_2025"
+   ]
+  },
+  {
+   "id": "E1",
+   "question": "Why is unemployment so high among educated young people in India?",
+   "needed": [
+    "UR_annual_2025",
+    "LFPR_annual_2025",
+    "WPR_annual_2025"
+   ],
+   "names": [
+    "7.graduate"
+   ],
+   "note": "live run 2026-11-14: 4 tasks at once, groups named 'graduate', three analysts stopped"
+  },
+  {
+   "id": "I1",
+   "question": "Is inflation rising in India?",
+   "needed": [
+    "INFLATION_monthly"
+   ],
+   "about": "CPI (Phase 3): the 2024 base's inflation, latest month and its trend"
+  },
+  {
+   "id": "I2",
+   "question": "Which items are pushing food prices up the most?",
+   "needed": [
+    "INFLATION_monthly"
+   ],
+   "about": "CPI (Phase 3): items within the food division"
+  }
  ],
  "analyst": [
-  {"id": "A1", "task": "How does women's unemployment compare with men's in rural and in urban areas in 2025?", "fits": ["gap"]},
-  {"id": "A2", "task": "Which social groups have the highest and lowest labour force participation?", "fits": ["compare"]},
-  {"id": "A3", "task": "Which states saw the biggest change in the worker population ratio since 2024?", "fits": ["change"]},
-  {"id": "A4", "task": "How has unemployment among 15-29 year olds moved month by month?", "fits": ["series"]},
-  {"id": "A5", "task": "Do states where more women are in work also have lower unemployment among women?", "fits": ["relate"]},
-  {"id": "A6", "task": "For men's labour force participation, which way of splitting the figures shows the biggest differences?", "fits": ["drill", "compare"]},
-  {"id": "A7", "task": "Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above and the overall UR for all ages, state All India, measure CWS, for years 2024 and 2025; give the gap between each education level and overall and whether the gap widened or narrowed.", "fits": ["gap"]},
-  {"id": "A8", "task": "Compare unemployment among Muslim women and Hindu women in 2025, against all women.", "fits": ["value", "compare", "gap"],
-   "about": "groups named by their followers, not as the data does (Islam, Hinduism): matched by the server, the tables list no longer spells them out"},
-  {"id": "A9", "task": "How does women's labour force participation in Jammu and Kashmir compare with Tamil Nadu and Orissa in 2025?", "fits": ["value", "compare"],
-   "about": "states named as people write them ('and' for '&', an old name): the tables list gives the states as a count only"},
-  {"id": "A10", "task": "UR_annual_2025: get UR for gender=Female, religion=Muslim, state=Kerala", "fits": ["value"],
-   "about": "a task a lead wrote in the tasks span (2026-11-25) for a combination that isn't published (religion x state): does the analyst say so, or pass off a nearer figure as it (the first eval, 2026-11-11)?"}
+  {
+   "id": "A1",
+   "task": "How does women's unemployment compare with men's in rural and in urban areas in 2025?",
+   "fits": [
+    "gap"
+   ]
+  },
+  {
+   "id": "A2",
+   "task": "Which social groups have the highest and lowest labour force participation?",
+   "fits": [
+    "compare"
+   ]
+  },
+  {
+   "id": "A3",
+   "task": "Which states saw the biggest change in the worker population ratio since 2024?",
+   "fits": [
+    "change"
+   ]
+  },
+  {
+   "id": "A4",
+   "task": "How has unemployment among 15-29 year olds moved month by month?",
+   "fits": [
+    "series"
+   ]
+  },
+  {
+   "id": "A5",
+   "task": "Do states where more women are in work also have lower unemployment among women?",
+   "fits": [
+    "relate"
+   ]
+  },
+  {
+   "id": "A6",
+   "task": "For men's labour force participation, which way of splitting the figures shows the biggest differences?",
+   "fits": [
+    "drill",
+    "compare"
+   ]
+  },
+  {
+   "id": "A7",
+   "task": "Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above and the overall UR for all ages, state All India, measure CWS, for years 2024 and 2025; give the gap between each education level and overall and whether the gap widened or narrowed.",
+   "fits": [
+    "gap"
+   ]
+  },
+  {
+   "id": "A8",
+   "task": "Compare unemployment among Muslim women and Hindu women in 2025, against all women.",
+   "fits": [
+    "value",
+    "compare",
+    "gap"
+   ],
+   "about": "groups named by their followers, not as the data does (Islam, Hinduism): matched by the server, the tables list no longer spells them out"
+  },
+  {
+   "id": "A9",
+   "task": "How does women's labour force participation in Jammu and Kashmir compare with Tamil Nadu and Orissa in 2025?",
+   "fits": [
+    "value",
+    "compare"
+   ],
+   "about": "states named as people write them ('and' for '&', an old name): the tables list gives the states as a count only"
+  },
+  {
+   "id": "A10",
+   "task": "UR_annual_2025: get UR for gender=Female, religion=Muslim, state=Kerala",
+   "fits": [
+    "value"
+   ],
+   "about": "a task a lead wrote in the tasks span (2026-11-25) for a combination that isn't published (religion x state): does the analyst say so, or pass off a nearer figure as it (the first eval, 2026-11-11)?"
+  },
+  {
+   "id": "A11",
+   "task": "Which food items had the highest inflation in October 2026?",
+   "fits": [
+    "compare"
+   ],
+   "about": "CPI's item level, its parents left out: the server finds each item's division"
+  },
+  {
+   "id": "A12",
+   "task": "Is consumer price inflation in October 2026 higher than in October 2024?",
+   "fits": [
+    "value",
+    "change"
+   ],
+   "about": "across 2025, where the 2024 base's figures before 2025 are the 2012 base's rescaled: does the claim say so (the result's note)?"
+  },
+  {
+   "id": "A13",
+   "task": "Which states had the highest consumer price inflation in October 2026, and is it higher in their towns or their villages?",
+   "fits": [
+    "compare",
+    "gap"
+   ],
+   "about": "CPI by state (general index only) and sector"
+  },
+  {
+   "id": "A14",
+   "task": "Month by month in 2026, how did the unemployment rate and consumer price inflation in urban areas compare?",
+   "fits": [
+    "join"
+   ],
+   "about": "two datasets over the same months (PLFS monthly, CPI): one join on period and sector, or two series read apart?"
+  },
+  {
+   "id": "A15",
+   "task": "For each state, give the unemployment rate in 2025 together with its consumer price inflation in December 2025.",
+   "fits": [
+    "join"
+   ],
+   "about": "a survey year against one month, by state; CPI's 2024 base has no inflation for 2025, so the 2012 base's table: does it find it?"
+  }
  ],
  "brief": [
-  {"id": "Q1", "findings": [
-   {"task": "How does unemployment of young women in cities compare with young men's, and in villages?",
-    "claim": "In 2025, unemployment of 15-29 year olds in cities was 18.9% for women and 11.8% for men, a gap of +7.1 points, against +0.4 in villages.",
-    "calls": [{"tool": "gap", "args": {"table": "ur_annual", "field": "gender", "a": "female", "b": "male", "across": "sector", "where": {"age": "15-29 years"}}}]},
-   {"task": "How many young urban women are in the labour force, against young urban men?",
-    "claim": "Only 23.2% of urban women aged 15-29 were in the labour force in 2025, against 60.9% of urban men that age.",
-    "calls": [{"tool": "gap", "args": {"table": "lfpr_annual", "field": "gender", "a": "female", "b": "male", "across": "sector", "where": {"age": "15-29 years"}}}]}]},
-  {"id": "Q2", "findings": [
-   {"task": "Is unemployment higher in the latest month than a year earlier?",
-    "claim": "Unemployment was 5% in September 2026 against 5.2% in September 2025 (-0.2 points).",
-    "calls": [{"tool": "change", "args": {"table": "ur_monthly"}}]},
-   {"task": "How has unemployment moved month by month?",
-    "claim": "Monthly unemployment stayed between 4.7% and 5.6% from April 2025 to September 2026.",
-    "calls": [{"tool": "series", "args": {"table": "ur_monthly"}}]}]},
-  {"id": "Q3", "findings": [
-   {"task": "Which states have the lowest participation of women in the labour force?",
-    "claim": "Delhi has the lowest participation of women, 13.1% in 2025, against 40% for women in all of India.",
-    "calls": [{"tool": "compare", "args": {"table": "lfpr_annual", "by": "state", "where": {"gender": "female"}}}]}]},
-  {"id": "Q4", "findings": [
-   {"task": "What is the unemployment rate of Muslim women in Kerala?",
-    "claim": "There is no figure for Muslim women in Kerala: religion is published only for all of India. Muslim women in all of India: 3.6%; all women in Kerala: 6.4% (2025).",
-    "calls": [{"tool": "value", "args": {"table": "ur_annual", "where": {"religion": "Islam", "gender": "female"}}},
-              {"tool": "value", "args": {"table": "ur_annual", "where": {"state": "Kerala", "gender": "female"}}}]}]},
-  {"id": "Q5", "findings": [
-   {"task": "Do states with higher labour force participation also have more people in work?",
-    "claim": "Across 36 states, labour force participation and the worker population ratio go together closely (r = 0.99) in 2025.",
-    "calls": [{"tool": "relate", "args": {"x_table": "lfpr_annual", "y_table": "wpr_annual"}}]}]},
-  {"id": "Q6", "findings": [
-   {"task": "Are women in Nagaland more likely than men to be unemployed?",
-    "claim": "In Nagaland in 2025, women's unemployment was 8.4% against men's 5.3%, a gap of +3.1 points.",
-    "calls": [{"tool": "gap", "args": {"table": "ur_annual", "field": "gender", "a": "female", "b": "male", "where": {"state": "Nagaland"}}}]}]},
-  {"id": "Q7", "findings": [
-   {"task": "Which state has the highest unemployment among women?",
-    "claim": "Andaman & Nicobar Islands has the highest unemployment among women, 16.4% in 2025, followed by Chandigarh at 14.2%.",
-    "calls": [{"tool": "compare", "args": {"table": "ur_annual", "by": "state", "where": {"gender": "female"}}}]}]},
-  {"id": "Q8", "findings": [
-   {"task": "How does unemployment differ by education?",
-    "claim": "Graduates have the highest unemployment, 11.2% in 2025, against 3.1% for everyone and 0.3% for those not literate.",
-    "calls": [{"tool": "compare", "args": {"table": "ur_annual", "by": "education"}}]}]}
+  {
+   "id": "Q1",
+   "findings": [
+    {
+     "task": "How does unemployment of young women in cities compare with young men's, and in villages?",
+     "claim": "In 2025, unemployment of 15-29 year olds in cities was 18.9% for women and 11.8% for men, a gap of +7.1 points, against +0.4 in villages.",
+     "calls": [
+      {
+       "tool": "gap",
+       "args": {
+        "table": "ur_annual",
+        "field": "gender",
+        "a": "female",
+        "b": "male",
+        "across": "sector",
+        "where": {
+         "age": "15-29 years"
+        }
+       }
+      }
+     ]
+    },
+    {
+     "task": "How many young urban women are in the labour force, against young urban men?",
+     "claim": "Only 23.2% of urban women aged 15-29 were in the labour force in 2025, against 60.9% of urban men that age.",
+     "calls": [
+      {
+       "tool": "gap",
+       "args": {
+        "table": "lfpr_annual",
+        "field": "gender",
+        "a": "female",
+        "b": "male",
+        "across": "sector",
+        "where": {
+         "age": "15-29 years"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Q2",
+   "findings": [
+    {
+     "task": "Is unemployment higher in the latest month than a year earlier?",
+     "claim": "Unemployment was 5% in September 2026 against 5.2% in September 2025 (-0.2 points).",
+     "calls": [
+      {
+       "tool": "change",
+       "args": {
+        "table": "ur_monthly"
+       }
+      }
+     ]
+    },
+    {
+     "task": "How has unemployment moved month by month?",
+     "claim": "Monthly unemployment stayed between 4.7% and 5.6% from April 2025 to September 2026.",
+     "calls": [
+      {
+       "tool": "series",
+       "args": {
+        "table": "ur_monthly"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Q3",
+   "findings": [
+    {
+     "task": "Which states have the lowest participation of women in the labour force?",
+     "claim": "Delhi has the lowest participation of women, 13.1% in 2025, against 40% for women in all of India.",
+     "calls": [
+      {
+       "tool": "compare",
+       "args": {
+        "table": "lfpr_annual",
+        "by": "state",
+        "where": {
+         "gender": "female"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Q4",
+   "findings": [
+    {
+     "task": "What is the unemployment rate of Muslim women in Kerala?",
+     "claim": "There is no figure for Muslim women in Kerala: religion is published only for all of India. Muslim women in all of India: 3.6%; all women in Kerala: 6.4% (2025).",
+     "calls": [
+      {
+       "tool": "value",
+       "args": {
+        "table": "ur_annual",
+        "where": {
+         "religion": "Islam",
+         "gender": "female"
+        }
+       }
+      },
+      {
+       "tool": "value",
+       "args": {
+        "table": "ur_annual",
+        "where": {
+         "state": "Kerala",
+         "gender": "female"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Q5",
+   "findings": [
+    {
+     "task": "Do states with higher labour force participation also have more people in work?",
+     "claim": "Across 36 states, labour force participation and the worker population ratio go together closely (r = 0.99) in 2025.",
+     "calls": [
+      {
+       "tool": "relate",
+       "args": {
+        "x_table": "lfpr_annual",
+        "y_table": "wpr_annual"
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Q6",
+   "findings": [
+    {
+     "task": "Are women in Nagaland more likely than men to be unemployed?",
+     "claim": "In Nagaland in 2025, women's unemployment was 8.4% against men's 5.3%, a gap of +3.1 points.",
+     "calls": [
+      {
+       "tool": "gap",
+       "args": {
+        "table": "ur_annual",
+        "field": "gender",
+        "a": "female",
+        "b": "male",
+        "where": {
+         "state": "Nagaland"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Q7",
+   "findings": [
+    {
+     "task": "Which state has the highest unemployment among women?",
+     "claim": "Andaman & Nicobar Islands has the highest unemployment among women, 16.4% in 2025, followed by Chandigarh at 14.2%.",
+     "calls": [
+      {
+       "tool": "compare",
+       "args": {
+        "table": "ur_annual",
+        "by": "state",
+        "where": {
+         "gender": "female"
+        }
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "Q8",
+   "findings": [
+    {
+     "task": "How does unemployment differ by education?",
+     "claim": "Graduates have the highest unemployment, 11.2% in 2025, against 3.1% for everyone and 0.3% for those not literate.",
+     "calls": [
+      {
+       "tool": "compare",
+       "args": {
+        "table": "ur_annual",
+        "by": "education"
+       }
+      }
+     ]
+    }
+   ]
+  }
  ],
  "retask": [
-  {"id": "R1", "question_of": "Q8", "needed": ["UR_annual_2025"],
+  {
+   "id": "R1",
+   "question_of": "Q8",
+   "needed": [
+    "UR_annual_2025"
+   ],
    "about": "A plan the lead wrote in the tasks span (2026-11-25), refused by code's task check: graduates on all ages and CWS, neither published for education.",
-   "plan": {"approach": "Test whether higher education levels (degree, graduate, post-graduate) are associated with higher unemployment rates and whether this pattern differs by gender or urban-rural location.",
-            "tasks": ["Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above compared with the overall UR, using PS+SS measure, all ages, latest year 2025, and also provide the same figures for the other measure (CWS) where available.",
-                      "Find the unemployment rate (UR) by gender for the same education levels (graduate and post-graduate) and compare the gender gap at those education levels with the overall gender gap in UR."]}},
-  {"id": "R2", "question_of": "Q4", "needed": ["UR_annual_2025"],
+   "plan": {
+    "approach": "Test whether higher education levels (degree, graduate, post-graduate) are associated with higher unemployment rates and whether this pattern differs by gender or urban-rural location.",
+    "tasks": [
+     "Find the unemployment rate (UR) for education levels 7.graduate and 8.post graduate & above compared with the overall UR, using PS+SS measure, all ages, latest year 2025, and also provide the same figures for the other measure (CWS) where available.",
+     "Find the unemployment rate (UR) by gender for the same education levels (graduate and post-graduate) and compare the gender gap at those education levels with the overall gender gap in UR."
+    ]
+   }
+  },
+  {
+   "id": "R2",
+   "question_of": "Q4",
+   "needed": [
+    "UR_annual_2025"
+   ],
    "about": "A plan the lead wrote in the tasks span (2026-11-25), refused by code's task check: Muslim women in Kerala as one group, religion x state not published together.",
-   "plan": {"approach": "Get the figure for the group asked about, and for women in the state, to compare.",
-            "tasks": ["UR_annual_2025: get UR for gender=Female, religion=Muslim, state=Kerala",
-                      "UR_annual_2025: get UR for gender=Female, state=Kerala (all religions)"]}}
+   "plan": {
+    "approach": "Get the figure for the group asked about, and for women in the state, to compare.",
+    "tasks": [
+     "UR_annual_2025: get UR for gender=Female, religion=Muslim, state=Kerala",
+     "UR_annual_2025: get UR for gender=Female, state=Kerala (all religions)"
+    ]
+   }
+  }
  ]
 }

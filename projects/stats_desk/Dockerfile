@@ -27,10 +27,11 @@ LABEL org.opencontainers.image.description="Stats Desk: agents answering questio
 RUN useradd --create-home --uid 10001 desk && mkdir -p /app/data/release
 WORKDIR /app
 COPY --from=build /app/.venv /app/.venv
-COPY --chmod=444 data/release/plfs.duckdb /app/data/release/plfs.duckdb
+# one release file per dataset; the server reads the folder
+COPY --chmod=444 data/release/plfs.duckdb data/release/cpi.duckdb /app/data/release/
 ENV PATH="/app/.venv/bin:$PATH" \
     PYTHONUNBUFFERED=1 \
-    STATS_DESK_RELEASE=/app/data/release/plfs.duckdb \
+    STATS_DESK_RELEASE=/app/data/release \
     PORT=8080
 USER desk
 EXPOSE 8080

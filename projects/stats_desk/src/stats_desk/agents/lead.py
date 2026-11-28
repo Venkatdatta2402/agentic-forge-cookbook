@@ -27,6 +27,7 @@ pay for, saying how many it can, and leaves enough for the brief.
 """
 
 import asyncio
+import itertools
 import json
 import re
 import uuid
@@ -37,14 +38,17 @@ from pydantic import BaseModel, Field, ValidationError
 
 from .. import config
 from ..analysis.analyses import NOTE
-from ..analysis.data import MEASURES, TOTAL
+from ..analysis import periods
+from ..analysis.data import MEASURES, TOTAL, value_list
+from ..analysis.periods import ANNUAL, FREQUENCIES
+from ..analysis.periods import NAMES as FREQUENCY_NAMES
 from ..core import events, llm, meter, trace
 from ..core.tools import Registry, Tool, ToolError
-from ..datasets import DATASET
+from ..datasets import CATALOG, DATASET, WORDS, Words
 from . import plan
 from .agent import FORM, Agent, Stopped, answer
 from .analyst import BUDGET as ANALYST_BUDGET
-from .analyst import INDICATORS, Finding, check_numbers, run_analyst, tables_for, ways_to_say
+from .analyst import INDICATORS, JOIN_NOTE, SAYS_JOIN, Finding, check_numbers, run_analyst, tables_for, ways_to_say
 from .checks import check, outliers_in
 from .grouping import groups_in
 from .record import Record, now
@@ -59,14 +63,19 @@ UNPUBLISHED = re.compile(r"\b(?:not|never) (?:been )?published\b|\bunpublished\b
 # (eval: taken as evidence, it let "MoSPI doesn't publish unemployment by education" through)
 PUBLISHED_REFUSAL = re.compile(rf"not published|nothing published|has no (?:field|period|{DATASET.across_plural})|no \w+ '")
 DEFINITION_WORDS = ("by definition", "built in", "computed from", "mechanical", "by construction", "follows from")
-SKIPPED = re.compile(r"not published(?:, left out)?: ((?:\d{4}-\d{2}(?:, )?)+)")       # series, trend; average
+# periods not published, as series, trend and average list them ("not published, left out: ...")
+PERIOD = "|".join(f.shape for f in FREQUENCIES)
+SKIPPED = re.compile(rf"not published(?:, left out)?: ((?:(?:{PERIOD})(?:, )?)+)")
+SKIPPED_ONE = re.compile(rf"\b(?:{PERIOD})\b")
 MONTHS = ("january", "february", "march", "april", "may", "june", "july", "august", "september", "october",
           "november", "december")
 
 
 def month_name(period: str) -> str:
-    """"2026-03" -> "march 2026", as plain() reads a brief."""
-    return f"{MONTHS[int(period[5:7]) - 1]} {period[:4]}"
+    """"2026-03" -> "march 2026", as plain() reads a brief; a quarter "q3 2025"; a year as it is."""
+    if periods.of(period) is periods.MONTHLY:
+        return f"{MONTHS[int(period[5:7]) - 1]} {period[:4]}"
+    return f"q{period[-1]} {period[:4]}" if periods.of(period) is periods.QUARTERLY else period
 
 
 # words that say a figure is shaky, for a brief naming a state set apart as an outlier
@@ -100,11 +109,13 @@ QUESTION_BUDGET = 60_000
 TASK_RESERVE = ANALYST_BUDGET   # an analyst's budget; code's checks spend no tokens
 BRIEF_RESERVE = 6_000
 
-# the dataset's own words in the instructions (datasets/plfs.toml)
-_D, _EX = DATASET, DATASET.examples
 ACROSS, ACROSS_PLURAL = DATASET.across, DATASET.across_plural
 
-PERSONA = f"""You are the lead analyst at a desk that answers questions about {_D.subject}: {_D.publisher}'s {_D.name}, with {_D.holds}.
+
+def lead_persona(w: Words) -> str:
+    """The lead's instructions, in the words of the datasets the desk answers from (datasets.Words):
+    PLFS alone reads as it always did."""
+    return f"""You are the lead analyst at a desk that answers questions about {w.about}.
 
 You direct; you never run analyses yourself. Every reply is a tool call: profile, ask_analysts, or {FORM} to hand in. Never reply in prose.
 1. Read the profiles that bear on the question; the list below says which table each comes from. Ask for all of them in one profile call. A profile says what code found striking in its table's latest release.
@@ -113,17 +124,20 @@ You direct; you never run analyses yourself. Every reply is a tool call: profile
    Analysts can:
    - look up figures; rank the groups of a field; take the gap between groups and whether it widened or narrowed since a year (or a month) earlier
    - over time: the change since the previous year or month; the months described (peaks, dips, streaks); an average over a stretch of months; whether it is rising, falling or has no clear trend
-   - across {ACROSS_PLURAL}: whether two figures go together; and find which split shows the biggest differences
-   - do each of these for any groups a task names: every group of a field (e.g. {_EX['every_group']}), a few of one field (e.g. {_EX['few_groups']}), or groups that differ in more than one way (e.g. {_EX['differ_groups']}), always with the total
-   They cannot: average across groups, {_D.cannot}, test statistical significance, or give a combination {_D.publisher} doesn't publish.
-4. Each finding comes back with the analyst's claim, its figures, the same figures rerun by code in the other period and on the other measure, and warnings from code. Judge it yourself: does it hold there too; are the groups compared alike in all but one way; could an overall figure hide the opposite pattern within its groups; does it rest on a small {ACROSS} set apart as an outlier; is it true by definition; is it a link you would expect anyway, because the {ACROSS_PLURAL} share something that moves both? A link you would expect anyway is not a finding: don't present it as one. Then go on with your plan: give the later tasks as the findings now make them look, drop the ones they make unnecessary, and add one only if something that matters for the answer is still open. A task that came back empty can be given again. Stop when more tasks are unlikely to change the answer; if the figures can't settle the question, say so. At most {MAX_ANALYSTS} tasks in all.
+   - across {w.across_plural}: whether two figures go together; and find which split shows the biggest differences
+   - do each of these for any groups a task names: every group of a field (e.g. {w.examples['every_group']}), a few of one field (e.g. {w.examples['few_groups']}), or groups that differ in more than one way (e.g. {w.examples['differ_groups']}), always with the total
+   They cannot: average across groups, {w.cannot}, test statistical significance, or give a combination {w.publisher} doesn't publish.
+4. Each finding comes back with the analyst's claim, its figures, the same figures rerun by code {w.rerun}, and warnings from code. Judge it yourself: does it hold there too; are the groups compared alike in all but one way; could an overall figure hide the opposite pattern within its groups; does it rest on a small {w.across} set apart as an outlier; is it true by definition; is it a link you would expect anyway, because the {w.across_plural} share something that moves both? A link you would expect anyway is not a finding: don't present it as one. Then go on with your plan: give the later tasks as the findings now make them look, drop the ones they make unnecessary, and add one only if something that matters for the answer is still open. A task that came back empty can be given again. Stop when more tasks are unlikely to change the answer; if the figures can't settle the question, say so. At most {MAX_ANALYSTS} tasks in all.
 5. Hand in the brief with {FORM}:
-- answer: the direct answer in 2-5 sentences. Quote numbers exactly as the findings show them, each with its unit ({_D.unit} or points), group, year and measure, and keep levels apart from changes. If what was asked is not published, say so, and give the nearest figures that are.
+- answer: the direct answer in 2-5 sentences. Quote numbers exactly as the findings show them, each with its unit ({w.unit} or points), {w.quoted_with}, and keep levels apart from changes. If what was asked is not published, say so, and give the nearest figures that are.
 - findings: ids of the findings it rests on (f1, f2, ...)
 - ruled_out: what was checked and did not hold, and why
 - cannot_tell: what these figures cannot say. They show where and for whom, not why.
 If the question asks whether one thing makes or causes another, don't answer yes or no: say what the figures show, and that they can't show cause.
-Correlations across {ACROSS_PLURAL} describe {ACROSS_PLURAL} ({_D.describes}), not causes. Never work a number out yourself."""
+Correlations across {w.across_plural} describe {w.across_plural} ({w.describes}), not causes. Never work a number out yourself."""
+
+
+PERSONA = lead_persona(WORDS)
 
 
 class BriefForm(BaseModel):
@@ -202,16 +216,20 @@ def not_comparable(findings, results) -> str:
     settings = list(dict.fromkeys(s for f in findings for i in f.results if i in results
                                   for s in settings_of(results[i])))
     measures = {m for _, m in settings}
-    kinds = {"monthly" if ", monthly" in w else "annual" for w, _ in settings}
+
+    def kind(where):                                # "unemployment rate (UR), monthly, 2025-04 to 2026-09"
+        return next((f.name for f in FREQUENCIES if f", {f.name}" in where), ANNUAL.name)
+
+    kinds = {kind(w) for w, _ in settings}
     if len({f.id for f in findings}) < 2 or (len(measures) < 2 and len(kinds) < 2):
         return ""
     named = []
-    for where, measure in settings:                  # "unemployment rate (UR), monthly, 2025-04 to 2026-09"
-        kind = "monthly" if ", monthly" in where else "annual"
+    for where, measure in settings:
         period = where.rsplit(", ", 1)[-1]
-        named.append(f"the {kind} figures ({period}, {measure})")
+        named.append(f"the {kind(where)} figures ({period}, {measure})")
     why = ("different measures and periods" if len(measures) > 1 and len(kinds) > 1
-           else "different measures" if len(measures) > 1 else "annual and monthly figures")
+           else "different measures" if len(measures) > 1
+           else " and ".join(sorted(kinds, key=lambda k: [f.name for f in FREQUENCIES][::-1].index(k))) + " figures")
     return (f"Note: {', '.join(named[:-1])} and {named[-1]} are not directly comparable: {why}.")
 
 
@@ -229,7 +247,7 @@ def _table_lines(tables_text) -> dict:
     """{table: [title, periods, measure, fields, published together (if any)]} from the tables list."""
     tables = {}
     for line in tables_text.split("\n"):
-        m = re.match(r"(\w+_(?:annual|monthly)): (.*)$", line)
+        m = re.match(rf"(\w+_(?:{FREQUENCY_NAMES})): (.*)$", line)
         if m:
             tables[m[1]] = m[2].split("; ", 4)
     return tables
@@ -268,19 +286,19 @@ def profile_list(tables_text):
     return "\n".join(out)
 
 
-SETTINGS = DATASET.settings        # measure, age: the dimensions with no total
+SETTINGS = CATALOG.settings        # the dimensions with no total (datasets/*.toml)
 
 
 def catalogue(tables_text):
     """From the tables list: each table's fields, and every field's values."""
     fields, values = {}, {}
     for line in tables_text.split("\n"):
-        table = re.match(r"(\w+_(?:annual|monthly)): .*?; fields ([^;]+)", line)
+        table = re.match(rf"(\w+_(?:{FREQUENCY_NAMES})): .*?; fields ([^;]+)", line)
         if table:
             fields[table[1]] = [f.strip() for f in table[2].split(",")]
         listed = re.match(r"(\w+) values: (.*)$", line)
         if listed:
-            values[listed[1]] = [v.strip() for v in listed[2].split(", ")]
+            values[listed[1]] = value_list(listed[2])
     return fields, values
 
 
@@ -291,7 +309,7 @@ def _words(text):
 
 
 def named_in(task, values):
-    """What a task names: the settings ([(field, value)] of age and measure) and one group of each
+    """What a task names: the settings ([(field, value)], e.g. an age band, a measure) and one group of each
     other field ({field: value}), matched on the values as the tables list writes them ("7.graduate"
     also as "graduate"). Totals are no group."""
     said = _words(task)
@@ -317,7 +335,7 @@ def names_in(task, values) -> list[tuple[str, str]]:
             if v == TOTAL.get(f):
                 continue
             name = re.sub(r"^\d+\.", "", v).lower()
-            names = {name, name.replace(" & ", " and "), *(_words(s).replace("-", " ") for s in DATASET.synonyms(f, v))}
+            names = {name, name.replace(" & ", " and "), *(_words(s).replace("-", " ") for s in CATALOG.synonyms(f, v))}
             spans += [(m.start(), m.end(), f, v) for n in names
                       for m in re.finditer(rf"(?<!\w){re.escape(n)}(?!\w)", said)]
     kept = [s for s in spans if not any(o[0] <= s[0] and s[1] <= o[1] and o[1] - o[0] > s[1] - s[0] for o in spans)]
@@ -328,13 +346,15 @@ def names_in(task, values) -> list[tuple[str, str]]:
 
 
 def tables_of_task(fields, task) -> list[str]:
-    """The tables a task can mean: its indicator's (all if it names none), annual or monthly when
-    the task's own words say which (a year alone: annual)."""
+    """The tables a task can mean: its indicator's (all if it names none), of one frequency when
+    the task's own words say which, the finest its tables have that the words name (a year
+    alone: annual; a month: monthly)."""
     wanted = {i for i, pattern in INDICATORS.items() if re.search(pattern, task, re.I)} or set(INDICATORS)
-    months = r"\bmonth|\b\d{4}-\d{2}\b|\b(?:" + "|".join(m[:3] for m in MONTHS) + r")[a-z]*\b"
-    kind = ("monthly" if re.search(months, task, re.I) else
-            "annual" if re.search(r"\bannual|\byears?\b|\b20\d\d\b", task, re.I) else None)
-    return [t for t in fields if t.split("_")[0] in wanted and (kind is None or t.endswith(kind))]
+    tables = [t for t in fields if t.split("_")[0] in wanted]
+    have = {t.rsplit("_", 1)[-1] for t in tables}
+    kind = next((f.name for f in FREQUENCIES if f.name in have and re.search(f.words, task, re.I)), None)
+    # only where the indicator has several: CPI's are all monthly, and "2026" must not leave none
+    return [t for t in tables if kind is None or t.endswith(kind)] or tables
 
 
 def _named(group: dict) -> str:
@@ -368,7 +388,7 @@ async def unpublished_group(analyses, tables_text, task, group: dict):
 
 
 async def unpublished_settings(analyses, tables_text, task):
-    """A measure or age group a task names that its groups aren't published on: the server's own
+    """A setting's value (a measure, an age group) a task names that its groups aren't published on: the server's own
     note, else None. Code's calls, no tokens: each group of the task, on the settings it names, in
     every table of the task's indicator that has the group's field; it counts only if no table
     publishes it (a table without the note does). Span test: told which measure each split is on,
@@ -378,36 +398,38 @@ async def unpublished_settings(analyses, tables_text, task):
     settings, groups = named_in(task, values)
     if not settings:
         return None
-    measure_field, band_field = DATASET.measure, DATASET.band
-    measures = [v for f, v in settings if f == measure_field] or [None]
-    ages = [v for f, v in settings if f == band_field] or [None]
+    # every value the task names of each setting it names, checked in each combination
+    named = {}
+    for f, v in settings:
+        named.setdefault(f, []).append(v)
     tables = tables_of_task(fields, task)
     for field, group in [*groups.items(), (None, None)]:
-        for measure in measures:
-            for age in ages:
-                where = {k: v for k, v in ((measure_field, measure), (band_field, age), (field, group)) if k and v}
-                notes, published = [], False
-                for table in tables:
-                    if any(k not in fields[table] for k in where if k != measure_field):   # every table has one
-                        continue
-                    try:
-                        text = await analyses.call("value", table=table, where=where)
-                    except ToolError:
-                        continue                   # refused for something else: not this check's to say
-                    rid = text.partition("\n")[0].removeprefix("result ").strip()
-                    analyses.results.pop(rid, None)    # a probe, never a result to cite
-                    analyses.calls.pop(rid, None)
-                    found = NOTE.findall(text)
-                    if not found:
-                        published = True
-                        break
-                    notes.append((table, found))
-                if notes and not published:
-                    table, found = notes[0]
-                    what = f"{group} ({field})" if field else "the figures"
-                    asked = " and ".join(f"{k} {v}" for k, v in where.items() if k in SETTINGS)
-                    nearest = ", ".join(f"{f} {used}" for f, used, _ in found)
-                    return f"{what} on {asked} isn't published together in {table} (the nearest that is: {nearest})"
+        for chosen in itertools.product(*named.values()):
+            where = {**dict(zip(named, chosen)), **({field: group} if field else {})}
+            notes, published = [], False
+            for table in tables:
+                # a measure is named before the tables list's fields, not among them: a table
+                # without it refuses the call, and is passed over below
+                if any(k not in fields[table] for k in where if k not in CATALOG.measures):
+                    continue
+                try:
+                    text = await analyses.call("value", table=table, where=where)
+                except ToolError:
+                    continue                   # refused for something else: not this check's to say
+                rid = text.partition("\n")[0].removeprefix("result ").strip()
+                analyses.results.pop(rid, None)    # a probe, never a result to cite
+                analyses.calls.pop(rid, None)
+                found = NOTE.findall(text)
+                if not found:
+                    published = True
+                    break
+                notes.append((table, found))
+            if notes and not published:
+                table, found = notes[0]
+                what = f"{group} ({field})" if field else "the figures"
+                asked = " and ".join(f"{k} {v}" for k, v in where.items() if k in SETTINGS)
+                nearest = ", ".join(f"{f} {used}" for f, used, _ in found)
+                return f"{what} on {asked} isn't published together in {table} (the nearest that is: {nearest})"
     return None
 
 
@@ -538,7 +560,7 @@ class Investigation:
         return "\n\n".join(found) + plan.later_text(later)
 
     async def check_tasks(self, tasks: list):
-        """Refuse the tasks, none given out, when one names a measure or age group its groups aren't
+        """Refuse the tasks, none given out, when one names a setting's value (a measure, an age group) its groups aren't
         published on (`unpublished_settings`), or a group whose names aren't published together
         (`unpublished_groups`)."""
         settings = [await unpublished_settings(self.analyses, self.tables, task) for task in tasks]
@@ -548,7 +570,10 @@ class Investigation:
             return
         fixes = []
         if any(settings):
-            fixes.append(f"without the {DATASET.measure} or {DATASET.band} group the question doesn't ask about: "
+            # the settings the refused tasks name, in the description's words: no dataset's own
+            _, values = catalogue(self.tables)
+            named = dict.fromkeys(f for task, s in zip(tasks, settings) if s for f, _ in named_in(task, values)[0])
+            fixes.append(f"without the {' or '.join(named)} group the question doesn't ask about: "
                          "analysts use the published one")
         if any(groups):
             fixes.append("with the nearest groups that are published, each on its own, and say in the brief "
@@ -749,10 +774,17 @@ class Investigation:
         # every result said "not published: 2026-03"; the brief didn't)
         rests_on = [i for fid in form.findings if fid in done for i in done[fid].results]
         skipped = sorted({m for i in rests_on for m in SKIPPED.findall(self.analyses.results.get(i, ""))
-                          for m in re.findall(r"\d{4}-\d{2}", m)})
+                          for m in SKIPPED_ONE.findall(m)})
         if skipped and not any(m in said or month_name(m) in said for m in skipped):
-            raise Rewrite(f"The monthly figures skip {', '.join(month_name(m).title() for m in skipped)}: "
+            raise Rewrite(f"The {periods.of(skipped[0]).name} figures skip {', '.join(month_name(m).title() for m in skipped)}: "
                           f"{DATASET.publisher} didn't publish it. Say so in the answer.")
+        # figures from both sides of a change of base (CPI's 2024 base holds the 2012 base's
+        # figures, rescaled, before 2025): the answer says so, as the finding's claim must
+        joins = sorted({y for i in rests_on for y in JOIN_NOTE.findall(self.analyses.results.get(i, ""))})
+        if joins and not SAYS_JOIN.search(form.answer):
+            raise Rewrite(f"The figures the answer rests on sit on both sides of {', '.join(joins)}, where "
+                          f"{DATASET.publisher} changed the list of items and weights: say so in the answer, "
+                          "and that part of the difference can come from that change, not from prices.")
         return form
 
     def _refused_as_unpublished(self) -> bool:
@@ -779,7 +811,7 @@ class Investigation:
                 continue                # several groups, each set on its own: not one combination
             where = merged.setdefault(args["table"], {})
             for k, v in (args.get("where") or {}).items():
-                if k not in ("period", DATASET.measure) and v is not None and not isinstance(v, list):
+                if k != "period" and k not in CATALOG.measures and v is not None and not isinstance(v, list):
                     where.setdefault(k, v)
         for table, where in merged.items():
             if len(where) < 2:
