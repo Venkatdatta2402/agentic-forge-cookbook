@@ -1,6 +1,7 @@
 PROFILE unemployment rate (UR), annual, 2025, usual status (PS+SS), ages 15+ unless stated
 headline (All India, everyone): 3.1%
 on the other measure, current weekly status (CWS): 5.3% -- never mix the two
+education figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band
 previous year (2024): 3.2%
 largest gaps from the total:
   - education = 7.graduate: 11.2% vs 3.1% overall (+8.1 points)
@@ -18,5 +19,4 @@ biggest changes since last release:
   - state = Nagaland: -2.8 points since 2024
   - state = Lakshadweep: -2.6 points since 2024
 not findings (true by definition): UR 15-29 years vs UR 15 years and above r = 0.82, because the age bands overlap (15-29 years, 15 years and above); UR vs WPR r = -0.30, because WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))
-education figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band
 Across-state correlations describe states (people's chances there), not causes.

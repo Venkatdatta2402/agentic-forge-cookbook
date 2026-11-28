@@ -1,6 +1,7 @@
 PROFILE labour force participation rate (LFPR), annual, 2025, usual status (PS+SS), ages 15+ unless stated
 headline (All India, everyone): 59.3%
 on the other measure, current weekly status (CWS): 55.7% -- never mix the two
+education figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band
 previous year (2024): 59.6%
 largest gaps from the total:
   - gender = male: 79.1% vs 59.3% overall (+19.8 points)
@@ -18,5 +19,4 @@ biggest changes since last release:
   - state = Ladakh: +6.1 points since 2024
   - state = Uttarakhand: -5.6 points since 2024
 not findings (true by definition): LFPR 15-29 years vs LFPR 15 years and above r = 0.66, because the age bands overlap (15-29 years, 15 years and above); LFPR vs WPR r = 0.99, because WPR is computed from LFPR and UR (WPR = LFPR x (1 - UR/100))
-education figures: MoSPI's table gives no age; they match the 15 years and above figures, so they are read as that band
 Across-state correlations describe states (people's chances there), not causes.

@@ -1,0 +1,20 @@
+PROFILE consumer price inflation (% on a year earlier), 2024 base, monthly, latest 2026-10
+headline (All India, all items): 6.09%
+series (from 2014-01; the last 24): 2023-11 5.55, 2023-12 5.69, 2024-01 5.1, 2024-02 5.09, 2024-03 4.85, 2024-04 4.83, 2024-05 4.8, 2024-06 5.08, 2024-07 3.6, 2024-08 3.65, 2024-09 5.49, 2024-10 6.21, 2024-11 5.48, 2024-12 5.22, 2026-01 2.74, 2026-02 3.21, 2026-03 3.4, 2026-04 3.48, 2026-05 3.93, 2026-06 4.38, 2026-07 4.45, 2026-08 4.83, 2026-09 5.54, 2026-10 6.09
+not published: 2025-01, 2025-02, 2025-03, 2025-04, 2025-05, 2025-06, 2025-07, 2025-08, 2025-09, 2025-10, 2025-11, 2025-12
+note: across 2025, figures before 2025 are MoSPI's back series: the 2012 base's, measured on its list of items and weights and rescaled to 2024 = 100; from 2025 on, the 2024 list. Part of a change across 2025 can come from the change of list, not of prices
+trend 2014-01 to 2026-10: no clear trend (+0.0 points along a straight line; the months usually sit 1.5 from it)
+latest streak: rose 9 months in a row (2026-01 to 2026-10)
+latest (2026-10): the highest since 2024-10 (6.21)
+groups with a clear trend: state = Jammu & Kashmir: rising (+3.4 along the line); state = Rajasthan: rising (+2.8 along the line); state = Tamil Nadu: rising (+4.0 along the line)
+groups on a streak of 3+ months: state = Rajasthan: rose 9 months in a row; state = Jammu & Kashmir: rose 9 months in a row; state = Karnataka: rose 9 months in a row
+vs previous published month (2026-09): 5.54% -> 6.09%
+  state: Karnataka +1.2, Lakshadweep +1.2, Puducherry +1.1, ... 30 more ..., Meghalaya +0.0, Haryana +0.0, Mizoram +0.0
+  sector: rural +0.5, urban +0.5
+  division: Food and beverages +1.1, Paan, tobacco and intoxicants +0.1, Clothing and footwear +1.0, Housing, water, electricity, gas and other fuels +0.2, Furnishings, household equipment and routine household maintenance +0.8, Health +0.6, Transport +0.8, Information and communication +0.7, Recreation, sport and culture +0.4, Education services +0.1, Restaurants and accommodation services +0.7, Personal care, social protection and miscellaneous goods and services -3.6
+  item: Silver jewellery -35.4, Ginger -14.5, Tomato +14.5, ... 352 more ..., Wheat atta PDS +0.0, Wheat PDS +0.0, Rice PDS +0.0
+groups now: state: Puducherry 7.96, Dadra & Nagar Haveli & Daman & Diu 7.59, Tamil Nadu 7.29, ... 30 more ..., Meghalaya 3.63, Andaman & Nicobar Islands 3.46, Mizoram 2.85; sector: rural 6.63, urban 5.41; division: Food and beverages 8.51, Paan, tobacco and intoxicants 4.93, Clothing and footwear 4.96, Housing, water, electricity, gas and other fuels 2.9, Furnishings, household equipment and routine household maintenance 3.94, Health 2.05, Transport 5.84, Information and communication 3.16, Recreation, sport and culture 2.52, Education services 4.02, Restaurants and accommodation services 10.06, Personal care, social protection and miscellaneous goods and services 10.14; item: Onion 116.22, Garlic 60.74, Silver jewellery 52.39, ... 352 more ..., Cauliflower -10.57, Potato -14.24, Coconut oil -28.31
+gap urban minus rural (-1.2) across item: Lemon +19.5, Kerosene +9.2, Ginger +7.5, ... 352 more ..., Peas -17.1, Barley and its products -19.3, Airfare -31.7
+gap urban minus rural (-1.2) across state: Dadra & Nagar Haveli & Daman & Diu +1.3, Goa +0.4, Jammu & Kashmir +0.0, ... 29 more ..., Odisha -2.1, Chhattisgarh -2.1, Uttar Pradesh -2.3
+gap urban minus rural (-1.2) across division: Food and beverages -0.5, Paan, tobacco and intoxicants +0.7, Clothing and footwear -1.7, Housing, water, electricity, gas and other fuels -1.3, Furnishings, household equipment and routine household maintenance -1.0, Health +0.2, Transport -0.2, Information and communication -0.1, Recreation, sport and culture -0.9, Education services +1.5, Restaurants and accommodation services -0.3, Personal care, social protection and miscellaneous goods and services -1.6
+widest range over the series: division=Personal care, social protection and miscellaneous goods and services 9.5, sector=rural 7.4, division=Restaurants and accommodation services 7.3, sector=urban 7.2

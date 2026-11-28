@@ -1,0 +1,24 @@
+PROFILE consumer price index (2024 = 100), monthly, latest 2026-10
+headline (All India, all items): 110.05
+series (from 2013-01; the last 24): 2024-11 103.5, 2024-12 102.9, 2025-01 101.67, 2025-02 101.32, 2025-03 101.39, 2025-04 101.58, 2025-05 101.9, 2025-06 102.51, 2025-07 103.35, 2025-08 103.74, 2025-09 103.74, 2025-10 103.74, 2025-11 104.01, 2025-12 104.1, 2026-01 104.45, 2026-02 104.57, 2026-03 104.84, 2026-04 105.12, 2026-05 105.91, 2026-06 107, 2026-07 107.95, 2026-08 108.74, 2026-09 109.49, 2026-10 110.05
+note: across 2025, figures before 2025 are MoSPI's back series: the 2012 base's, measured on its list of items and weights and rescaled to 2024 = 100; from 2025 on, the 2024 list. Part of a change across 2025 can come from the change of list, not of prices
+trend 2013-01 to 2026-10: rising (+52.9 points along a straight line; the months usually sit 1.9 from it)
+latest streak: rose 12 months in a row (2025-10 to 2026-10)
+latest (2026-10): the highest of the series
+groups with a clear trend: sector = urban: rising (+52.8 along the line); sector = rural: rising (+52.9 along the line); state = Telangana: rising (+10.7 along the line)
+groups on a streak of 3+ months: division = Paan, tobacco and intoxicants: rose 21 months in a row; division = Restaurants and accommodation services: rose 21 months in a row; state = Nagaland: rose 19 months in a row
+vs previous published month (2026-09): 109.49 -> 110.05
+  state: Tripura +1.3, Karnataka +1.2, Andhra Pradesh +1.1, ... 30 more ..., Haryana +0.1, Uttarakhand +0.0, Delhi +0.0
+  sector: rural +0.6, urban +0.5
+  division: Food and beverages +1.0, Paan, tobacco and intoxicants +0.2, Clothing and footwear +0.9, Housing, water, electricity, gas and other fuels +0.3, Furnishings, household equipment and routine household maintenance +0.6, Health +0.4, Transport +0.2, Information and communication +0.5, Recreation, sport and culture +0.4, Education services +0.1, Restaurants and accommodation services +0.9, Personal care, social protection and miscellaneous goods and services -0.8
+  item: Singara -26.3, Cauliflower -18.8, Airfare +18.3, ... 352 more ..., Wheat atta PDS +0.0, Wheat PDS +0.0, Rice PDS +0.0
+vs a year earlier (2025-10): 103.74 -> 110.05
+  state: Puducherry +8.2, Dadra & Nagar Haveli & Daman & Diu +7.8, Telangana +7.6, ... 30 more ..., Meghalaya +3.8, Andaman & Nicobar Islands +3.7, Mizoram +2.9
+  sector: rural +6.9, urban +5.6
+  division: Food and beverages +8.8, Paan, tobacco and intoxicants +5.1, Clothing and footwear +5.2, Housing, water, electricity, gas and other fuels +3.0, Furnishings, household equipment and routine household maintenance +4.0, Health +2.1, Transport +5.9, Information and communication +3.3, Recreation, sport and culture +2.6, Education services +4.2, Restaurants and accommodation services +10.6, Personal care, social protection and miscellaneous goods and services +11.5
+  item: Silver jewellery +91.0, Onion +77.4, Coconut oil -58.8, ... 352 more ..., Sugar PDS +0.0, Edible oil PDS +0.0, Wheat PDS +0.0
+groups now: state: Telangana 111.88, Puducherry 111.68, Tamil Nadu 111.01, ... 30 more ..., Tripura 107.31, Delhi 106.7, Mizoram 105.4; sector: rural 110.73, urban 109.22; division: Food and beverages 112.78, Paan, tobacco and intoxicants 108.95, Clothing and footwear 110.52, Housing, water, electricity, gas and other fuels 104.67, Furnishings, household equipment and routine household maintenance 106.72, Health 105.67, Transport 106.31, Information and communication 106.53, Recreation, sport and culture 105.93, Education services 109.19, Restaurants and accommodation services 115.68, Personal care, social protection and miscellaneous goods and services 124.5; item: Silver jewellery 264.77, Coconut: copra 185.96, Peas 169.67, ... 352 more ..., Arhar, tur 85.3, Garlic 80.74, Potato 69.46
+gap urban minus rural (-1.5) across item: Litchi +20.1, Silver jewellery +18.3, Peas +17.7, ... 352 more ..., Small millets and its products -21.5, Airfare -25.0, Barley and its products -27.5
+gap urban minus rural (-1.5) across division: Food and beverages -0.1, Paan, tobacco and intoxicants +0.5, Clothing and footwear -3.3, Housing, water, electricity, gas and other fuels -1.5, Furnishings, household equipment and routine household maintenance -1.3, Health +0.8, Transport -0.4, Information and communication -0.7, Recreation, sport and culture -1.0, Education services +2.3, Restaurants and accommodation services +1.1, Personal care, social protection and miscellaneous goods and services -1.7
+gap urban minus rural (-1.5) across state: Dadra & Nagar Haveli & Daman & Diu +1.7, Lakshadweep +1.0, Manipur +0.2, ... 29 more ..., Andaman & Nicobar Islands -2.9, Jharkhand -3.2, Uttarakhand -3.3
+widest range over the series: sector=rural 55.8, sector=urban 53.9, division=Personal care, social protection and miscellaneous goods and services 22.5, division=Restaurants and accommodation services 12.9
